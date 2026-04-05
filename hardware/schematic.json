@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "title": "ESP8266 Soil Moisture Sensor",
+  "description": "Wiring schematic for capacitive soil moisture monitoring system",
+  "connections": [
+    {
+      "from": { "component": "Capacitive Soil Moisture Sensor v1.2", "pin": "VCC" },
+      "to":   { "component": "ESP8266 NodeMCU", "pin": "3V3" },
+      "wire": "red",
+      "notes": "3.3V power supply"
+    },
+    {
+      "from": { "component": "Capacitive Soil Moisture Sensor v1.2", "pin": "GND" },
+      "to":   { "component": "ESP8266 NodeMCU", "pin": "GND" },
+      "wire": "black",
+      "notes": "Common ground"
+    },
+    {
+      "from": { "component": "Capacitive Soil Moisture Sensor v1.2", "pin": "AOUT" },
+      "to":   { "component": "ESP8266 NodeMCU", "pin": "A0" },
+      "wire": "yellow",
+      "notes": "Analog soil moisture signal (0-1V range)"
+    }
+  ],
+  "components": [
+    {
+      "name": "ESP8266 NodeMCU",
+      "type": "microcontroller",
+      "variant": "NodeMCU v2 / Wemos D1 Mini",
+      "voltage": "3.3V logic",
+      "pins_used": ["3V3", "GND", "A0"]
+    },
+    {
+      "name": "Capacitive Soil Moisture Sensor v1.2",
+      "type": "sensor",
+      "voltage": "3.3V - 5V",
+      "output": "Analog 0-3V",
+      "pins": ["VCC", "GND", "AOUT"]
+    }
+  ],
+  "power": {
+    "source": "USB Micro-B on ESP8266 board",
+    "voltage": "5V USB → 3.3V onboard regulator",
+    "notes": "Can also be powered via VIN pin with 5-9V"
+  }
+}

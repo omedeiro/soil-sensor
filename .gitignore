@@ -1,0 +1,16 @@
+# PlatformIO
+firmware/.pio/
+firmware/.pioenvs/
+firmware/.piolibdeps/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Build artifacts
+*.o
+*.elf
+*.bin
+*.hex
