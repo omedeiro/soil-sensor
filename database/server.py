@@ -19,29 +19,43 @@ DB_PATH = os.path.join(os.path.dirname(__file__), 'sensor_data.db')
 # ─── Database initialization ──────────────────────────────────────────────────
 
 def init_db():
-    """Initialize SQLite database with schema"""
+    """Initialize SQLite database with schema for multi-sensor support"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
+    # Devices table - track each sensor
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS devices (
+            device_id TEXT PRIMARY KEY,
+            name TEXT,
+            location TEXT,
+            mac_address TEXT,
+            first_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            total_readings INTEGER DEFAULT 0
+        )
+    ''')
+    
+    # Readings table - now with device_id foreign key
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS readings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            device_id TEXT NOT NULL,
             timestamp INTEGER NOT NULL,
             raw INTEGER NOT NULL,
             moisture REAL NOT NULL,
             uptime INTEGER,
             crashes INTEGER DEFAULT 0,
-            received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (device_id) REFERENCES devices(device_id)
         )
     ''')
     
-    cursor.execute('''
-        CREATE INDEX IF NOT EXISTS idx_timestamp ON readings(timestamp)
-    ''')
-    
-    cursor.execute('''
-        CREATE INDEX IF NOT EXISTS idx_received_at ON readings(received_at)
-    ''')
+    # Indexes for performance
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_timestamp ON readings(timestamp)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_received_at ON readings(received_at)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_device_id ON readings(device_id)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_device_timestamp ON readings(device_id, timestamp)')
     
     conn.commit()
     conn.close()
@@ -59,29 +73,43 @@ def add_reading():
             return jsonify({'error': 'No JSON data received'}), 400
         
         # Extract fields
+        device_id = data.get('device_id')
         timestamp = data.get('timestamp', int(time.time()))
         raw = data.get('raw')
         moisture = data.get('moisture')
         uptime = data.get('uptime', 0)
         crashes = data.get('crashes', 0)
         
+        # Device ID is required
+        if not device_id:
+            return jsonify({'error': 'Missing device_id'}), 400
+            
         if raw is None or moisture is None:
             return jsonify({'error': 'Missing required fields: raw, moisture'}), 400
         
-        # Store in database
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
+        # Register or update device
         cursor.execute('''
-            INSERT INTO readings (timestamp, raw, moisture, uptime, crashes)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (timestamp, raw, moisture, uptime, crashes))
+            INSERT INTO devices (device_id, last_seen, total_readings)
+            VALUES (?, CURRENT_TIMESTAMP, 1)
+            ON CONFLICT(device_id) DO UPDATE SET
+                last_seen = CURRENT_TIMESTAMP,
+                total_readings = total_readings + 1
+        ''')
+        
+        # Store reading
+        cursor.execute('''
+            INSERT INTO readings (device_id, timestamp, raw, moisture, uptime, crashes)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (device_id, timestamp, raw, moisture, uptime, crashes))
         
         reading_id = cursor.lastrowid
         conn.commit()
         conn.close()
         
-        print(f"✓ Reading #{reading_id}: {moisture:.1f}% (raw={raw}, uptime={uptime}s, crashes={crashes})")
+        print(f"✓ [{device_id}] Reading #{reading_id}: {moisture:.1f}% (raw={raw})")
         
         return jsonify({
             'id': reading_id,
@@ -95,17 +123,29 @@ def add_reading():
 
 @app.route('/api/latest', methods=['GET'])
 def get_latest():
-    """Get the most recent sensor reading"""
+    """Get the most recent sensor reading (optionally filtered by device_id)"""
     try:
+        device_id = request.args.get('device_id')
+        
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
-        cursor.execute('''
-            SELECT timestamp, raw, moisture, uptime, crashes, received_at
-            FROM readings
-            ORDER BY id DESC
-            LIMIT 1
-        ''')
+        if device_id:
+            cursor.execute('''
+                SELECT device_id, timestamp, raw, moisture, uptime, crashes, received_at
+                FROM readings
+                WHERE device_id = ?
+                ORDER BY id DESC
+                LIMIT 1
+            ''', (device_id,))
+        else:
+            # Return latest from ALL devices
+            cursor.execute('''
+                SELECT device_id, timestamp, raw, moisture, uptime, crashes, received_at
+                FROM readings
+                ORDER BY id DESC
+                LIMIT 1
+            ''')
         
         row = cursor.fetchone()
         conn.close()
@@ -114,12 +154,13 @@ def get_latest():
             return jsonify({'error': 'No readings available'}), 404
         
         return jsonify({
-            'ts': row[0],
-            'raw': row[1],
-            'moisture': row[2],
-            'uptime': row[3],
-            'crashes': row[4],
-            'received_at': row[5]
+            'device_id': row[0],
+            'ts': row[1],
+            'raw': row[2],
+            'moisture': row[3],
+            'uptime': row[4],
+            'crashes': row[5],
+            'received_at': row[6]
         })
         
     except Exception as e:
@@ -127,9 +168,10 @@ def get_latest():
 
 @app.route('/api/history', methods=['GET'])
 def get_history():
-    """Get historical readings"""
+    """Get historical readings (optionally filtered by device_id)"""
     try:
         # Query parameters
+        device_id = request.args.get('device_id')
         limit = request.args.get('limit', 288, type=int)  # Default: 24h at 5min intervals
         offset = request.args.get('offset', 0, type=int)
         
@@ -140,29 +182,39 @@ def get_history():
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
-        cursor.execute('''
-            SELECT timestamp, raw, moisture, uptime, crashes
-            FROM readings
-            ORDER BY id DESC
-            LIMIT ? OFFSET ?
-        ''', (limit, offset))
+        if device_id:
+            cursor.execute('''
+                SELECT device_id, timestamp, raw, moisture, uptime, crashes
+                FROM readings
+                WHERE device_id = ?
+                ORDER BY id DESC
+                LIMIT ? OFFSET ?
+            ''', (device_id, limit, offset))
+            
+            cursor.execute('SELECT COUNT(*) FROM readings WHERE device_id = ?', (device_id,))
+        else:
+            cursor.execute('''
+                SELECT device_id, timestamp, raw, moisture, uptime, crashes
+                FROM readings
+                ORDER BY id DESC
+                LIMIT ? OFFSET ?
+            ''', (limit, offset))
+            
+            cursor.execute('SELECT COUNT(*) FROM readings')
         
         rows = cursor.fetchall()
-        
-        # Get total count
-        cursor.execute('SELECT COUNT(*) FROM readings')
         total_count = cursor.fetchone()[0]
-        
         conn.close()
         
         readings = []
         for row in rows:
             readings.append({
-                'ts': row[0],
-                'raw': row[1],
-                'moisture': row[2],
-                'uptime': row[3],
-                'crashes': row[4]
+                'device_id': row[0],
+                'ts': row[1],
+                'raw': row[2],
+                'moisture': row[3],
+                'uptime': row[4],
+                'crashes': row[5]
             })
         
         # Reverse so oldest is first
@@ -177,38 +229,246 @@ def get_history():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/stats', methods=['GET'])
-def get_stats():
-    """Get statistics about the database"""
+@app.route('/api/devices', methods=['GET'])
+def get_devices():
+    """Get list of all registered devices"""
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
-        # Total readings
-        cursor.execute('SELECT COUNT(*) FROM readings')
-        total = cursor.fetchone()[0]
+        cursor.execute('''
+            SELECT device_id, name, location, mac_address, first_seen, last_seen, total_readings
+            FROM devices
+            ORDER BY last_seen DESC
+        ''')
         
-        # First and last reading times
-        cursor.execute('SELECT MIN(timestamp), MAX(timestamp) FROM readings')
-        first_ts, last_ts = cursor.fetchone()
-        
-        # Average moisture
-        cursor.execute('SELECT AVG(moisture) FROM readings')
-        avg_moisture = cursor.fetchone()[0]
-        
-        # Max crashes reported
-        cursor.execute('SELECT MAX(crashes) FROM readings')
-        max_crashes = cursor.fetchone()[0] or 0
-        
+        rows = cursor.fetchall()
         conn.close()
         
+        devices = []
+        for row in rows:
+            devices.append({
+                'device_id': row[0],
+                'name': row[1],
+                'location': row[2],
+                'mac_address': row[3],
+                'first_seen': row[4],
+                'last_seen': row[5],
+                'total_readings': row[6]
+            })
+        
         return jsonify({
-            'total_readings': total,
-            'first_reading': first_ts,
-            'last_reading': last_ts,
-            'avg_moisture': round(avg_moisture, 1) if avg_moisture else 0,
-            'max_crashes': max_crashes
+            'count': len(devices),
+            'devices': devices
         })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/devices/<device_id>', methods=['GET'])
+def get_device(device_id):
+    """Get information about a specific device"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT device_id, name, location, mac_address, first_seen, last_seen, total_readings
+            FROM devices
+            WHERE device_id = ?
+        ''', (device_id,))
+        
+        row = cursor.fetchone()
+        
+        if not row:
+            conn.close()
+            return jsonify({'error': 'Device not found'}), 404
+        
+        # Get latest reading
+        cursor.execute('''
+            SELECT timestamp, moisture, raw
+            FROM readings
+            WHERE device_id = ?
+            ORDER BY id DESC
+            LIMIT 1
+        ''', (device_id,))
+        
+        latest = cursor.fetchone()
+        conn.close()
+        
+        device_info = {
+            'device_id': row[0],
+            'name': row[1],
+            'location': row[2],
+            'mac_address': row[3],
+            'first_seen': row[4],
+            'last_seen': row[5],
+            'total_readings': row[6]
+        }
+        
+        if latest:
+            device_info['latest_reading'] = {
+                'timestamp': latest[0],
+                'moisture': latest[1],
+                'raw': latest[2]
+            }
+        
+        return jsonify(device_info)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/devices/<device_id>', methods=['PUT'])
+def update_device(device_id):
+    """Update device metadata (name, location)"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No JSON data received'}), 400
+        
+        name = data.get('name')
+        location = data.get('location')
+        mac_address = data.get('mac_address')
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Check if device exists
+        cursor.execute('SELECT device_id FROM devices WHERE device_id = ?', (device_id,))
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({'error': 'Device not found'}), 404
+        
+        # Build update query dynamically
+        updates = []
+        params = []
+        
+        if name is not None:
+            updates.append('name = ?')
+            params.append(name)
+        if location is not None:
+            updates.append('location = ?')
+            params.append(location)
+        if mac_address is not None:
+            updates.append('mac_address = ?')
+            params.append(mac_address)
+        
+        if not updates:
+            conn.close()
+            return jsonify({'error': 'No fields to update'}), 400
+        
+        params.append(device_id)
+        query = f"UPDATE devices SET {', '.join(updates)} WHERE device_id = ?"
+        
+        cursor.execute(query, params)
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'status': 'ok', 'device_id': device_id})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/devices/all/latest', methods=['GET'])
+def get_all_latest():
+    """Get the latest reading from each device"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Get latest reading for each device
+        cursor.execute('''
+            SELECT r.device_id, d.name, d.location, r.timestamp, r.moisture, r.raw, r.uptime, r.crashes
+            FROM readings r
+            INNER JOIN (
+                SELECT device_id, MAX(id) as max_id
+                FROM readings
+                GROUP BY device_id
+            ) latest ON r.id = latest.max_id
+            LEFT JOIN devices d ON r.device_id = d.device_id
+            ORDER BY r.timestamp DESC
+        ''')
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        devices = []
+        for row in rows:
+            devices.append({
+                'device_id': row[0],
+                'name': row[1],
+                'location': row[2],
+                'timestamp': row[3],
+                'moisture': row[4],
+                'raw': row[5],
+                'uptime': row[6],
+                'crashes': row[7]
+            })
+        
+        return jsonify({
+            'count': len(devices),
+            'devices': devices
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/stats', methods=['GET'])
+def get_stats():
+    """Get statistics about the database (optionally filtered by device_id)"""
+    try:
+        device_id = request.args.get('device_id')
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        if device_id:
+            # Stats for specific device
+            cursor.execute('SELECT COUNT(*) FROM readings WHERE device_id = ?', (device_id,))
+            total = cursor.fetchone()[0]
+            
+            cursor.execute('SELECT MIN(timestamp), MAX(timestamp) FROM readings WHERE device_id = ?', (device_id,))
+            first_ts, last_ts = cursor.fetchone()
+            
+            cursor.execute('SELECT AVG(moisture) FROM readings WHERE device_id = ?', (device_id,))
+            avg_moisture = cursor.fetchone()[0]
+            
+            cursor.execute('SELECT MAX(crashes) FROM readings WHERE device_id = ?', (device_id,))
+            max_crashes = cursor.fetchone()[0] or 0
+            
+            stats = {
+                'device_id': device_id,
+                'total_readings': total,
+                'first_reading': first_ts,
+                'last_reading': last_ts,
+                'avg_moisture': round(avg_moisture, 1) if avg_moisture else 0,
+                'max_crashes': max_crashes
+            }
+        else:
+            # Overall stats
+            cursor.execute('SELECT COUNT(*) FROM readings')
+            total = cursor.fetchone()[0]
+            
+            cursor.execute('SELECT COUNT(*) FROM devices')
+            device_count = cursor.fetchone()[0]
+            
+            cursor.execute('SELECT MIN(timestamp), MAX(timestamp) FROM readings')
+            first_ts, last_ts = cursor.fetchone()
+            
+            cursor.execute('SELECT AVG(moisture) FROM readings')
+            avg_moisture = cursor.fetchone()[0]
+            
+            stats = {
+                'total_devices': device_count,
+                'total_readings': total,
+                'first_reading': first_ts,
+                'last_reading': last_ts,
+                'avg_moisture': round(avg_moisture, 1) if avg_moisture else 0
+            }
+        
+        conn.close()
+        return jsonify(stats)
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -244,8 +504,13 @@ def index():
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
+        
         cursor.execute('SELECT COUNT(*) FROM readings')
-        count = cursor.fetchone()[0]
+        reading_count = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM devices')
+        device_count = cursor.fetchone()[0]
+        
         conn.close()
         
         return f"""
@@ -254,15 +519,28 @@ def index():
         <body style="font-family: monospace; padding: 2rem; background: #0f172a; color: #e2e8f0;">
             <h1>🌱 Soil Moisture Database Server</h1>
             <p>Status: <strong style="color: #22d3ee;">Running</strong></p>
-            <p>Readings stored: <strong>{count}</strong></p>
+            <p>Devices: <strong>{device_count}</strong></p>
+            <p>Readings stored: <strong>{reading_count}</strong></p>
             <hr style="border-color: #334155;">
             <h2>API Endpoints:</h2>
+            <h3>Readings:</h3>
             <ul>
-                <li><code>POST /api/reading</code> - Store new reading</li>
-                <li><code>GET /api/latest</code> - Get latest reading</li>
-                <li><code>GET /api/history?limit=288</code> - Get history</li>
-                <li><code>GET /api/stats</code> - Get statistics</li>
+                <li><code>POST /api/reading</code> - Store new reading (requires device_id)</li>
+                <li><code>GET /api/latest?device_id=xxx</code> - Get latest reading</li>
+                <li><code>GET /api/history?device_id=xxx&limit=288</code> - Get history</li>
+                <li><code>GET /api/stats?device_id=xxx</code> - Get statistics</li>
+            </ul>
+            <h3>Devices:</h3>
+            <ul>
+                <li><code>GET /api/devices</code> - List all devices</li>
+                <li><code>GET /api/devices/&lt;id&gt;</code> - Get device info</li>
+                <li><code>PUT /api/devices/&lt;id&gt;</code> - Update device (name, location)</li>
+                <li><code>GET /api/devices/all/latest</code> - Latest reading from each device</li>
+            </ul>
+            <h3>System:</h3>
+            <ul>
                 <li><code>GET /health</code> - Health check</li>
+                <li><code>POST /api/reset</code> - Clear all data</li>
             </ul>
             <hr style="border-color: #334155;">
             <p><a href="/dashboard" style="color: #22d3ee;">View Dashboard →</a></p>

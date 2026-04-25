@@ -33,6 +33,18 @@
 #define READ_INTERVAL_MS    60000  // how often to read sensor (ms) — 1 minute
 #define LOG_BUFFER_SIZE     1440   // max entries kept in RAM (~24 h at 1-min interval)
 
+// ─── Remote Database (Multi-Sensor Support) ──────────────────────────────────
+// Enable to send readings to a central database server
+#define USE_REMOTE_DB       false  // Set to true to enable database logging
+#define DB_SERVER_URL       "http://192.168.99.188:5001/api/reading"
+
+// Device identification for multi-sensor deployments
+// Option 1: Auto-generate from MAC address (e.g., "esp8266-40915141d997")
+// Option 2: Set DEVICE_ID_AUTO=false and provide custom ID below
+#define DEVICE_ID_AUTO      true   // Auto-generate device ID from MAC
+#define DEVICE_ID           ""     // Custom device ID (e.g., "garden-bed-a")
+                                   // Only used if DEVICE_ID_AUTO is false
+
 // ─── HTTP Server ─────────────────────────────────────────────────────────────
 #define HTTP_PORT           80
 
