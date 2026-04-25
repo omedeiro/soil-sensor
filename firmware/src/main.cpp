@@ -57,6 +57,8 @@ void setup() {
     Serial.println();
     Serial.println(F("═══════════════════════════════════════"));
     Serial.println(F("  🌱  Soil Moisture Monitoring System"));
+    Serial.printf("  Version: %s\n", FIRMWARE_VERSION);
+    Serial.printf("  Built: %s %s\n", BUILD_DATE, BUILD_TIME);
     Serial.println(F("═══════════════════════════════════════"));
 
     // 1. Sensor
