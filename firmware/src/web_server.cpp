@@ -76,8 +76,8 @@ String MonitorWebServer::_buildDashboardHTML() {
 <style>
   :root { --bg:#0f172a; --card:#1e293b; --accent:#22d3ee; --text:#e2e8f0; }
   * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); display:flex; justify-content:center; padding:2rem; }
-  .container { max-width:480px; width:100%; }
+  body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); display:flex; justify-content:center; padding:1rem; }
+  .container { max-width:800px; width:100%; }
   h1 { text-align:center; margin-bottom:1.5rem; color:var(--accent); font-size:1.5rem; }
   .card { background:var(--card); border-radius:12px; padding:1.5rem; margin-bottom:1rem; }
   .value { font-size:3rem; font-weight:700; text-align:center; color:var(--accent); }
@@ -85,6 +85,8 @@ String MonitorWebServer::_buildDashboardHTML() {
   .row { display:flex; justify-content:space-between; margin-top:.75rem; }
   .row span { font-size:.85rem; opacity:.8; }
   #status { text-align:center; font-size:.8rem; opacity:.5; margin-top:1rem; }
+  #chart { width:100%; height:250px; margin-top:1rem; }
+  canvas { border-radius:8px; }
 </style>
 </head>
 <body>
@@ -97,6 +99,10 @@ String MonitorWebServer::_buildDashboardHTML() {
     <div class="row"><span>Timestamp:</span><span id="ts">--</span></div>
   </div>
   <div class="card">
+    <canvas id="chart"></canvas>
+    <div style="text-align:center;margin-top:0.5rem;font-size:0.85rem;opacity:0.7;">24-Hour History</div>
+  </div>
+  <div class="card">
     <div class="row"><span>Readings logged:</span><span id="count">--</span></div>
     <div class="row"><span>IP address:</span><span>)rawliteral");
 
@@ -107,6 +113,7 @@ String MonitorWebServer::_buildDashboardHTML() {
   <div id="status">Updating every 5 s</div>
 </div>
 <script>
+let chart;
 async function refresh(){
   try{
     const r=await fetch('/api/latest');
@@ -117,7 +124,56 @@ async function refresh(){
     const h=await fetch('/api/history');
     const hd=await h.json();
     document.getElementById('count').textContent=hd.count;
+    drawChart(hd.readings);
   }catch(e){ console.error(e); }
+}
+function drawChart(data){
+  const canvas=document.getElementById('chart');
+  const ctx=canvas.getContext('2d');
+  const w=canvas.width=canvas.offsetWidth*2;
+  const h=canvas.height=500;
+  ctx.clearRect(0,0,w,h);
+  if(!data||data.length<2)return;
+  const maxPoints=Math.min(data.length,288);
+  const step=Math.max(1,Math.floor(data.length/maxPoints));
+  const points=[];
+  for(let i=0;i<data.length;i+=step){
+    points.push(data[i]);
+  }
+  const pad=60;
+  const cw=w-pad*2;
+  const ch=h-pad*2;
+  ctx.strokeStyle='#334155';
+  ctx.lineWidth=2;
+  for(let i=0;i<=5;i++){
+    const y=pad+ch-(i/5)*ch;
+    ctx.beginPath();
+    ctx.moveTo(pad,y);
+    ctx.lineTo(w-pad,y);
+    ctx.stroke();
+    ctx.fillStyle='#64748b';
+    ctx.font='24px sans-serif';
+    ctx.textAlign='right';
+    ctx.fillText((i*20)+'%',pad-10,y+8);
+  }
+  ctx.strokeStyle='#22d3ee';
+  ctx.lineWidth=4;
+  ctx.beginPath();
+  points.forEach((p,i)=>{
+    const x=pad+(i/(points.length-1))*cw;
+    const y=pad+ch-(p.moisture/100)*ch;
+    if(i===0)ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  ctx.fillStyle='#22d3ee';
+  points.forEach((p,i)=>{
+    const x=pad+(i/(points.length-1))*cw;
+    const y=pad+ch-(p.moisture/100)*ch;
+    ctx.beginPath();
+    ctx.arc(x,y,6,0,Math.PI*2);
+    ctx.fill();
+  });
 }
 refresh();
 setInterval(refresh,5000);

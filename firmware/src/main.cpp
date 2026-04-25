@@ -14,6 +14,7 @@
 
 #include <Arduino.h>
 #include <time.h>
+#include <ArduinoOTA.h>
 #include "config.h"
 #include "sensor.h"
 #include "wifi_manager.h"
@@ -71,6 +72,37 @@ void setup() {
         syncTime();
     }
 
+    // 3.5. OTA Updates
+    if (wifi.isConnected()) {
+        ArduinoOTA.setHostname("soil-sensor");
+        ArduinoOTA.setPassword("soilmon2026");  // Change this to your preferred password
+        
+        ArduinoOTA.onStart([]() {
+            String type = (ArduinoOTA.getCommand() == U_FLASH) ? "firmware" : "filesystem";
+            Serial.println("[OTA] Update started: " + type);
+        });
+        
+        ArduinoOTA.onEnd([]() {
+            Serial.println("\n[OTA] Update complete! Rebooting...");
+        });
+        
+        ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+            Serial.printf("[OTA] Progress: %u%%\r", (progress / (total / 100)));
+        });
+        
+        ArduinoOTA.onError([](ota_error_t error) {
+            Serial.printf("[OTA] Error[%u]: ", error);
+            if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+            else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+            else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+            else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+            else if (error == OTA_END_ERROR) Serial.println("End Failed");
+        });
+        
+        ArduinoOTA.begin();
+        Serial.println(F("[OTA] Ready for wireless updates"));
+    }
+
     // 4. Web server
     if (wifi.isConnected()) {
         webServer = new MonitorWebServer(logger, sensor);
@@ -86,6 +118,9 @@ void setup() {
 
 // ─── loop() ──────────────────────────────────────────────────────────────────
 void loop() {
+    // Handle OTA updates
+    ArduinoOTA.handle();
+    
     // Handle HTTP clients
     if (webServer) {
         webServer->handleClient();

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌱 Soil Moisture - 24h History</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root { 
+    --bg:#0f172a; 
+    --card:#1e293b; 
+    --accent:#22d3ee; 
+    --text:#e2e8f0;
+    --grid:#334155;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { 
+    font-family:'Segoe UI',system-ui,sans-serif; 
+    background:var(--bg); 
+    color:var(--text); 
+    padding:2rem;
+  }
+  .container { max-width:1200px; margin:0 auto; }
+  h1 { 
+    text-align:center; 
+    margin-bottom:1.5rem; 
+    color:var(--accent); 
+    font-size:1.8rem; 
+  }
+  .card { 
+    background:var(--card); 
+    border-radius:12px; 
+    padding:1.5rem; 
+    margin-bottom:1rem; 
+  }
+  .stats {
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+    gap:1rem;
+    margin-bottom:1.5rem;
+  }
+  .stat {
+    background:var(--bg);
+    padding:1rem;
+    border-radius:8px;
+    text-align:center;
+  }
+  .stat-value {
+    font-size:2rem;
+    font-weight:700;
+    color:var(--accent);
+  }
+  .stat-label {
+    font-size:0.85rem;
+    opacity:0.7;
+    margin-top:0.25rem;
+  }
+  #chartContainer {
+    position:relative;
+    height:400px;
+  }
+  .controls {
+    display:flex;
+    gap:1rem;
+    margin-bottom:1rem;
+    flex-wrap:wrap;
+  }
+  button {
+    background:var(--accent);
+    color:var(--bg);
+    border:none;
+    padding:0.75rem 1.5rem;
+    border-radius:8px;
+    font-weight:600;
+    cursor:pointer;
+    transition:opacity 0.2s;
+  }
+  button:hover { opacity:0.8; }
+  button:disabled { opacity:0.5; cursor:not-allowed; }
+  .status {
+    text-align:center;
+    font-size:0.9rem;
+    opacity:0.6;
+    margin-top:1rem;
+  }
+  .error {
+    background:#ef4444;
+    color:white;
+    padding:1rem;
+    border-radius:8px;
+    margin-bottom:1rem;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🌱 Soil Moisture - 24 Hour History</h1>
+  
+  <div id="errorBox" class="error" style="display:none;"></div>
+  
+  <div class="card">
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value" id="currentMoisture">--</div>
+        <div class="stat-label">Current Moisture %</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="totalReadings">--</div>
+        <div class="stat-label">Total Readings</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="avgMoisture">--</div>
+        <div class="stat-label">24h Average %</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="minMoisture">--</div>
+        <div class="stat-label">24h Min %</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="maxMoisture">--</div>
+        <div class="stat-label">24h Max %</div>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <button onclick="loadData()">🔄 Refresh Data</button>
+      <button onclick="toggleAutoRefresh()" id="autoRefreshBtn">▶️ Auto-Refresh (Off)</button>
+      <button onclick="exportCSV()">📊 Export CSV</button>
+    </div>
+    
+    <div id="chartContainer">
+      <canvas id="moistureChart"></canvas>
+    </div>
+    
+    <div class="status" id="status">Loading...</div>
+  </div>
+</div>
+
+<script>
+const DEVICE_IP = '192.168.99.70'; // Change this if your IP is different
+let chart = null;
+let autoRefreshInterval = null;
+let historyData = null;
+
+// Initialize chart
+function initChart() {
+  const ctx = document.getElementById('moistureChart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Soil Moisture %',
+        data: [],
+        borderColor: '#22d3ee',
+        backgroundColor: 'rgba(34, 211, 238, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 2,
+        pointHoverRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: '#e2e8f0' }
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#334155' },
+          ticks: { color: '#94a3b8', maxRotation: 45, minRotation: 45 }
+        },
+        y: {
+          grid: { color: '#334155' },
+          ticks: { color: '#94a3b8' },
+          min: 0,
+          max: 100,
+          title: {
+            display: true,
+            text: 'Moisture %',
+            color: '#e2e8f0'
+          }
+        }
+      },
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false
+      }
+    }
+  });
+}
+
+// Load data from device
+async function loadData() {
+  try {
+    document.getElementById('status').textContent = 'Loading data...';
+    document.getElementById('errorBox').style.display = 'none';
+    
+    const response = await fetch(`http://${DEVICE_IP}/api/history`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.json();
+    historyData = data;
+    
+    if (data.count === 0) {
+      document.getElementById('status').textContent = 'No data yet. Wait for first reading...';
+      return;
+    }
+    
+    // Process data
+    const labels = [];
+    const moistureData = [];
+    let sum = 0;
+    let min = 100;
+    let max = 0;
+    
+    data.readings.forEach(reading => {
+      const date = new Date(reading.ts * 1000);
+      labels.push(date.toLocaleTimeString());
+      moistureData.push(reading.moisture);
+      sum += reading.moisture;
+      if (reading.moisture < min) min = reading.moisture;
+      if (reading.moisture > max) max = reading.moisture;
+    });
+    
+    const avg = sum / data.count;
+    
+    // Update chart
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = moistureData;
+    chart.update();
+    
+    // Update stats
+    const latest = data.readings[data.count - 1];
+    document.getElementById('currentMoisture').textContent = latest.moisture.toFixed(1) + '%';
+    document.getElementById('totalReadings').textContent = data.count;
+    document.getElementById('avgMoisture').textContent = avg.toFixed(1) + '%';
+    document.getElementById('minMoisture').textContent = min.toFixed(1) + '%';
+    document.getElementById('maxMoisture').textContent = max.toFixed(1) + '%';
+    
+    const lastUpdate = new Date(latest.ts * 1000);
+    document.getElementById('status').textContent = `Last updated: ${lastUpdate.toLocaleString()}`;
+    
+  } catch (error) {
+    console.error('Error loading data:', error);
+    document.getElementById('errorBox').textContent = 
+      `❌ Failed to connect to device at ${DEVICE_IP}. Make sure you're on the same WiFi network.`;
+    document.getElementById('errorBox').style.display = 'block';
+    document.getElementById('status').textContent = 'Error loading data';
+  }
+}
+
+// Toggle auto-refresh
+function toggleAutoRefresh() {
+  const btn = document.getElementById('autoRefreshBtn');
+  if (autoRefreshInterval) {
+    clearInterval(autoRefreshInterval);
+    autoRefreshInterval = null;
+    btn.textContent = '▶️ Auto-Refresh (Off)';
+  } else {
+    autoRefreshInterval = setInterval(loadData, 30000); // Every 30 seconds
+    btn.textContent = '⏸️ Auto-Refresh (On)';
+    loadData(); // Load immediately
+  }
+}
+
+// Export to CSV
+function exportCSV() {
+  if (!historyData || historyData.count === 0) {
+    alert('No data to export');
+    return;
+  }
+  
+  let csv = 'Timestamp,DateTime,Raw ADC,Moisture %\\n';
+  historyData.readings.forEach(reading => {
+    const date = new Date(reading.ts * 1000);
+    csv += `${reading.ts},${date.toLocaleString()},${reading.raw},${reading.moisture}\\n`;
+  });
+  
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `soil-moisture-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Initialize on load
+initChart();
+loadData();
+</script>
+</body>
+</html>
