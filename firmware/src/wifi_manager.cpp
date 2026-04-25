@@ -11,8 +11,8 @@ bool WifiConnection::connect() {
     Serial.println(F("[WiFi] Starting connection…"));
 
     // Set a timeout so the captive portal doesn't block forever
-    _wm.setConfigPortalTimeout(WIFI_CONNECT_TIMEOUT);
-    _wm.setConnectTimeout(WIFI_CONNECT_TIMEOUT);
+    _wm.setConfigPortalTimeout(180);
+    _wm.setConnectTimeout(60);  // Increased timeout for slower networks
 
     // Try to auto-connect with saved credentials.
     // If that fails, start the captive-portal AP.
@@ -24,8 +24,13 @@ bool WifiConnection::connect() {
     }
 
     if (connected) {
-        Serial.print(F("[WiFi] Connected! IP: "));
+        Serial.print(F("[WiFi] ✓ Connected! IP: "));
         Serial.println(WiFi.localIP());
+        Serial.print(F("[WiFi] SSID: "));
+        Serial.println(WiFi.SSID());
+        Serial.print(F("[WiFi] Signal: "));
+        Serial.print(WiFi.RSSI());
+        Serial.println(F(" dBm"));
     } else {
         Serial.println(F("[WiFi] Failed to connect (portal timed out)"));
         // Fallback: try hard-coded credentials if provided
@@ -37,11 +42,12 @@ bool WifiConnection::connect() {
                    millis() - start < (unsigned long)WIFI_CONNECT_TIMEOUT * 1000) {
                 delay(500);
                 Serial.print('.');
+                yield();  // Feed watchdog
             }
             Serial.println();
             connected = WiFi.status() == WL_CONNECTED;
             if (connected) {
-                Serial.print(F("[WiFi] Connected via fallback! IP: "));
+                Serial.print(F("[WiFi] ✓ Connected via fallback! IP: "));
                 Serial.println(WiFi.localIP());
             }
         }
@@ -61,3 +67,4 @@ void WifiConnection::resetSettings() {
     _wm.resetSettings();
     Serial.println(F("[WiFi] Saved credentials erased"));
 }
+
