@@ -1,0 +1,18 @@
+[Unit]
+Description=Soil Sensor Health Monitor
+Documentation=https://github.com/soil-sensor
+After=network.target influxdb.service grafana-server.service
+Requires=influxdb.service grafana-server.service
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+ExecStart=/usr/local/bin/sensor-health-monitor.sh
+Restart=always
+RestartSec=10
+StandardOutput=append:/mnt/sensor-data/logs/health-monitor.log
+StandardError=append:/mnt/sensor-data/logs/health-monitor.log
+
+[Install]
+WantedBy=multi-user.target

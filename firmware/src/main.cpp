@@ -1,14 +1,14 @@
 /*
  * main.cpp
  * ────────────────────────────────────────────────────────────────────
- * Soil Moisture Monitoring System — ESP8266 firmware
+ * Soil Moisture Monitoring System — ESP8266 firmware (InfluxDB version)
  *
  * Flow:
  *   1. Init serial + sensor
  *   2. Connect to WiFi (captive-portal provisioning via WiFiManager)
  *   3. Sync time via NTP
  *   4. Start HTTP server (dashboard + JSON API)
- *   5. Loop: read sensor at configured interval, log to ring buffer
+ *   5. Loop: read sensor at configured interval, send to InfluxDB
  * ────────────────────────────────────────────────────────────────────
  */
 
@@ -20,19 +20,33 @@
 #include "config.h"
 #include "sensor.h"
 #include "wifi_manager.h"
+#include "wifi_stability.h"
 #include "data_logger.h"
 #include "web_server.h"
 
+#if USE_REMOTE_DB
+#include "database_client.h"
+#include "reading_queue.h"
+#endif
+
 // ─── Global objects ──────────────────────────────────────────────────────────
-SoilSensor      sensor;
-WifiConnection  wifi;
-DataLogger      logger;
-MonitorWebServer* webServer = nullptr;
-WiFiClient      wifiClient;
+SoilSensor          sensor;
+WifiConnection      wifi;
+WiFiStabilityManager wifiStability;
+DataLogger          logger;
+MonitorWebServer*   webServer = nullptr;
+WiFiClient          wifiClient;
+
+#if USE_REMOTE_DB
+DatabaseClient  dbClient;
+ReadingQueue    readingQueue;
+String          deviceId;
+#endif
 
 unsigned long lastReadTime = 0;
 unsigned long bootTime = 0;
 unsigned long lastCrashTime = 0;
+unsigned long lastDiagnosticsTime = 0;
 uint32_t      crashCount = 0;
 uint32_t      totalReadings = 0;
 
@@ -91,48 +105,16 @@ void checkForCrash() {
     Serial.println(F("─────────────────────────────────────"));
 }
 
-// ─── Post reading to remote database ─────────────────────────────────────────
-bool postToDatabase(const SensorReading& reading) {
-    if (!USE_REMOTE_DB || strlen(DB_SERVER_URL) == 0) {
-        return false;  // Remote DB disabled
+// ─── WiFi Diagnostics (periodic) ─────────────────────────────────────────────
+#if ENABLE_WIFI_DIAGNOSTICS
+void logWiFiDiagnostics() {
+    static unsigned long lastLog = 0;
+    if (millis() - lastLog > 300000) {  // Every 5 minutes
+        wifiStability.printDiagnostics();
+        lastLog = millis();
     }
-    
-    if (!wifi.isConnected()) {
-        Serial.println(F("[DB] Skipping POST - no WiFi"));
-        return false;
-    }
-    
-    HTTPClient http;
-    http.begin(wifiClient, DB_SERVER_URL);
-    http.addHeader("Content-Type", "application/json");
-    http.setTimeout(DB_POST_TIMEOUT_MS);
-    
-    // Build JSON payload
-    String payload = "{";
-    payload += "\"timestamp\":" + String(reading.timestamp) + ",";
-    payload += "\"raw\":" + String(reading.rawValue) + ",";
-    payload += "\"moisture\":" + String(reading.moisturePct, 1) + ",";
-    payload += "\"uptime\":" + String(millis() / 1000) + ",";
-    payload += "\"crashes\":" + String(crashCount);
-    payload += "}";
-    
-    int httpCode = http.POST(payload);
-    
-    if (httpCode > 0) {
-        if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_CREATED) {
-            Serial.printf("[DB] ✓ Posted to database (HTTP %d)\n", httpCode);
-            http.end();
-            return true;
-        } else {
-            Serial.printf("[DB] ✗ Server returned HTTP %d\n", httpCode);
-        }
-    } else {
-        Serial.printf("[DB] ✗ POST failed: %s\n", http.errorToString(httpCode).c_str());
-    }
-    
-    http.end();
-    return false;
 }
+#endif
 
 // ─── setup() ─────────────────────────────────────────────────────────────────
 void setup() {
@@ -141,6 +123,7 @@ void setup() {
     Serial.println();
     Serial.println(F("═══════════════════════════════════════"));
     Serial.println(F("  🌱  Soil Moisture Monitoring System"));
+    Serial.println(F("     InfluxDB + WiFi Stability v2.0"));
     Serial.println(F("═══════════════════════════════════════"));
     
     bootTime = millis();
@@ -154,6 +137,9 @@ void setup() {
     // 2. WiFi
     if (!wifi.connect()) {
         Serial.println(F("[!] Running in offline mode (no WiFi)"));
+    } else {
+        // Initialize WiFi stability manager with event handlers
+        wifiStability.begin();
     }
 
     // 3. NTP
@@ -161,9 +147,21 @@ void setup() {
         syncTime();
     }
 
+#if USE_REMOTE_DB
+    // 3.2. Initialize database client
+    if (wifi.isConnected()) {
+        deviceId = DatabaseClient::getDeviceId();
+        Serial.printf("[DB] Device ID: %s\n", deviceId.c_str());
+        Serial.printf("[DB] Location: %s\n", DEVICE_LOCATION);
+        Serial.printf("[DB] InfluxDB URL: %s\n", DB_SERVER_URL);
+        Serial.printf("[DB] Organization: %s\n", INFLUX_ORG);
+        Serial.printf("[DB] Bucket: %s\n", INFLUX_BUCKET);
+    }
+#endif
+
     // 3.5. OTA Updates
     if (wifi.isConnected()) {
-        ArduinoOTA.setHostname("soil-sensor");
+        ArduinoOTA.setHostname(deviceId.c_str());
         ArduinoOTA.setPassword("soilmon2026");  // Change this to your preferred password
         
         ArduinoOTA.onStart([]() {
@@ -192,10 +190,11 @@ void setup() {
         Serial.println(F("[OTA] Ready for wireless updates"));
     }
 
-    // 4. Web server
+    // 4. Web server (optional - can disable to save memory)
     if (wifi.isConnected()) {
         webServer = new MonitorWebServer(logger, sensor);
         webServer->begin();
+        Serial.println(F("[HTTP] Local web server started (can disable to save memory)"));
     }
 
     // 5. Take first reading immediately
@@ -204,32 +203,68 @@ void setup() {
     totalReadings++;
     
     Serial.printf("[Sensor] moisture=%.1f%%  raw=%d\n", r.moisturePct, r.rawValue);
-    
-    // Post to database
-    if (USE_REMOTE_DB) {
-        postToDatabase(r);
+
+#if USE_REMOTE_DB
+    // Send first reading to InfluxDB
+    if (wifi.isConnected()) {
+        unsigned long uptime = (millis() - bootTime) / 1000;
+        int rssi = WiFi.RSSI();
+        int freeHeap = ESP.getFreeHeap();
+        
+        bool success = dbClient.sendReading(
+            deviceId, 
+            r.timestamp, 
+            r.rawValue, 
+            r.moisturePct, 
+            uptime, 
+            crashCount,
+            rssi,
+            freeHeap,
+            QUEUE_FAILED_READINGS  // Queue on failure
+        );
+        
+        if (!success && QUEUE_FAILED_READINGS) {
+            // Add to queue if send failed
+            QueuedReading qr = {deviceId, r.timestamp, r.rawValue, r.moisturePct, 
+                                uptime, (int)crashCount, rssi, freeHeap};
+            readingQueue.enqueue(qr);
+        }
     }
+#endif
     
     lastReadTime = millis();
     
     Serial.println(F("═══════════════════════════════════════"));
     Serial.printf("Setup complete. Uptime: %lu s\n", (millis() - bootTime) / 1000);
-    Serial.printf("Reading interval: %d min\n", READ_INTERVAL_MS / 60000);
+    Serial.printf("Reading interval: %lu min\n", READ_INTERVAL_MS / 60000);
     Serial.printf("Remote DB: %s\n", USE_REMOTE_DB ? "enabled" : "disabled");
+    Serial.printf("WiFi Diagnostics: %s\n", ENABLE_WIFI_DIAGNOSTICS ? "enabled" : "disabled");
+    Serial.printf("Reading Queue: %s (%d max)\n", QUEUE_FAILED_READINGS ? "enabled" : "disabled", MAX_QUEUE_SIZE);
+    Serial.printf("Free heap: %u bytes\n", ESP.getFreeHeap());
     Serial.println(F("═══════════════════════════════════════"));
 }
 
 // ─── loop() ──────────────────────────────────────────────────────────────────
 void loop() {
-    // Handle OTA updates (with watchdog feed)
+    yield();  // Feed watchdog at start of loop
+    
+    // Handle OTA updates
     ArduinoOTA.handle();
     yield();
     
-    // Handle HTTP clients (with watchdog feed)
+    // Handle HTTP clients (if web server enabled)
     if (webServer) {
         webServer->handleClient();
         yield();
     }
+    
+    // WiFi stability monitoring and reconnection
+    wifiStability.loop();
+    yield();
+    
+#if ENABLE_WIFI_DIAGNOSTICS
+    logWiFiDiagnostics();
+#endif
 
     // Periodic sensor reading
     if (millis() - lastReadTime >= READ_INTERVAL_MS) {
@@ -239,6 +274,64 @@ void loop() {
         logger.addReading(r);
         totalReadings++;
 
+#if USE_REMOTE_DB
+        // Get additional metrics
+        unsigned long uptime = (millis() - bootTime) / 1000;
+        int rssi = WiFi.RSSI();
+        int freeHeap = ESP.getFreeHeap();
+        
+        // Try to drain queue first if WiFi is connected
+        if (wifi.isConnected() && !readingQueue.isEmpty()) {
+            Serial.println(F("[Main] WiFi connected - attempting to drain queue"));
+            int drained = dbClient.drainQueue(readingQueue);
+            if (drained > 0) {
+                Serial.printf("[Main] Successfully sent %d queued readings\n", drained);
+            }
+            yield();
+        }
+        
+        // Send current reading to InfluxDB
+        bool sent = false;
+        if (wifi.isConnected()) {
+            sent = dbClient.sendReading(
+                deviceId,
+                r.timestamp,
+                r.rawValue,
+                r.moisturePct,
+                uptime,
+                crashCount,
+                rssi,
+                freeHeap,
+                false  // Don't queue yet - we'll do it manually below
+            );
+        }
+        
+        if (!sent) {
+            Serial.println(F("[DB] Failed to send reading (WiFi down or server error)"));
+            
+            // Add to queue if enabled
+            if (QUEUE_FAILED_READINGS) {
+                QueuedReading qr = {
+                    deviceId, 
+                    r.timestamp, 
+                    r.rawValue, 
+                    r.moisturePct,
+                    uptime, 
+                    (int)crashCount, 
+                    rssi, 
+                    freeHeap
+                };
+                
+                if (readingQueue.enqueue(qr)) {
+                    Serial.printf("[Queue] Reading queued (%u in queue)\n", readingQueue.count());
+                } else {
+                    Serial.println(F("[Queue] ✗ Queue full - reading LOST!"));
+                }
+            }
+        }
+#endif
+
+        // Log reading info to serial
         Serial.println(F("─────────────────────────────────────"));
         Serial.printf("[Sensor] Reading #%u\n", totalReadings);
         Serial.printf("  Moisture: %.1f%%\n", r.moisturePct);
@@ -249,14 +342,11 @@ void loop() {
                       (millis() - bootTime) / 60000.0);
         Serial.printf("  Free heap: %u bytes\n", ESP.getFreeHeap());
         Serial.printf("  WiFi RSSI: %d dBm\n", WiFi.RSSI());
+        Serial.printf("  WiFi Status: %s\n", WiFi.status() == WL_CONNECTED ? "CONNECTED" : "DISCONNECTED");
         
-        // Post to database
-        if (USE_REMOTE_DB) {
-            bool posted = postToDatabase(r);
-            if (!posted) {
-                Serial.println(F("  [DB] Failed to post - will retry next reading"));
-            }
-        }
+#if QUEUE_FAILED_READINGS
+        Serial.printf("  Queue size: %u / %u\n", readingQueue.count(), MAX_QUEUE_SIZE);
+#endif
         
         Serial.printf("  Read duration: %lu ms\n", millis() - readStart);
         Serial.println(F("─────────────────────────────────────"));
@@ -264,15 +354,5 @@ void loop() {
         lastReadTime = millis();
     }
 
-    // Reconnect WiFi if it drops
-    if (!wifi.isConnected()) {
-        static unsigned long lastReconnect = 0;
-        if (millis() - lastReconnect > 30000) {
-            Serial.println(F("[WiFi] Disconnected — attempting reconnect…"));
-            wifi.connect();
-            lastReconnect = millis();
-        }
-    }
-
-    yield();  // ESP8266 watchdog - CRITICAL for stability
+    yield();  // Feed watchdog at end of loop
 }

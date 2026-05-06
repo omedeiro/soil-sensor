@@ -30,20 +30,31 @@
 #define SENSOR_WATER_VALUE  360
 
 // ─── Logging / Timing ────────────────────────────────────────────────────────
-#define READ_INTERVAL_MS    60000  // how often to read sensor (ms) — 1 minute
-#define LOG_BUFFER_SIZE     1440   // max entries kept in RAM (~24 h at 1-min interval)
+#define READ_INTERVAL_MS    300000  // how often to read sensor (ms) — 5 minutes
+#define LOG_BUFFER_SIZE     50      // max entries kept in RAM (reduced for memory savings)
 
-// ─── Remote Database (Multi-Sensor Support) ──────────────────────────────────
-// Enable to send readings to a central database server
-#define USE_REMOTE_DB       false  // Set to true to enable database logging
-#define DB_SERVER_URL       "http://192.168.99.188:5001/api/reading"
+// ─── Remote Database (InfluxDB) ──────────────────────────────────────────────
+// Enable to send readings to InfluxDB on Raspberry Pi
+#define USE_REMOTE_DB       true
+
+// InfluxDB Configuration
+// NOTE: Update these after setting up InfluxDB on Raspberry Pi!
+#define DB_SERVER_URL       "http://192.168.99.200:8086/api/v2/write"
+#define INFLUX_TOKEN        "YOUR_INFLUXDB_WRITE_TOKEN_HERE"  // Get from InfluxDB UI
+#define INFLUX_ORG          "soil-monitoring"
+#define INFLUX_BUCKET       "sensor-readings"
 
 // Device identification for multi-sensor deployments
 // Option 1: Auto-generate from MAC address (e.g., "esp8266-40915141d997")
 // Option 2: Set DEVICE_ID_AUTO=false and provide custom ID below
-#define DEVICE_ID_AUTO      true   // Auto-generate device ID from MAC
-#define DEVICE_ID           ""     // Custom device ID (e.g., "garden-bed-a")
-                                   // Only used if DEVICE_ID_AUTO is false
+#define DEVICE_ID_AUTO      false
+#define DEVICE_ID           "sensor-1"          // Change for each sensor: sensor-1, sensor-2, etc.
+#define DEVICE_LOCATION     "test-bench"        // Optional location tag for Grafana filtering
+
+// ─── WiFi Stability & Queue ──────────────────────────────────────────────────
+#define ENABLE_WIFI_DIAGNOSTICS  true   // Enable detailed WiFi logging
+#define QUEUE_FAILED_READINGS    true   // Queue readings when network is down
+#define MAX_QUEUE_SIZE           20     // Maximum queued readings
 
 // ─── HTTP Server ─────────────────────────────────────────────────────────────
 #define HTTP_PORT           80

@@ -1,0 +1,11 @@
+[Unit]
+Description=Soil Sensor Backup Service
+Documentation=https://github.com/soil-sensor
+
+[Service]
+Type=oneshot
+User=pi
+Group=pi
+ExecStart=/usr/local/bin/sensor-backup.sh
+StandardOutput=append:/mnt/sensor-data/logs/backup.log
+StandardError=append:/mnt/sensor-data/logs/backup.log
