@@ -39,8 +39,8 @@
 
 // InfluxDB Configuration
 // NOTE: Update these after setting up InfluxDB on Raspberry Pi!
-#define DB_SERVER_URL       "http://192.168.99.200:8086/api/v2/write"
-#define INFLUX_TOKEN        "YOUR_INFLUXDB_WRITE_TOKEN_HERE"  // Get from InfluxDB UI
+#define DB_SERVER_URL       "http://192.168.99.134:8086/api/v2/write"
+#define INFLUX_TOKEN        "fNL1d7Eg__QMxP_vGqR2Ekw16ADxYO8gDdDxXqEFGs-t3j03sRpHKDY8R7pz0kRIaQ35yWlU3NXhXX9ra0YWNA=="  // Operator token
 #define INFLUX_ORG          "soil-monitoring"
 #define INFLUX_BUCKET       "sensor-readings"
 

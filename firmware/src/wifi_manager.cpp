@@ -5,9 +5,7 @@
 
 #include "wifi_manager.h"
 
-extern "C" {
-    #include "user_interface.h"  // For wifi_set_listen_interval
-}
+
 
 WifiConnection::WifiConnection() {}
 
@@ -49,11 +47,8 @@ bool WifiConnection::connect() {
         WiFi.setOutputPower(20.5);  // Max for ESP8266 is 20.5 dBm
         Serial.println(F("[WiFi] Output power: 20.5 dBm (maximum)"));
         
-        // Set DTIM listen interval
-        // Lower value = more battery drain, but more stable connection
-        // Value of 3 = listen every 3 beacons (good balance)
-        wifi_set_listen_interval(3);
-        Serial.println(F("[WiFi] DTIM listen interval: 3 (stable mode)"));
+        // Set DTIM listen interval (not available in newer SDK versions, skipped)
+        Serial.println(F("[WiFi] DTIM listen interval: default"));
         
         // Enable auto-reconnect (ESP8266 will try to reconnect automatically)
         WiFi.setAutoReconnect(true);
@@ -86,7 +81,6 @@ bool WifiConnection::connect() {
                 // Apply same power management settings
                 WiFi.setSleepMode(WIFI_NONE_SLEEP);
                 WiFi.setOutputPower(20.5);
-                wifi_set_listen_interval(3);
                 WiFi.setAutoReconnect(true);
             }
         }
