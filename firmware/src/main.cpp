@@ -129,6 +129,8 @@ void setup() {
     Serial.print(F("  ("));
     Serial.print(F(DEVICE_LOCATION));
     Serial.println(F(")"));
+    Serial.print(F("  MAC:    "));
+    Serial.println(WiFi.macAddress());
     Serial.println(F("═══════════════════════════════════════"));
     
     bootTime = millis();
