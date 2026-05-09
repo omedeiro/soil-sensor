@@ -1,6 +1,7 @@
 #!/bin/bash
 # Raspberry Pi 5 - Soil Sensor System Installation Script
-# OS: Raspberry Pi OS Bookworm 64-bit
+# OS: Raspberry Pi OS Trixie (Debian 13) 64-bit
+# Networking: NetworkManager (nmcli) — NOT dhcpcd
 # Run with: sudo ./install.sh
 
 set -e  # Exit on any error
@@ -161,24 +162,26 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     ROUTER_IP=${ROUTER_IP:-192.168.99.1}
     
     log_info "Configuring static IP: $STATIC_IP"
-    
-    # Backup dhcpcd.conf (only if not already backed up)
-    [[ ! -f /etc/dhcpcd.conf.backup ]] && cp /etc/dhcpcd.conf /etc/dhcpcd.conf.backup
 
-    # Remove any previous static IP block added by this script, then re-add
-    sed -i '/# Static IP for Soil Sensor System/,+4d' /etc/dhcpcd.conf
-    
-    # Add static IP configuration
-    cat >> /etc/dhcpcd.conf <<EOF
+    # Use nmcli — Raspberry Pi OS Trixie uses NetworkManager, NOT dhcpcd
+    # Find the active WiFi connection name
+    NM_CON=$(nmcli -t -f NAME,TYPE con show --active | grep wireless | cut -d: -f1 | head -1)
+    # Fall back to wired if no WiFi connection found
+    if [[ -z "$NM_CON" ]]; then
+        NM_CON=$(nmcli -t -f NAME,TYPE con show --active | grep ethernet | cut -d: -f1 | head -1)
+    fi
+    # Fall back to "preconfigured" (Pi OS default connection name)
+    NM_CON=${NM_CON:-preconfigured}
 
-# Static IP for Soil Sensor System
-interface wlan0
-static ip_address=${STATIC_IP}/24
-static routers=${ROUTER_IP}
-static domain_name_servers=${ROUTER_IP} 8.8.8.8
-EOF
-    
-    log_info "Static IP configured (will apply after reboot)"
+    log_info "Applying static IP to NetworkManager connection: $NM_CON"
+    nmcli con mod "$NM_CON" \
+        ipv4.addresses "${STATIC_IP}/24" \
+        ipv4.gateway "$ROUTER_IP" \
+        ipv4.dns "${ROUTER_IP} 8.8.8.8" \
+        ipv4.method manual
+    nmcli con up "$NM_CON"
+
+    log_info "Static IP configured and applied (active now, persists after reboot)"
 else
     STATIC_IP=$CURRENT_IP
 fi
@@ -246,9 +249,11 @@ fi
 log_section "Step 5/8: Installing Grafana"
 
 log_info "Adding Grafana repository..."
-apt install -y software-properties-common
-wget -q -O - https://packages.grafana.com/gpg.key | apt-key add -
-echo "deb https://packages.grafana.com/oss/deb stable main" | tee /etc/apt/sources.list.d/grafana.list
+# Modern signed key method (software-properties-common not available on Trixie)
+curl -fsSL https://apt.grafana.com/gpg.key | \
+    gpg --dearmor | tee /etc/apt/keyrings/grafana.gpg > /dev/null
+echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" \
+    | tee /etc/apt/sources.list.d/grafana.list
 
 log_info "Installing Grafana..."
 apt update
