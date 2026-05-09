@@ -1,0 +1,306 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "soil-sensor-v1",
+    "title": "🌱 Soil Sensor Dashboard",
+    "tags": ["soil", "sensor", "esp8266"],
+    "timezone": "browser",
+    "refresh": "5m",
+    "schemaVersion": 38,
+    "version": 1,
+    "time": { "from": "now-24h", "to": "now" },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Soil Moisture %",
+        "type": "gauge",
+        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 8 },
+        "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 20 },
+                { "color": "green", "value": 40 },
+                { "color": "blue", "value": 80 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "orientation": "auto",
+          "showThresholdLabels": true,
+          "showThresholdMarkers": true
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> last()"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "WiFi Signal (RSSI)",
+        "type": "gauge",
+        "gridPos": { "x": 6, "y": 0, "w": 6, "h": 8 },
+        "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "dBm",
+            "min": -90,
+            "max": -30,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": -75 },
+                { "color": "green", "value": -60 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "orientation": "auto",
+          "showThresholdLabels": true,
+          "showThresholdMarkers": true
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"rssi\")\n  |> last()"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Uptime",
+        "type": "stat",
+        "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+        "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [{ "color": "green", "value": null }]
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "background"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"uptime\")\n  |> last()"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Free Heap",
+        "type": "stat",
+        "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+        "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 20000 },
+                { "color": "green", "value": 30000 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "background"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"free_heap\")\n  |> last()"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Crash Count",
+        "type": "stat",
+        "gridPos": { "x": 12, "y": 4, "w": 6, "h": 4 },
+        "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 1 },
+                { "color": "red", "value": 5 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "background"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"crashes\")\n  |> last()"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Raw ADC",
+        "type": "stat",
+        "gridPos": { "x": 18, "y": 4, "w": 6, "h": 4 },
+        "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [{ "color": "blue", "value": null }]
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"raw_adc\")\n  |> last()"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Soil Moisture % Over Time",
+        "type": "timeseries",
+        "gridPos": { "x": 0, "y": 8, "w": 24, "h": 10 },
+        "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "color": { "mode": "palette-classic" },
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 15,
+              "gradientMode": "opacity",
+              "spanNulls": false
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 20 },
+                { "color": "green", "value": 40 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "tooltip": { "mode": "single" },
+          "legend": { "displayMode": "list", "placement": "bottom" }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "WiFi Signal Over Time",
+        "type": "timeseries",
+        "gridPos": { "x": 0, "y": 18, "w": 12, "h": 8 },
+        "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "dBm",
+            "color": { "mode": "palette-classic" },
+            "custom": { "lineWidth": 2, "fillOpacity": 10 }
+          }
+        },
+        "options": {
+          "tooltip": { "mode": "single" },
+          "legend": { "displayMode": "list", "placement": "bottom" }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"rssi\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Free Heap Over Time",
+        "type": "timeseries",
+        "gridPos": { "x": 12, "y": 18, "w": 12, "h": 8 },
+        "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "color": { "mode": "palette-classic" },
+            "custom": { "lineWidth": 2, "fillOpacity": 10 }
+          }
+        },
+        "options": {
+          "tooltip": { "mode": "single" },
+          "legend": { "displayMode": "list", "placement": "bottom" }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"free_heap\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+          }
+        ]
+      }
+    ]
+  },
+  "folderId": 0,
+  "overwrite": true
+}
