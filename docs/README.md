@@ -61,63 +61,92 @@ When InfluxDB is unreachable, readings are buffered in a circular RAM queue (`re
 
 ---
 
-## Cloudflare Tunnel (Public Access)
+## Grafana Cloud (Public Access)
 
-A Cloudflare Tunnel exposes Grafana to the internet without port forwarding.
+Since `medeirosowen.grafana.net` already exists, the simplest approach is to push metrics from the Pi directly to Grafana Cloud using **Grafana Alloy** (the modern agent). The local Grafana instance stays for LAN use; the Cloud instance is publicly accessible from anywhere.
 
-### Install on Pi
+### Architecture with Cloud
+
+```
+[ESP8266 sensors] ──► [InfluxDB on Pi] ──► [Grafana Alloy on Pi] ──► [Grafana Cloud]
+                              │
+                         [Local Grafana :3000]  (LAN only)
+```
+
+### Step 1 — Get Grafana Cloud credentials
+
+1. Log in to [grafana.com](https://grafana.com) → **My Account**
+2. Go to your stack **medeirosowen** → **Details**
+3. Under **Prometheus** (or **Metrics**), note the **Remote Write URL** and generate an **API key** with `MetricsPublisher` role
+
+### Step 2 — Install Grafana Alloy on Pi
+
+SSH into the Pi, then:
 
 ```bash
-# Install cloudflared
-curl -L --output cloudflared.deb \
-  https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64.deb
-sudo dpkg -i cloudflared.deb
+# Add Grafana repo
+wget -q -O - https://apt.grafana.com/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/grafana.gpg
+echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" \
+  | sudo tee /etc/apt/sources.list.d/grafana.list
 
-# Authenticate (opens browser — run on a machine with a browser, or use --url trick)
-cloudflared tunnel login
-
-# Create tunnel
-cloudflared tunnel create soil-sensor
-
-# Route traffic
-cloudflared tunnel route dns soil-sensor grafana.yourdomain.com
-
-# Create config
-mkdir -p ~/.cloudflared
-cat > ~/.cloudflared/config.yml << EOF
-tunnel: <TUNNEL_ID>
-credentials-file: /home/omedeiros/.cloudflared/<TUNNEL_ID>.json
-ingress:
-  - hostname: grafana.yourdomain.com
-    service: http://localhost:3000
-  - service: http_status:404
-EOF
-
-# Install as systemd service
-sudo cloudflared service install
-sudo systemctl enable --now cloudflared
+sudo apt-get update
+sudo apt-get install -y alloy
 ```
 
-### Grafana anonymous access (view-only, no login)
+### Step 3 — Configure Alloy to scrape InfluxDB and forward to Cloud
 
-Edit `/etc/grafana/grafana.ini` on the Pi:
+Create `/etc/alloy/config.alloy`:
 
-```ini
-[auth.anonymous]
-enabled = true
-org_name = Main Org.
-org_role = Viewer
+```hcl
+// Read from local InfluxDB via Prometheus-compatible scrape
+prometheus.scrape "influxdb" {
+  targets = [{ __address__ = "localhost:8086" }]
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+  scrape_interval = "60s"
+}
 
-[auth]
-disable_login_form = false   # keep true login available for admin
+// Forward to Grafana Cloud
+prometheus.remote_write "grafana_cloud" {
+  endpoint {
+    url = "https://prometheus-prod-XX-prod-XX-X.grafana.net/api/prom/push"  // your stack URL
+
+    basic_auth {
+      username = "<your-stack-user-id>"
+      password = "<your-api-key>"
+    }
+  }
+}
 ```
 
-Restart Grafana:
+> Get the exact URL and user ID from: grafana.com → your stack → **Details** → Prometheus section.
+
 ```bash
-sudo systemctl restart grafana-server
+sudo systemctl enable --now alloy
+sudo systemctl status alloy
 ```
 
-Anyone hitting the tunnel URL will see the dashboard without a login prompt. Admin login still works via `http://localhost:3000`.
+### Step 4 — Import dashboard to Grafana Cloud
+
+```bash
+# Upload soil-sensor dashboard to Cloud Grafana (replace token and stack URL)
+curl -X POST \
+  -H "Authorization: Bearer <service-account-token>" \
+  -H "Content-Type: application/json" \
+  -d @grafana-dashboards/soil-sensor.json \
+  https://medeirosowen.grafana.net/api/dashboards/db
+```
+
+Or manually: log in to `medeirosowen.grafana.net` → **Dashboards** → **Import** → paste `grafana-dashboards/soil-sensor.json`.
+
+### Step 5 — Share publicly (view-only)
+
+In Grafana Cloud, dashboards can be shared via a public link:
+
+1. Open the dashboard
+2. Click **Share** → **Public dashboard** tab
+3. Enable public access → copy the link
+
+Anyone with the link can view it — no login required.
 
 ---
 
