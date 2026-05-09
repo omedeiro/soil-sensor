@@ -16,8 +16,44 @@ bool WifiConnection::connect() {
     _wm.setConfigPortalTimeout(180);
     _wm.setConnectTimeout(60);  // Increased timeout for slower networks
 
-    // Try to auto-connect with saved credentials.
-    // If that fails, start the captive-portal AP.
+    // If hardcoded credentials are provided, bypass WiFiManager entirely.
+    if (strlen(WIFI_SSID) > 0) {
+        _wm.resetSettings();
+        Serial.println(F("[WiFi] Using hardcoded credentials (flash cleared)"));
+        WiFi.persistent(false);   // Don't save to flash (avoids stale credential issues)
+        WiFi.mode(WIFI_STA);      // Must be in station mode before begin()
+        WiFi.disconnect(true);    // Disconnect & clear any AP state
+        delay(200);               // Let radio settle
+        WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+        Serial.print(F("[WiFi] Connecting to "));
+        Serial.println(WIFI_SSID);
+        unsigned long start = millis();
+        while (WiFi.status() != WL_CONNECTED &&
+               millis() - start < (unsigned long)WIFI_CONNECT_TIMEOUT * 1000) {
+            delay(500);
+            Serial.print('.');
+            yield();
+        }
+        Serial.println();
+        bool connected = WiFi.status() == WL_CONNECTED;
+        if (connected) {
+            Serial.print(F("[WiFi] ✓ Connected! IP: "));
+            Serial.println(WiFi.localIP());
+            Serial.print(F("[WiFi] Signal: "));
+            Serial.print(WiFi.RSSI());
+            Serial.println(F(" dBm"));
+            WiFi.setSleepMode(WIFI_NONE_SLEEP);
+            WiFi.setOutputPower(20.5);
+            WiFi.setAutoReconnect(true);
+            WiFi.persistent(true);
+            Serial.println(F("[WiFi] Power management configured for stability"));
+        } else {
+            Serial.println(F("[WiFi] ✗ Failed to connect with hardcoded credentials"));
+        }
+        return connected;
+    }
+
+    // No hardcoded credentials — use WiFiManager captive portal flow
     bool connected;
     if (strlen(AP_PASSWORD) > 0) {
         connected = _wm.autoConnect(AP_NAME, AP_PASSWORD);

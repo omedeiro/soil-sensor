@@ -236,7 +236,7 @@ void setup() {
     
     Serial.println(F("═══════════════════════════════════════"));
     Serial.printf("Setup complete. Uptime: %lu s\n", (millis() - bootTime) / 1000);
-    Serial.printf("Reading interval: %lu min\n", READ_INTERVAL_MS / 60000);
+    Serial.printf("Reading interval: %u min\n", (unsigned)(READ_INTERVAL_MS / 60000));
     Serial.printf("Remote DB: %s\n", USE_REMOTE_DB ? "enabled" : "disabled");
     Serial.printf("WiFi Diagnostics: %s\n", ENABLE_WIFI_DIAGNOSTICS ? "enabled" : "disabled");
     Serial.printf("Reading Queue: %s (%d max)\n", QUEUE_FAILED_READINGS ? "enabled" : "disabled", MAX_QUEUE_SIZE);

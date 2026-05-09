@@ -9,9 +9,9 @@
 // ─── WiFi ────────────────────────────────────────────────────────────────────
 // If WiFiManager captive portal times out, these are the fallback credentials.
 // Leave empty to rely solely on the captive-portal flow.
-#define WIFI_SSID           ""
-#define WIFI_PASSWORD       ""
-#define WIFI_CONNECT_TIMEOUT 30    // seconds
+#define WIFI_SSID           "Starry00920"
+#define WIFI_PASSWORD       "8T3UYT4334"
+#define WIFI_CONNECT_TIMEOUT 60    // seconds
 
 // WiFiManager access-point name (shown when device is unconfigured)
 #define AP_NAME             "SoilSensor-Setup"
