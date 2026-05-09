@@ -18,24 +18,55 @@ bool WifiConnection::connect() {
 
     // If hardcoded credentials are provided, bypass WiFiManager entirely.
     if (strlen(WIFI_SSID) > 0) {
-        _wm.resetSettings();
-        Serial.println(F("[WiFi] Using hardcoded credentials (flash cleared)"));
-        WiFi.persistent(false);   // Don't save to flash (avoids stale credential issues)
-        WiFi.mode(WIFI_STA);      // Must be in station mode before begin()
-        WiFi.disconnect(true);    // Disconnect & clear any AP state
-        delay(200);               // Let radio settle
-        WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-        Serial.print(F("[WiFi] Connecting to "));
-        Serial.println(WIFI_SSID);
-        unsigned long start = millis();
-        while (WiFi.status() != WL_CONNECTED &&
-               millis() - start < (unsigned long)WIFI_CONNECT_TIMEOUT * 1000) {
-            delay(500);
-            Serial.print('.');
-            yield();
+        Serial.println(F("[WiFi] Using hardcoded credentials"));
+        WiFi.persistent(false);
+        WiFi.mode(WIFI_STA);
+        WiFi.disconnect(true);
+        delay(500);
+
+        // Scan to confirm the target network is visible
+        Serial.println(F("[WiFi] Scanning for networks..."));
+        int n = WiFi.scanNetworks();
+        bool found = false;
+        for (int i = 0; i < n; i++) {
+            Serial.print(F("  Found: "));
+            Serial.print(WiFi.SSID(i));
+            Serial.print(F(" ("));
+            Serial.print(WiFi.RSSI(i));
+            Serial.println(F(" dBm)"));
+            if (WiFi.SSID(i) == String(WIFI_SSID)) found = true;
         }
-        Serial.println();
-        bool connected = WiFi.status() == WL_CONNECTED;
+        if (!found) {
+            Serial.print(F("[WiFi] ✗ SSID '"));
+            Serial.print(WIFI_SSID);
+            Serial.println(F("' not found in scan — check name/band"));
+        }
+        WiFi.scanDelete();
+
+        // Try connecting up to 3 times
+        bool connected = false;
+        for (int attempt = 1; attempt <= 3 && !connected; attempt++) {
+            Serial.print(F("[WiFi] Attempt "));
+            Serial.print(attempt);
+            Serial.print(F("/3 connecting to "));
+            Serial.println(WIFI_SSID);
+            WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+            unsigned long start = millis();
+            while (WiFi.status() != WL_CONNECTED &&
+                   millis() - start < (unsigned long)WIFI_CONNECT_TIMEOUT * 1000UL / 3) {
+                delay(500);
+                Serial.print('.');
+                yield();
+            }
+            Serial.println();
+            connected = WiFi.status() == WL_CONNECTED;
+            if (!connected) {
+                Serial.print(F("[WiFi] Status: "));
+                Serial.println(WiFi.status());
+                WiFi.disconnect(true);
+                delay(1000);
+            }
+        }
         if (connected) {
             Serial.print(F("[WiFi] ✓ Connected! IP: "));
             Serial.println(WiFi.localIP());

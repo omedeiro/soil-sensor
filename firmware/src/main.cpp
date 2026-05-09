@@ -124,6 +124,11 @@ void setup() {
     Serial.println(F("═══════════════════════════════════════"));
     Serial.println(F("  🌱  Soil Moisture Monitoring System"));
     Serial.println(F("     InfluxDB + WiFi Stability v2.0"));
+    Serial.print(F("  Device: "));
+    Serial.print(F(DEVICE_ID));
+    Serial.print(F("  ("));
+    Serial.print(F(DEVICE_LOCATION));
+    Serial.println(F(")"));
     Serial.println(F("═══════════════════════════════════════"));
     
     bootTime = millis();

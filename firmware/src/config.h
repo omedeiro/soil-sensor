@@ -11,7 +11,7 @@
 // Leave empty to rely solely on the captive-portal flow.
 #define WIFI_SSID           "Starry00920"
 #define WIFI_PASSWORD       "8T3UYT4334"
-#define WIFI_CONNECT_TIMEOUT 60    // seconds
+#define WIFI_CONNECT_TIMEOUT 90    // seconds
 
 // WiFiManager access-point name (shown when device is unconfigured)
 #define AP_NAME             "SoilSensor-Setup"
@@ -48,8 +48,8 @@
 // Option 1: Auto-generate from MAC address (e.g., "esp8266-40915141d997")
 // Option 2: Set DEVICE_ID_AUTO=false and provide custom ID below
 #define DEVICE_ID_AUTO      false
-#define DEVICE_ID           "sensor-1"          // Change for each sensor: sensor-1, sensor-2, etc.
-#define DEVICE_LOCATION     "test-bench"        // Optional location tag for Grafana filtering
+#define DEVICE_ID           "sensor-2"          // Change for each sensor: sensor-1, sensor-2, etc.
+#define DEVICE_LOCATION     "living-room"        // Optional location tag for Grafana filtering
 
 // ─── WiFi Stability & Queue ──────────────────────────────────────────────────
 #define ENABLE_WIFI_DIAGNOSTICS  true   // Enable detailed WiFi logging
