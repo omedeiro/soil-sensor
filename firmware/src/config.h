@@ -14,9 +14,9 @@
 // ─── WiFi ────────────────────────────────────────────────────────────────────
 // If WiFiManager captive portal times out, these are the fallback credentials.
 // Leave empty to rely solely on the captive-portal flow.
-#define WIFI_SSID           ""
-#define WIFI_PASSWORD       ""
-#define WIFI_CONNECT_TIMEOUT 30    // seconds
+#define WIFI_SSID           "Starry00920"
+#define WIFI_PASSWORD       "8T3UYT4334"
+#define WIFI_CONNECT_TIMEOUT 90    // seconds
 
 // WiFiManager access-point name (shown when device is unconfigured)
 #define AP_NAME             "SoilSensor-Setup"
@@ -35,8 +35,31 @@
 #define SENSOR_WATER_VALUE  360
 
 // ─── Logging / Timing ────────────────────────────────────────────────────────
-#define READ_INTERVAL_MS    60000  // how often to read sensor (ms) — 1 minute
-#define LOG_BUFFER_SIZE     1440   // max entries kept in RAM (~24 h at 1-min interval)
+#define READ_INTERVAL_MS    300000  // how often to read sensor (ms) — 5 minutes
+#define LOG_BUFFER_SIZE     50      // max entries kept in RAM (reduced for memory savings)
+
+// ─── Remote Database (InfluxDB) ──────────────────────────────────────────────
+// Enable to send readings to InfluxDB on Raspberry Pi
+#define USE_REMOTE_DB       true
+
+// InfluxDB Configuration
+// NOTE: Update these after setting up InfluxDB on Raspberry Pi!
+#define DB_SERVER_URL       "http://192.168.99.134:8086/api/v2/write"
+#define INFLUX_TOKEN        "fNL1d7Eg__QMxP_vGqR2Ekw16ADxYO8gDdDxXqEFGs-t3j03sRpHKDY8R7pz0kRIaQ35yWlU3NXhXX9ra0YWNA=="  // Operator token
+#define INFLUX_ORG          "soil-monitoring"
+#define INFLUX_BUCKET       "sensor-readings"
+
+// Device identification for multi-sensor deployments
+// Option 1: Auto-generate from MAC address (e.g., "esp8266-40915141d997")
+// Option 2: Set DEVICE_ID_AUTO=false and provide custom ID below
+#define DEVICE_ID_AUTO      false
+#define DEVICE_ID           "sensor-4"          // Change for each sensor: sensor-1, sensor-2, etc.
+#define DEVICE_LOCATION     "guest-room"        // Optional location tag for Grafana filtering
+
+// ─── WiFi Stability & Queue ──────────────────────────────────────────────────
+#define ENABLE_WIFI_DIAGNOSTICS  true   // Enable detailed WiFi logging
+#define QUEUE_FAILED_READINGS    true   // Queue readings when network is down
+#define MAX_QUEUE_SIZE           20     // Maximum queued readings
 
 // ─── HTTP Server ─────────────────────────────────────────────────────────────
 #define HTTP_PORT           80

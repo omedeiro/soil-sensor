@@ -1,9 +1,11 @@
 /*
  * wifi_manager.cpp
- * WiFi connection management implementation
+ * WiFi connection management implementation with power management tuning
  */
 
 #include "wifi_manager.h"
+
+
 
 WifiConnection::WifiConnection() {}
 
@@ -11,11 +13,78 @@ bool WifiConnection::connect() {
     Serial.println(F("[WiFi] Starting connection…"));
 
     // Set a timeout so the captive portal doesn't block forever
-    _wm.setConfigPortalTimeout(WIFI_CONNECT_TIMEOUT);
-    _wm.setConnectTimeout(WIFI_CONNECT_TIMEOUT);
+    _wm.setConfigPortalTimeout(180);
+    _wm.setConnectTimeout(60);  // Increased timeout for slower networks
 
-    // Try to auto-connect with saved credentials.
-    // If that fails, start the captive-portal AP.
+    // If hardcoded credentials are provided, bypass WiFiManager entirely.
+    if (strlen(WIFI_SSID) > 0) {
+        Serial.println(F("[WiFi] Using hardcoded credentials"));
+        WiFi.persistent(false);
+        WiFi.mode(WIFI_STA);
+        WiFi.disconnect(true);
+        delay(500);
+
+        // Scan to confirm the target network is visible
+        Serial.println(F("[WiFi] Scanning for networks..."));
+        int n = WiFi.scanNetworks();
+        bool found = false;
+        for (int i = 0; i < n; i++) {
+            Serial.print(F("  Found: "));
+            Serial.print(WiFi.SSID(i));
+            Serial.print(F(" ("));
+            Serial.print(WiFi.RSSI(i));
+            Serial.println(F(" dBm)"));
+            if (WiFi.SSID(i) == String(WIFI_SSID)) found = true;
+        }
+        if (!found) {
+            Serial.print(F("[WiFi] ✗ SSID '"));
+            Serial.print(WIFI_SSID);
+            Serial.println(F("' not found in scan — check name/band"));
+        }
+        WiFi.scanDelete();
+
+        // Try connecting up to 3 times
+        bool connected = false;
+        for (int attempt = 1; attempt <= 3 && !connected; attempt++) {
+            Serial.print(F("[WiFi] Attempt "));
+            Serial.print(attempt);
+            Serial.print(F("/3 connecting to "));
+            Serial.println(WIFI_SSID);
+            WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+            unsigned long start = millis();
+            while (WiFi.status() != WL_CONNECTED &&
+                   millis() - start < (unsigned long)WIFI_CONNECT_TIMEOUT * 1000UL / 3) {
+                delay(500);
+                Serial.print('.');
+                yield();
+            }
+            Serial.println();
+            connected = WiFi.status() == WL_CONNECTED;
+            if (!connected) {
+                Serial.print(F("[WiFi] Status: "));
+                Serial.println(WiFi.status());
+                WiFi.disconnect(true);
+                delay(1000);
+            }
+        }
+        if (connected) {
+            Serial.print(F("[WiFi] ✓ Connected! IP: "));
+            Serial.println(WiFi.localIP());
+            Serial.print(F("[WiFi] Signal: "));
+            Serial.print(WiFi.RSSI());
+            Serial.println(F(" dBm"));
+            WiFi.setSleepMode(WIFI_NONE_SLEEP);
+            WiFi.setOutputPower(20.5);
+            WiFi.setAutoReconnect(true);
+            WiFi.persistent(true);
+            Serial.println(F("[WiFi] Power management configured for stability"));
+        } else {
+            Serial.println(F("[WiFi] ✗ Failed to connect with hardcoded credentials"));
+        }
+        return connected;
+    }
+
+    // No hardcoded credentials — use WiFiManager captive portal flow
     bool connected;
     if (strlen(AP_PASSWORD) > 0) {
         connected = _wm.autoConnect(AP_NAME, AP_PASSWORD);
@@ -24,8 +93,39 @@ bool WifiConnection::connect() {
     }
 
     if (connected) {
-        Serial.print(F("[WiFi] Connected! IP: "));
+        Serial.print(F("[WiFi] ✓ Connected! IP: "));
         Serial.println(WiFi.localIP());
+        Serial.print(F("[WiFi] SSID: "));
+        Serial.println(WiFi.SSID());
+        Serial.print(F("[WiFi] Signal: "));
+        Serial.print(WiFi.RSSI());
+        Serial.println(F(" dBm"));
+        
+        // ═══════════════════════════════════════════════════════════════
+        // WiFi Stability Power Management Tuning
+        // ═══════════════════════════════════════════════════════════════
+        
+        // Disable WiFi sleep for maximum stability
+        // Trade-off: Higher power consumption for better reliability
+        WiFi.setSleepMode(WIFI_NONE_SLEEP);
+        Serial.println(F("[WiFi] Sleep mode: DISABLED (max stability)"));
+        
+        // Set maximum output power (helps with weak signal scenarios)
+        WiFi.setOutputPower(20.5);  // Max for ESP8266 is 20.5 dBm
+        Serial.println(F("[WiFi] Output power: 20.5 dBm (maximum)"));
+        
+        // Set DTIM listen interval (not available in newer SDK versions, skipped)
+        Serial.println(F("[WiFi] DTIM listen interval: default"));
+        
+        // Enable auto-reconnect (ESP8266 will try to reconnect automatically)
+        WiFi.setAutoReconnect(true);
+        Serial.println(F("[WiFi] Auto-reconnect: ENABLED"));
+        
+        // Set persistent WiFi credentials (survive reboot)
+        WiFi.persistent(true);
+        
+        Serial.println(F("[WiFi] Power management configured for stability"));
+        
     } else {
         Serial.println(F("[WiFi] Failed to connect (portal timed out)"));
         // Fallback: try hard-coded credentials if provided
@@ -37,12 +137,18 @@ bool WifiConnection::connect() {
                    millis() - start < (unsigned long)WIFI_CONNECT_TIMEOUT * 1000) {
                 delay(500);
                 Serial.print('.');
+                yield();  // Feed watchdog
             }
             Serial.println();
             connected = WiFi.status() == WL_CONNECTED;
             if (connected) {
-                Serial.print(F("[WiFi] Connected via fallback! IP: "));
+                Serial.print(F("[WiFi] ✓ Connected via fallback! IP: "));
                 Serial.println(WiFi.localIP());
+                
+                // Apply same power management settings
+                WiFi.setSleepMode(WIFI_NONE_SLEEP);
+                WiFi.setOutputPower(20.5);
+                WiFi.setAutoReconnect(true);
             }
         }
     }

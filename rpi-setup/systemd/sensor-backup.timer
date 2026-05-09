@@ -1,0 +1,12 @@
+[Unit]
+Description=Daily Soil Sensor Backup
+Documentation=https://github.com/soil-sensor
+
+[Timer]
+OnCalendar=daily
+OnCalendar=03:00
+Persistent=true
+Unit=sensor-backup.service
+
+[Install]
+WantedBy=timers.target

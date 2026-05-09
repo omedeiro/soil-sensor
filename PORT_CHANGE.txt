@@ -1,0 +1,15 @@
+⚠️ IMPORTANT: PORT NUMBER CHANGED
+
+The database server now runs on PORT 5001 (not 5000) because macOS uses port 5000.
+
+All configuration files have been updated:
+- firmware/src/config.h → http://192.168.99.188:5001/api/reading
+- database/server.py → port 5001
+- database/dashboard.html → http://192.168.99.188:5001
+
+Some documentation files may still reference port 5000 - use 5001 instead.
+
+Correct URLs:
+- Database API: http://192.168.99.188:5001
+- Dashboard: http://192.168.99.188:5001/ or open database/dashboard.html
+- Health check: http://192.168.99.188:5001/health

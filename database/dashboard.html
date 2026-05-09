@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soil Moisture Monitor - Database Dashboard</title>
+<style>
+  :root { 
+    --bg:#0f172a; 
+    --card:#1e293b; 
+    --accent:#22d3ee; 
+    --text:#e2e8f0; 
+    --warn:#f59e0b;
+    --error:#ef4444;
+    --success:#22c55e;
+  }
+  
+  * { 
+    box-sizing:border-box; 
+    margin:0; 
+    padding:0; 
+  }
+  
+  body { 
+    font-family:'Segoe UI',system-ui,sans-serif; 
+    background:var(--bg); 
+    color:var(--text); 
+    display:flex; 
+    justify-content:center; 
+    padding:1rem; 
+  }
+  
+  .container { 
+    max-width:1200px; 
+    width:100%; 
+  }
+  
+  h1 { 
+    text-align:center; 
+    margin-bottom:1.5rem; 
+    color:var(--accent); 
+    font-size:1.8rem; 
+  }
+  
+  .card { 
+    background:var(--card); 
+    border-radius:12px; 
+    padding:1.5rem; 
+    margin-bottom:1rem; 
+  }
+  
+  .value { 
+    font-size:3rem; 
+    font-weight:700; 
+    text-align:center; 
+    color:var(--accent); 
+  }
+  
+  .label { 
+    text-align:center; 
+    font-size:.9rem; 
+    opacity:.7; 
+    margin-top:.25rem; 
+  }
+  
+  .row { 
+    display:flex; 
+    justify-content:space-between; 
+    margin-top:.75rem; 
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  
+  .row:last-child {
+    border-bottom: none;
+  }
+  
+  .row span { 
+    font-size:.85rem; 
+    opacity:.8; 
+  }
+  
+  .row .value-span {
+    font-weight: 600;
+    color: var(--accent);
+  }
+  
+  #status { 
+    text-align:center; 
+    font-size:.8rem; 
+    opacity:.5; 
+    margin-top:1rem; 
+  }
+  
+  #chart { 
+    width:100%; 
+    height:300px; 
+    margin-top:1rem; 
+  }
+  
+  canvas { 
+    border-radius:8px; 
+  }
+  
+  .status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+  
+  .status-ok { background: var(--success); }
+  .status-warn { background: var(--warn); }
+  .status-error { background: var(--error); }
+  
+  .alert {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+  
+  .alert-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--error);
+    color: var(--error);
+  }
+  
+  .alert-warn {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid var(--warn);
+    color: var(--warn);
+  }
+  
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .stat-card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+  }
+  
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+  }
+  
+  .stat-label {
+    font-size: 0.85rem;
+    opacity: 0.7;
+  }
+  
+  .config-info {
+    background: rgba(34, 211, 238, 0.1);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .config-info code {
+    background: rgba(0,0,0,0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🌱 Soil Moisture Monitor</h1>
+  
+  <div id="alerts"></div>
+  
+  <div class="grid">
+    <div class="stat-card">
+      <div class="stat-value" id="moisture">--</div>
+      <div class="stat-label">Current Moisture (%)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="uptime">--</div>
+      <div class="stat-label">Sensor Uptime</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="total-readings">--</div>
+      <div class="stat-label">Total Readings</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="crashes">--</div>
+      <div class="stat-label">Crash Count</div>
+    </div>
+  </div>
+  
+  <div class="card">
+    <div class="row">
+      <span>Database Status</span>
+      <span id="db-status">
+        <span class="status-indicator status-ok"></span>
+        Checking...
+      </span>
+    </div>
+    <div class="row">
+      <span>Raw ADC Value</span>
+      <span class="value-span" id="raw">--</span>
+    </div>
+    <div class="row">
+      <span>Last Reading</span>
+      <span class="value-span" id="last-reading">--</span>
+    </div>
+    <div class="row">
+      <span>Last Update</span>
+      <span class="value-span" id="last-update">--</span>
+    </div>
+  </div>
+  
+  <div class="card">
+    <canvas id="chart"></canvas>
+    <div style="text-align:center;margin-top:0.5rem;font-size:0.85rem;opacity:0.7;">
+      24-Hour History (updates every 5 minutes)
+    </div>
+  </div>
+  
+  <div id="status">Auto-refreshing every 10 seconds</div>
+</div>
+
+<script>
+// Configuration - UPDATE THIS to match your database server
+const DB_SERVER = 'http://192.168.99.188:5001';
+
+let lastReadingTime = null;
+let checkCount = 0;
+
+function showAlert(message, type = 'error') {
+  const alertsDiv = document.getElementById('alerts');
+  alertsDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+}
+
+function clearAlerts() {
+  document.getElementById('alerts').innerHTML = '';
+}
+
+function formatUptime(seconds) {
+  if (!seconds) return '--';
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${minutes}m`;
+}
+
+function formatTimestamp(ts) {
+  if (!ts) return '--';
+  const date = new Date(ts * 1000);
+  return date.toLocaleString();
+}
+
+function getTimeSince(ts) {
+  if (!ts) return '--';
+  const now = Date.now() / 1000;
+  const diff = now - ts;
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+  return `${Math.floor(diff / 86400)} days ago`;
+}
+
+async function refresh() {
+  checkCount++;
+  
+  try {
+    // Check database health
+    const healthResponse = await fetch(`${DB_SERVER}/health`);
+    if (!healthResponse.ok) {
+      throw new Error('Database server not responding');
+    }
+    
+    document.getElementById('db-status').innerHTML = 
+      '<span class="status-indicator status-ok"></span>Connected';
+    
+    // Get latest reading
+    const latestResponse = await fetch(`${DB_SERVER}/api/latest`);
+    if (!latestResponse.ok) {
+      throw new Error('No readings available');
+    }
+    
+    const latest = await latestResponse.json();
+    
+    // Update display
+    document.getElementById('moisture').textContent = latest.moisture.toFixed(1) + '%';
+    document.getElementById('raw').textContent = latest.raw;
+    document.getElementById('uptime').textContent = formatUptime(latest.uptime);
+    document.getElementById('crashes').textContent = latest.crashes || 0;
+    document.getElementById('last-reading').textContent = formatTimestamp(latest.ts);
+    document.getElementById('last-update').textContent = getTimeSince(latest.ts);
+    
+    // Check if reading is stale (more than 10 minutes old)
+    const now = Date.now() / 1000;
+    const age = now - latest.ts;
+    if (age > 600) {  // 10 minutes
+      showAlert(`⚠️ Last reading is ${Math.floor(age / 60)} minutes old. Sensor may be offline.`, 'warn');
+    } else {
+      clearAlerts();
+    }
+    
+    // Check for crashes
+    if (latest.crashes > 0) {
+      showAlert(`⚠️ Sensor has crashed ${latest.crashes} time(s). Check power supply.`, 'warn');
+    }
+    
+    lastReadingTime = latest.ts;
+    
+    // Get statistics
+    const statsResponse = await fetch(`${DB_SERVER}/api/stats`);
+    if (statsResponse.ok) {
+      const stats = await statsResponse.json();
+      document.getElementById('total-readings').textContent = stats.total_readings;
+    }
+    
+    // Get history for chart
+    const historyResponse = await fetch(`${DB_SERVER}/api/history?limit=288`);
+    if (historyResponse.ok) {
+      const history = await historyResponse.json();
+      drawChart(history.readings);
+    }
+    
+  } catch (error) {
+    console.error('Refresh error:', error);
+    document.getElementById('db-status').innerHTML = 
+      '<span class="status-indicator status-error"></span>Disconnected';
+    
+    if (checkCount > 2) {  // Only show error after a few attempts
+      showAlert(`❌ Cannot connect to database server at ${DB_SERVER}. Make sure the server is running.`, 'error');
+    }
+  }
+}
+
+function drawChart(data) {
+  const canvas = document.getElementById('chart');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.offsetWidth * 2;
+  const h = canvas.height = 600;
+  
+  ctx.clearRect(0, 0, w, h);
+  
+  if (!data || data.length < 2) {
+    ctx.fillStyle = '#64748b';
+    ctx.font = '32px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('No data available yet', w / 2, h / 2);
+    return;
+  }
+  
+  const maxPoints = Math.min(data.length, 288);
+  const step = Math.max(1, Math.floor(data.length / maxPoints));
+  const points = [];
+  
+  for (let i = 0; i < data.length; i += step) {
+    points.push(data[i]);
+  }
+  
+  const pad = 80;
+  const cw = w - pad * 2;
+  const ch = h - pad * 2;
+  
+  // Grid lines and labels
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 2;
+  for (let i = 0; i <= 5; i++) {
+    const y = pad + ch - (i / 5) * ch;
+    ctx.beginPath();
+    ctx.moveTo(pad, y);
+    ctx.lineTo(w - pad, y);
+    ctx.stroke();
+    
+    ctx.fillStyle = '#64748b';
+    ctx.font = '28px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText((i * 20) + '%', pad - 15, y + 10);
+  }
+  
+  // Draw line
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  
+  points.forEach((p, i) => {
+    const x = pad + (i / (points.length - 1)) * cw;
+    const y = pad + ch - (p.moisture / 100) * ch;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  
+  ctx.stroke();
+  
+  // Draw points
+  ctx.fillStyle = '#22d3ee';
+  points.forEach((p, i) => {
+    const x = pad + (i / (points.length - 1)) * cw;
+    const y = pad + ch - (p.moisture / 100) * ch;
+    ctx.beginPath();
+    ctx.arc(x, y, 8, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+// Initial refresh
+refresh();
+
+// Auto-refresh every 10 seconds
+setInterval(refresh, 10000);
+</script>
+</body>
+</html>
