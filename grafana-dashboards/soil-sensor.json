@@ -7,14 +7,31 @@
     "timezone": "browser",
     "refresh": "5m",
     "schemaVersion": 38,
-    "version": 1,
+    "version": 2,
     "time": { "from": "now-24h", "to": "now" },
+    "templating": {
+      "list": [
+        {
+          "name": "device",
+          "label": "Sensor",
+          "type": "query",
+          "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
+          "query": "from(bucket: \"sensor-readings\") |> range(start: -7d) |> filter(fn: (r) => r._measurement == \"sensor_reading\") |> keep(columns: [\"device_id\"]) |> distinct(column: \"device_id\") |> rename(columns: {_value: \"value\"})",
+          "refresh": 2,
+          "includeAll": true,
+          "multi": true,
+          "allValue": ".*",
+          "current": { "selected": true, "text": "All", "value": "$__all" },
+          "sort": 1
+        }
+      ]
+    },
     "panels": [
       {
         "id": 1,
         "title": "Soil Moisture %",
         "type": "gauge",
-        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 8 },
+        "gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 },
         "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
         "fieldConfig": {
           "defaults": {
@@ -33,7 +50,7 @@
           }
         },
         "options": {
-          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
           "orientation": "auto",
           "showThresholdLabels": true,
           "showThresholdMarkers": true
@@ -42,7 +59,7 @@
           {
             "refId": "A",
             "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
-            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> last()"
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => contains(value: r.device_id, set: ${device:json}))\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> map(fn: (r) => ({ r with _field: r.device_id }))"
           }
         ]
       },
@@ -50,7 +67,7 @@
         "id": 2,
         "title": "WiFi Signal (RSSI)",
         "type": "gauge",
-        "gridPos": { "x": 6, "y": 0, "w": 6, "h": 8 },
+        "gridPos": { "x": 8, "y": 0, "w": 8, "h": 8 },
         "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
         "fieldConfig": {
           "defaults": {
@@ -68,7 +85,7 @@
           }
         },
         "options": {
-          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
           "orientation": "auto",
           "showThresholdLabels": true,
           "showThresholdMarkers": true
@@ -77,7 +94,7 @@
           {
             "refId": "A",
             "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
-            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"rssi\")\n  |> last()"
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"rssi\")\n  |> filter(fn: (r) => contains(value: r.device_id, set: ${device:json}))\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> map(fn: (r) => ({ r with _field: r.device_id }))"
           }
         ]
       },
@@ -85,7 +102,7 @@
         "id": 3,
         "title": "Uptime",
         "type": "stat",
-        "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+        "gridPos": { "x": 16, "y": 0, "w": 8, "h": 4 },
         "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
         "fieldConfig": {
           "defaults": {
@@ -107,7 +124,7 @@
           {
             "refId": "A",
             "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
-            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"uptime\")\n  |> last()"
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"uptime\")\n  |> filter(fn: (r) => contains(value: r.device_id, set: ${device:json}))\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> map(fn: (r) => ({ r with _field: r.device_id }))"
           }
         ]
       },
@@ -115,7 +132,7 @@
         "id": 4,
         "title": "Free Heap",
         "type": "stat",
-        "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+        "gridPos": { "x": 16, "y": 4, "w": 4, "h": 4 },
         "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
         "fieldConfig": {
           "defaults": {
@@ -141,15 +158,15 @@
           {
             "refId": "A",
             "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
-            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"free_heap\")\n  |> last()"
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"free_heap\")\n  |> filter(fn: (r) => contains(value: r.device_id, set: ${device:json}))\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> map(fn: (r) => ({ r with _field: r.device_id }))"
           }
         ]
       },
       {
         "id": 5,
-        "title": "Crash Count",
+        "title": "Crashes",
         "type": "stat",
-        "gridPos": { "x": 12, "y": 4, "w": 6, "h": 4 },
+        "gridPos": { "x": 20, "y": 4, "w": 4, "h": 4 },
         "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
         "fieldConfig": {
           "defaults": {
@@ -175,37 +192,7 @@
           {
             "refId": "A",
             "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
-            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"crashes\")\n  |> last()"
-          }
-        ]
-      },
-      {
-        "id": 6,
-        "title": "Raw ADC",
-        "type": "stat",
-        "gridPos": { "x": 18, "y": 4, "w": 6, "h": 4 },
-        "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "none",
-            "color": { "mode": "thresholds" },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [{ "color": "blue", "value": null }]
-            }
-          }
-        },
-        "options": {
-          "reduceOptions": { "calcs": ["lastNotNull"] },
-          "orientation": "auto",
-          "textMode": "auto",
-          "colorMode": "value"
-        },
-        "targets": [
-          {
-            "refId": "A",
-            "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
-            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"raw_adc\")\n  |> last()"
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"crashes\")\n  |> filter(fn: (r) => contains(value: r.device_id, set: ${device:json}))\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> map(fn: (r) => ({ r with _field: r.device_id }))"
           }
         ]
       },
@@ -226,26 +213,18 @@
               "fillOpacity": 15,
               "gradientMode": "opacity",
               "spanNulls": false
-            },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                { "color": "red", "value": null },
-                { "color": "yellow", "value": 20 },
-                { "color": "green", "value": 40 }
-              ]
             }
           }
         },
         "options": {
-          "tooltip": { "mode": "single" },
-          "legend": { "displayMode": "list", "placement": "bottom" }
+          "tooltip": { "mode": "multi", "sort": "none" },
+          "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "min", "max"] }
         },
         "targets": [
           {
             "refId": "A",
             "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
-            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => contains(value: r.device_id, set: ${device:json}))\n  |> group(columns: [\"device_id\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> map(fn: (r) => ({ r with _field: r.device_id }))"
           }
         ]
       },
@@ -263,14 +242,14 @@
           }
         },
         "options": {
-          "tooltip": { "mode": "single" },
+          "tooltip": { "mode": "multi", "sort": "none" },
           "legend": { "displayMode": "list", "placement": "bottom" }
         },
         "targets": [
           {
             "refId": "A",
             "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
-            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"rssi\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"rssi\")\n  |> filter(fn: (r) => contains(value: r.device_id, set: ${device:json}))\n  |> group(columns: [\"device_id\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> map(fn: (r) => ({ r with _field: r.device_id }))"
           }
         ]
       },
@@ -288,14 +267,14 @@
           }
         },
         "options": {
-          "tooltip": { "mode": "single" },
+          "tooltip": { "mode": "multi", "sort": "none" },
           "legend": { "displayMode": "list", "placement": "bottom" }
         },
         "targets": [
           {
             "refId": "A",
             "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
-            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"free_heap\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"free_heap\")\n  |> filter(fn: (r) => contains(value: r.device_id, set: ${device:json}))\n  |> group(columns: [\"device_id\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> map(fn: (r) => ({ r with _field: r.device_id }))"
           }
         ]
       }
