@@ -6,6 +6,11 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+// ─── Version ─────────────────────────────────────────────────────────────────
+#define FIRMWARE_VERSION    "1.0.0"
+#define BUILD_DATE          __DATE__
+#define BUILD_TIME          __TIME__
+
 // ─── WiFi ────────────────────────────────────────────────────────────────────
 // If WiFiManager captive portal times out, these are the fallback credentials.
 // Leave empty to rely solely on the captive-portal flow.

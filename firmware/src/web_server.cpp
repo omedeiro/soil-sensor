@@ -109,6 +109,11 @@ String MonitorWebServer::_buildDashboardHTML() {
     html += WiFi.localIP().toString();
 
     html += F(R"rawliteral(</span></div>
+    <div class="row"><span>Firmware:</span><span>)rawliteral");
+    
+    html += F(FIRMWARE_VERSION);
+    
+    html += F(R"rawliteral(</span></div>
   </div>
   <div id="status">Updating every 5 s</div>
 </div>
