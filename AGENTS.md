@@ -82,8 +82,8 @@ python3 server.py          # direct invocation
 - `WIFI_DIAGNOSTICS_ENABLED` logs disconnect reasons and RSSI
 
 **IP addresses:**
-- Raspberry Pi InfluxDB: `192.168.99.200:8086` (default in config, update to match your Pi)
-- Raspberry Pi Grafana: `192.168.99.200:3000`
+- Raspberry Pi InfluxDB: `192.168.99.134:8086` (update to match your Pi if different)
+- Raspberry Pi Grafana: `192.168.99.134:3000`
 - ESP8266: `192.168.99.70` (DHCP-assigned, may change)
 - Update `DB_SERVER_URL` in `config.h` if Raspberry Pi IP changes
 
@@ -103,7 +103,7 @@ On first boot or if credentials invalid:
 - `✅ Clean boot` — no crashes detected
 - `[WiFi] ✓ Connected to <SSID>` — WiFi working
 - `[WiFi] RSSI: -45 dBm (excellent)` — strong WiFi signal
-- `[DB] Using InfluxDB: http://192.168.99.200:8086` — InfluxDB configured
+- `[DB] Using InfluxDB: http://192.168.99.134:8086` — InfluxDB configured
 - `[DB] ✓ Posted to InfluxDB (HTTP 204)` — successful write to InfluxDB (note: 204 not 201)
 - `[Queue] ✓ Queue empty` — no queued readings
 
@@ -258,10 +258,11 @@ Can calibrate via:
 - `WIFI_IMPROVEMENTS.md` — WiFi stability features and troubleshooting
 - `MULTI_SENSOR_GUIDE.md` — multi-sensor deployment guide (5-10 sensors)
 - `MIGRATION_PLAN.md` — SQLite → InfluxDB migration plan (to be created)
-- `GRAFANA_DASHBOARDS.md` — dashboard creation guide (to be created)
 
 **Grafana Dashboards (`/grafana-dashboards/`):**
-- (To be created) JSON exports of pre-built dashboards
+- `soil-sensor.json` — Primary dashboard for soil moisture monitoring (individual sensor plots)
+- `system-diagnostics.json` — Network/WiFi diagnostics and hardware health monitoring
+- `README.md` — Dashboard installation and customization guide
 
 **Legacy Database (`/database/` - deprecated):**
 - `server.py` — Flask app (being phased out)
@@ -295,8 +296,8 @@ Can calibrate via:
 - `docs/RPI_SETUP.md` — Raspberry Pi 5 installation and InfluxDB/Grafana configuration
 - `docs/WIFI_IMPROVEMENTS.md` — WiFi stability features, reconnection logic, diagnostics
 - `docs/MULTI_SENSOR_GUIDE.md` — deploying 5-10 sensors with device IDs and location tags
+- `grafana-dashboards/README.md` — dashboard installation, customization, and alert setup
 - `docs/MIGRATION_PLAN.md` — SQLite → InfluxDB migration (to be created)
-- `docs/GRAFANA_DASHBOARDS.md` — dashboard creation and alert configuration (to be created)
 
 **Legacy Documentation:**
 - `STATUS.md` — last known system state (legacy Flask server)
