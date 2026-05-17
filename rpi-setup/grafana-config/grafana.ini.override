@@ -1,0 +1,44 @@
+# Grafana configuration overrides for Soil Sensor project
+# These settings are appended to /etc/grafana/grafana.ini during installation
+
+[auth.anonymous]
+# Enable anonymous access
+enabled = true
+
+# Organization name for unauthenticated users
+org_name = Main Org.
+
+# Role for unauthenticated users (Viewer = read-only)
+org_role = Viewer
+
+[auth.basic]
+# Enable basic authentication
+enabled = true
+
+[security]
+# Allow embedding dashboards in iframes
+allow_embedding = true
+
+# Admin credentials (change in production!)
+admin_user = admin
+admin_password = admin
+
+[users]
+# Allow users to sign up
+allow_sign_up = false
+
+# Allow users to create organizations
+allow_org_create = false
+
+# Default role for new users
+auto_assign_org_role = Viewer
+
+[server]
+# HTTP port
+http_port = 3000
+
+# Root URL (update with your Pi's IP or hostname)
+root_url = http://192.168.99.134:3000
+
+# Serve Grafana from a subpath
+;serve_from_sub_path = false
