@@ -2,7 +2,7 @@
   "dashboard": {
     "id": null,
     "uid": "soil-moisture-v2",
-    "title": "🌱 Soil Moisture Dashboard",
+    "title": "\ud83c\udf31 Soil Moisture Dashboard",
     "tags": [
       "soil",
       "moisture",
@@ -66,24 +66,77 @@
               "mode": "absolute",
               "steps": [
                 {
-                  "color": "red",
-                  "value": null
-                },
-                {
-                  "color": "yellow",
-                  "value": 20
-                },
-                {
                   "color": "green",
-                  "value": 40
-                },
+                  "value": null
+                }
+              ]
+            },
+            "color": {
+              "mode": "palette-classic"
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": ".*sensor-1.*"
+              },
+              "properties": [
                 {
-                  "color": "blue",
-                  "value": 80
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#73BF69"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": ".*sensor-2.*"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#F2CC0C"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": ".*sensor-3.*"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#5794F2"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": ".*sensor-4.*"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#FF6B6B"
+                  }
                 }
               ]
             }
-          }
+          ]
         },
         "options": {
           "reduceOptions": {
@@ -104,7 +157,7 @@
               "type": "influxdb",
               "uid": "cflk0i2e2nwu8d"
             },
-            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"${device}\")\n  |> last()"
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"${device}\")\n  |> last()"
           }
         ]
       },
@@ -125,38 +178,88 @@
         "fieldConfig": {
           "defaults": {
             "unit": "percent",
-            "color": { "mode": "thresholds" },
+            "color": {
+              "mode": "thresholds"
+            },
             "thresholds": {
               "mode": "absolute",
               "steps": [
-                { "color": "red", "value": null },
-                { "color": "yellow", "value": 20 },
-                { "color": "green", "value": 40 },
-                { "color": "blue", "value": 80 }
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 20
+                },
+                {
+                  "color": "green",
+                  "value": 40
+                },
+                {
+                  "color": "blue",
+                  "value": 80
+                }
               ]
             }
           },
           "overrides": [
             {
-              "matcher": { "id": "byFrameRefID", "options": "A" },
-              "properties": [{ "id": "displayName", "value": "Last" }]
+              "matcher": {
+                "id": "byFrameRefID",
+                "options": "A"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Last"
+                }
+              ]
             },
             {
-              "matcher": { "id": "byFrameRefID", "options": "B" },
-              "properties": [{ "id": "displayName", "value": "Mean" }]
+              "matcher": {
+                "id": "byFrameRefID",
+                "options": "B"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Mean"
+                }
+              ]
             },
             {
-              "matcher": { "id": "byFrameRefID", "options": "C" },
-              "properties": [{ "id": "displayName", "value": "Min" }]
+              "matcher": {
+                "id": "byFrameRefID",
+                "options": "C"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Min"
+                }
+              ]
             },
             {
-              "matcher": { "id": "byFrameRefID", "options": "D" },
-              "properties": [{ "id": "displayName", "value": "Max" }]
+              "matcher": {
+                "id": "byFrameRefID",
+                "options": "D"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Max"
+                }
+              ]
             }
           ]
         },
         "options": {
-          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ]
+          },
           "orientation": "horizontal",
           "textMode": "value_and_name",
           "colorMode": "background"
@@ -164,23 +267,35 @@
         "targets": [
           {
             "refId": "A",
-            "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
-            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"${device}\")\n  |> last()"
+            "datasource": {
+              "type": "influxdb",
+              "uid": "cflk0i2e2nwu8d"
+            },
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"${device}\")\n  |> last()"
           },
           {
             "refId": "B",
-            "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
-            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"${device}\")\n  |> mean()"
+            "datasource": {
+              "type": "influxdb",
+              "uid": "cflk0i2e2nwu8d"
+            },
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"${device}\")\n  |> mean()"
           },
           {
             "refId": "C",
-            "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
-            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"${device}\")\n  |> min()"
+            "datasource": {
+              "type": "influxdb",
+              "uid": "cflk0i2e2nwu8d"
+            },
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"${device}\")\n  |> min()"
           },
           {
             "refId": "D",
-            "datasource": { "type": "influxdb", "uid": "cflk0i2e2nwu8d" },
-            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"${device}\")\n  |> max()"
+            "datasource": {
+              "type": "influxdb",
+              "uid": "cflk0i2e2nwu8d"
+            },
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"${device}\")\n  |> max()"
           }
         ]
       },
@@ -237,7 +352,85 @@
               "showPoints": "auto",
               "pointSize": 5
             }
-          }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": ".*sensor-1.*"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#73BF69"
+                  }
+                },
+                {
+                  "id": "displayName",
+                  "value": "Sensor 1"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": ".*sensor-2.*"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#F2CC0C"
+                  }
+                },
+                {
+                  "id": "displayName",
+                  "value": "Sensor 2"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": ".*sensor-3.*"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#5794F2"
+                  }
+                },
+                {
+                  "id": "displayName",
+                  "value": "Sensor 3"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": ".*sensor-4.*"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#FF6B6B"
+                  }
+                },
+                {
+                  "id": "displayName",
+                  "value": "Sensor 4"
+                }
+              ]
+            }
+          ]
         },
         "options": {
           "tooltip": {
@@ -263,7 +456,7 @@
               "type": "influxdb",
               "uid": "cflk0i2e2nwu8d"
             },
-            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"${device}\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+            "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"${device}\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
           }
         ]
       }

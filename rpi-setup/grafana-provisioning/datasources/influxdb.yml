@@ -1,0 +1,16 @@
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB-SoilMonitoring
+    type: influxdb
+    access: proxy
+    url: http://localhost:8086
+    jsonData:
+      version: Flux
+      organization: soil-monitoring
+      defaultBucket: sensor-readings
+      tlsSkipVerify: true
+    secureJsonData:
+      token: ${INFLUX_READ_TOKEN}
+    isDefault: true
+    editable: true

@@ -10,7 +10,6 @@
 
 **OLD SYSTEM (deprecated, being replaced):**
 - **Database server** (Python/Flask/SQLite on macOS) — to be phased out
-- See migration plan in `docs/MIGRATION_PLAN.md`
 
 **Working directory:** 
 - Firmware: `/firmware`
@@ -39,29 +38,19 @@ sudo ./install.sh          # installs InfluxDB, Grafana, systemd services
 1. Configure InfluxDB: `http://<pi-ip>:8086` (create org, bucket, tokens)
 2. Configure Grafana: `http://<pi-ip>:3000` (add data source, import dashboards)
 3. Update ESP8266 `config.h` with InfluxDB token and URL
-4. See `docs/RPI_SETUP.md` for complete guide
 
 ### System Testing
 ```bash
-# NEW: End-to-end InfluxDB + Grafana test
+# InfluxDB write test
 cd tests
 export INFLUX_TOKEN="your_write_token"
-./test_e2e.sh              # comprehensive system test
-
-# WiFi stability tests
-./test_wifi_reconnection.sh    # manual WiFi disconnect test
-./test_queue_drain.sh          # reading queue functionality
-./test_72h_stability.sh        # long-term stability (72 hours)
-
-# Multi-sensor tests
-./test_multi_sensor.sh         # simulate 5 sensors posting data
+./test_influx_write.sh     # verify InfluxDB connectivity and token
 ```
 
 ### Legacy Database Server (from `/database` - deprecated)
 ```bash
 ./start.sh                 # starts Flask server on port 5001
 python3 server.py          # direct invocation
-./test_system.sh           # old health check (use tests/test_e2e.sh instead)
 ```
 
 ## Configuration Gotchas
@@ -75,11 +64,11 @@ python3 server.py          # direct invocation
 - `DEVICE_ID_AUTO` can be false for multi-sensor deployments; use `DEVICE_ID` to name sensors (sensor-1, sensor-2, etc.)
 - `DEVICE_LOCATION` tags sensor location for Grafana filtering (e.g., "backyard", "greenhouse")
 
-**WiFi Stability Features (NEW):**
-- `WIFI_STABILITY_ENABLED` enables auto-reconnection with exponential backoff
-- `WIFI_RECONNECT_ENABLED` enables automatic WiFi reconnection (5s → 60s backoff)
-- `READING_QUEUE_ENABLED` queues up to 20 readings during database outages
-- `WIFI_DIAGNOSTICS_ENABLED` logs disconnect reasons and RSSI
+**WiFi Stability Features:**
+- WiFi stability manager is always enabled (automatic reconnection with exponential backoff 5s → 60s)
+- `ENABLE_WIFI_DIAGNOSTICS` enables detailed WiFi logging (disconnect reasons, RSSI)
+- `QUEUE_FAILED_READINGS` queues up to 20 readings during database outages
+- `MAX_QUEUE_SIZE` sets maximum queued readings (default: 20)
 
 **IP addresses:**
 - Raspberry Pi InfluxDB: `192.168.99.134:8086` (update to match your Pi if different)
@@ -175,7 +164,7 @@ Can calibrate via:
 3. **Configure Grafana** (one-time):
    - Open `http://<pi-ip>:3000` (admin/admin)
    - Add InfluxDB data source (Flux, localhost:8086)
-   - Import dashboards from `grafana-dashboards/` (to be created)
+   - Import dashboards from `grafana-dashboards/`
 
 4. **Flash ESP8266**:
    ```bash
@@ -186,12 +175,11 @@ Can calibrate via:
    ```
 
 5. **Verify data flow**:
-   - Watch serial for: `[DB] ✓ Posted to InfluxDB (HTTP 204)`
+   - Watch serial for: `[DB] ✓ Posted to InfluxDB: <device> @ <moisture>%`
    - Open Grafana dashboard
-   - Run: `cd tests && ./test_e2e.sh`
+   - Run: `cd tests && export INFLUX_TOKEN="your_token" && ./test_influx_write.sh`
 
 6. **WiFi stability test**:
-   - Run: `cd tests && ./test_wifi_reconnection.sh`
    - Manually disconnect WiFi (router admin or power off router)
    - Watch serial for reconnection attempts
    - Verify queued readings drain after reconnection
@@ -246,22 +234,12 @@ Can calibrate via:
 - `README.md` — installation guide
 
 **Tests (`/tests/`):**
-- `test_e2e.sh` — comprehensive end-to-end system test
 - `test_influx_write.sh` — InfluxDB write test (manual token verification)
-- `test_multi_sensor.sh` — simulate 5 sensors posting data
-- `test_wifi_reconnection.sh` — manual WiFi disconnect test
-- `test_queue_drain.sh` — reading queue functionality test
-- `test_72h_stability.sh` — long-term stability test (72 hours)
 
 **Documentation (`/docs/`):**
-- `RPI_SETUP.md` — Raspberry Pi installation and configuration guide
-- `WIFI_IMPROVEMENTS.md` — WiFi stability features and troubleshooting
-- `MULTI_SENSOR_GUIDE.md` — multi-sensor deployment guide (5-10 sensors)
-- `MIGRATION_PLAN.md` — SQLite → InfluxDB migration plan (to be created)
+- `README.md` — Technical documentation (WiFi stability, Grafana Cloud setup, InfluxDB notes)
 
 **Grafana Dashboards (`/grafana-dashboards/`):**
-- `soil-sensor.json` — Primary dashboard for soil moisture monitoring (individual sensor plots)
-- `system-diagnostics.json` — Network/WiFi diagnostics and hardware health monitoring
 - `README.md` — Dashboard installation and customization guide
 
 **Legacy Database (`/database/` - deprecated):**
@@ -287,24 +265,13 @@ Can calibrate via:
 6. **Sensor voltage:** Must power sensor from 3.3V pin, not 5V (ADC max is 1.0V)
 7. **Flashing without serial check:** Always run `pio device monitor` after upload to verify WiFi/DB connection
 8. **Duplicate device IDs:** Each sensor must have unique `DEVICE_ID` in multi-sensor setup
-9. **WiFi stability disabled:** Set `WIFI_STABILITY_ENABLED = true` to enable auto-reconnection
-10. **Queue disabled:** Set `READING_QUEUE_ENABLED = true` to survive network outages
+9. **WiFi diagnostics disabled:** Set `ENABLE_WIFI_DIAGNOSTICS = true` in config.h for detailed logging
+10. **Queue disabled:** Set `QUEUE_FAILED_READINGS = true` in config.h to survive network outages
 
 ## Status Files Reference
 
-**New Documentation:**
-- `docs/RPI_SETUP.md` — Raspberry Pi 5 installation and InfluxDB/Grafana configuration
-- `docs/WIFI_IMPROVEMENTS.md` — WiFi stability features, reconnection logic, diagnostics
-- `docs/MULTI_SENSOR_GUIDE.md` — deploying 5-10 sensors with device IDs and location tags
-- `grafana-dashboards/README.md` — dashboard installation, customization, and alert setup
-- `docs/MIGRATION_PLAN.md` — SQLite → InfluxDB migration (to be created)
-
-**Legacy Documentation:**
-- `STATUS.md` — last known system state (legacy Flask server)
-- `TESTING.md` — step-by-step testing procedure (legacy)
-- `DEPLOYMENT.md` — physical deployment guide, moisture level chart
-- `QUICK_REFERENCE.txt` — user-facing cheat sheet (legacy)
-- `START_HERE.sh` — interactive startup guide (legacy)
-
-**Testing:**
-Run `cd tests && ./test_e2e.sh` for comprehensive system health check (InfluxDB, Grafana, ESP8266).
+**Documentation:**
+- `docs/README.md` — Technical documentation (WiFi stability, Grafana Cloud setup, InfluxDB notes)
+- `grafana-dashboards/README.md` — Dashboard installation, customization, and alert setup
+- `README.md` — Project overview and setup instructions
+- `AGENTS.md` — This file (agent instructions and technical reference)
