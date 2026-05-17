@@ -65,7 +65,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\" or r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> last()\n  |> keep(columns: [\"_time\"])\n  |> limit(n: 1)",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> sort(columns: [\"_time\"], desc: true)\n  |> limit(n: 1)",
           "refId": "A"
         }
       ],
