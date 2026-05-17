@@ -1,13 +1,11 @@
 {
   "id": null,
   "uid": "sensor-details-v2",
-  "title": "\ud83d\udcca Sensor Details & Diagnostics",
+  "title": "📊 Sensor Details & Diagnostics",
   "description": "Deep dive into individual sensor metrics, WiFi performance, and diagnostic history",
   "tags": [
     "sensors",
-    "details",
-    "diagnostics",
-    "performance"
+    "diagnostics"
   ],
   "style": "dark",
   "timezone": "browser",
@@ -90,7 +88,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_value: int(v: r._time) / int(v: 1000000000)}))",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_value: int(v: r._time) / int(v: 1000000)}))",
           "refId": "A"
         }
       ],
@@ -343,14 +341,14 @@
           },
           "unit": "s",
           "decimals": 0,
-          "displayName": "Uptime (sec)"
+          "displayName": "Uptime"
         }
       }
     },
     {
       "id": 5,
       "type": "timeseries",
-      "title": "Moisture History (12 Hours)",
+      "title": "Moisture History",
       "gridPos": {
         "x": 0,
         "y": 6,
@@ -480,7 +478,7 @@
     {
       "id": 6,
       "type": "timeseries",
-      "title": "WiFi Signal Strength (RSSI) - 12 Hours",
+      "title": "WiFi Signal Strength (RSSI)",
       "gridPos": {
         "x": 12,
         "y": 6,
@@ -598,7 +596,7 @@
     {
       "id": 7,
       "type": "timeseries",
-      "title": "Free Heap Memory Trend (12 Hours)",
+      "title": "Free Heap Memory Trend",
       "gridPos": {
         "x": 0,
         "y": 14,
@@ -678,7 +676,7 @@
     {
       "id": 8,
       "type": "table",
-      "title": "Diagnostic Events for ${sensor} (Last 12 Hours)",
+      "title": "Diagnostic Events for ${sensor}",
       "gridPos": {
         "x": 12,
         "y": 14,

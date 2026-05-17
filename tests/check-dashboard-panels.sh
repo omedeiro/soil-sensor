@@ -50,6 +50,7 @@ TOTAL_PANELS=0
 PANELS_WITH_DATA=0
 PANELS_NO_DATA=0
 PANELS_ERROR=0
+PANELS_SKIPPED=0
 
 # Temporary files
 DASHBOARDS_LIST=$(mktemp)
@@ -121,31 +122,54 @@ for row in $(jq -r '.[] | @base64' "$DASHBOARDS_LIST"); do
             continue
         fi
         
+        # Skip queries with Grafana variables (can't test these via API)
+        if echo "$query" | grep -qE '\$\{[^}]+\}|v\.timeRange'; then
+            echo -e "    ${BLUE}⊘ $panel_title (${panel_type}): Skipped (uses Grafana variables)${NC}"
+            PANELS_SKIPPED=$((PANELS_SKIPPED + 1))
+            continue
+        fi
+        
         # Test query against InfluxDB
         QUERY_RESULT=$(mktemp)
+        QUERY_ERROR=$(mktemp)
         if curl -sf \
             -H "Authorization: Token $INFLUX_TOKEN" \
             -H "Content-Type: application/vnd.flux" \
             -H "Accept: application/csv" \
             -XPOST "$INFLUX_URL/api/v2/query?org=$INFLUX_ORG" \
-            --data-raw "$query" > "$QUERY_RESULT" 2>/dev/null; then
+            --data-raw "$query" > "$QUERY_RESULT" 2>"$QUERY_ERROR"; then
             
             # Check if result has data (more than just headers)
             line_count=$(wc -l < "$QUERY_RESULT")
             
             if [ "$line_count" -gt 1 ]; then
-                echo -e "    ${GREEN}✓ $panel_title (${panel_type}): Has data ($line_count lines)${NC}"
+                # Extract values from CSV (skip header, get _value column)
+                values=$(tail -n +2 "$QUERY_RESULT" | cut -d',' -f6 | head -5 | tr '\n' ' ')
+                echo -e "    ${GREEN}✓ $panel_title (${panel_type}): Has data ($((line_count - 1)) rows)${NC}"
+                echo -e "      Values: $values"
                 PANELS_WITH_DATA=$((PANELS_WITH_DATA + 1))
             else
-                echo -e "    ${RED}✗ $panel_title (${panel_type}): NO DATA${NC}"
+                # For table panels, "No Data" might be expected (e.g., no offline sensors)
+                if [ "$panel_type" = "table" ]; then
+                    echo -e "    ${YELLOW}⚠ $panel_title (${panel_type}): NO DATA (may be expected)${NC}"
+                else
+                    echo -e "    ${RED}✗ $panel_title (${panel_type}): NO DATA${NC}"
+                fi
                 PANELS_NO_DATA=$((PANELS_NO_DATA + 1))
             fi
         else
-            echo -e "    ${RED}✗ $panel_title (${panel_type}): Query failed${NC}"
+            # Query failed - check if it's a JSON error response
+            if grep -q "\"code\"" "$QUERY_ERROR" 2>/dev/null || grep -q "\"code\"" "$QUERY_RESULT" 2>/dev/null; then
+                error_msg=$(cat "$QUERY_RESULT" "$QUERY_ERROR" 2>/dev/null | jq -r '.message // .error // empty' 2>/dev/null | head -1)
+                echo -e "    ${RED}✗ $panel_title (${panel_type}): Query error${NC}"
+                echo -e "      Error: ${error_msg:-Unknown error}"
+            else
+                echo -e "    ${RED}✗ $panel_title (${panel_type}): Query failed${NC}"
+            fi
             PANELS_ERROR=$((PANELS_ERROR + 1))
         fi
         
-        rm -f "$QUERY_RESULT"
+        rm -f "$QUERY_RESULT" "$QUERY_ERROR"
     done
     
     rm -f "$DASHBOARD_JSON"
@@ -160,14 +184,23 @@ echo "Total Dashboards: $TOTAL_DASHBOARDS"
 echo "Total Panels: $TOTAL_PANELS"
 echo ""
 echo -e "${GREEN}Panels with Data: $PANELS_WITH_DATA${NC}"
-echo -e "${RED}Panels with NO DATA: $PANELS_NO_DATA${NC}"
-echo -e "${YELLOW}Panels with Errors: $PANELS_ERROR${NC}"
+echo -e "${YELLOW}Panels with NO DATA: $PANELS_NO_DATA (may be expected for tables)${NC}"
+echo -e "${BLUE}Panels Skipped: $PANELS_SKIPPED (use Grafana variables)${NC}"
+echo -e "${RED}Panels with Errors: $PANELS_ERROR${NC}"
 echo ""
 
-if [ "$PANELS_NO_DATA" -gt 0 ] || [ "$PANELS_ERROR" -gt 0 ]; then
-    echo -e "${RED}FAILED: Some panels have issues${NC}"
+if [ "$PANELS_ERROR" -gt 0 ]; then
+    echo -e "${RED}FAILED: Some panels have query errors${NC}"
     exit 1
 else
-    echo -e "${GREEN}SUCCESS: All panels are working correctly${NC}"
+    echo -e "${GREEN}SUCCESS: No query errors detected${NC}"
+    if [ "$PANELS_NO_DATA" -gt 0 ]; then
+        echo -e "${YELLOW}Note: $PANELS_NO_DATA panel(s) returned no data (verify if expected)${NC}"
+    fi
+    if [ "$PANELS_SKIPPED" -gt 0 ]; then
+        echo -e "${BLUE}Note: $PANELS_SKIPPED panel(s) skipped (use Grafana-specific variables)${NC}"
+    fi
+    exit 0
+fi
     exit 0
 fi

@@ -1,12 +1,10 @@
 {
   "id": null,
   "uid": "alerts-overview-v2",
-  "title": "\u26a0\ufe0f Alerts & Notifications",
+  "title": "⚠️ Alerts & Notifications",
   "description": "Real-time alert status, active issues, and notification history",
   "tags": [
     "alerts",
-    "notifications",
-    "issues",
     "monitoring"
   ],
   "style": "dark",
@@ -39,7 +37,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_value: int(v: r._time) / int(v: 1000000000)}))",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_value: int(v: r._time) / int(v: 1000000)}))",
           "refId": "A"
         }
       ],
@@ -75,7 +73,7 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "\ud83d\udea8 Critical Alerts (Now)",
+      "title": "🚨 Critical Alerts (Now)",
       "gridPos": {
         "x": 0,
         "y": 0,
@@ -141,7 +139,7 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "\ud83d\udca7 Sensors Need Watering",
+      "title": "💧 Sensors Need Watering",
       "gridPos": {
         "x": 6,
         "y": 0,
@@ -207,7 +205,7 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "\ud83d\udce1 Sensors Offline",
+      "title": "📡 Sensors Offline",
       "gridPos": {
         "x": 12,
         "y": 0,
@@ -220,7 +218,7 @@
       },
       "targets": [
         {
-          "query": "// Count sensors that haven't sent heartbeat in last 10 minutes\n// Expected sensors = 4 (excluding backyard)\nexpectedSensors = 4\n\nactiveSensors = from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> keep(columns: [\"device_id\"])\n  |> distinct(column: \"device_id\")\n  |> count()\n  |> findRecord(fn: (key) => true, idx: 0)\n\n// Return count of offline sensors\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -1m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> limit(n: 1)\n  |> map(fn: (r) => ({\n      _time: now(),\n      _value: expectedSensors - activeSensors._value,\n      _field: \"offline_count\"\n  }))",
+          "query": "// Count sensors that haven't sent heartbeat in last 10 minutes\n// Expected sensors = 4 (excluding backyard)\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> count()\n  |> group()\n  |> count()\n  |> map(fn: (r) => ({\n      _time: now(),\n      _value: 4 - r._value,\n      _field: \"offline_count\"\n  }))",
           "refId": "A"
         }
       ],
@@ -273,7 +271,7 @@
     {
       "id": 4,
       "type": "stat",
-      "title": "\u2699\ufe0f System Health Score",
+      "title": "⚙️ System Health Score",
       "gridPos": {
         "x": 18,
         "y": 0,
@@ -286,7 +284,7 @@
       },
       "targets": [
         {
-          "query": "// Health score: (sensors online / 4 expected) * 100%\nactiveSensors = from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> keep(columns: [\"device_id\"])\n  |> distinct(column: \"device_id\")\n  |> count()\n\nactiveSensors\n  |> map(fn: (r) => ({\n      _time: now(),\n      _value: float(v: r._value) / 4.0 * 100.0,\n      _field: \"health_score\"\n  }))",
+          "query": "// Health score: (sensors online / 4 expected) * 100%\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> count()\n  |> group()\n  |> count()\n  |> map(fn: (r) => ({\n      _time: now(),\n      _value: float(v: r._value) / 4.0 * 100.0,\n      _field: \"health_score\"\n  }))",
           "refId": "A"
         }
       ],
@@ -335,7 +333,7 @@
     {
       "id": 5,
       "type": "table",
-      "title": "\ud83d\udd34 Active Critical Issues",
+      "title": "🔴 Active Critical Issues",
       "gridPos": {
         "x": 0,
         "y": 5,
@@ -428,13 +426,13 @@
                   {
                     "type": "value",
                     "value": "critical",
-                    "text": "\ud83d\udd34 CRITICAL",
+                    "text": "🔴 CRITICAL",
                     "color": "dark-red"
                   },
                   {
                     "type": "value",
                     "value": "error",
-                    "text": "\ud83d\udfe0 ERROR",
+                    "text": "🟠 ERROR",
                     "color": "dark-orange"
                   }
                 ]
@@ -510,7 +508,7 @@
     {
       "id": 6,
       "type": "table",
-      "title": "\ud83d\udca7 Sensors Requiring Attention (Moisture < 40%)",
+      "title": "💧 Sensors Requiring Attention (Moisture < 40%)",
       "gridPos": {
         "x": 0,
         "y": 13,
@@ -674,7 +672,7 @@
     {
       "id": 7,
       "type": "table",
-      "title": "\ud83d\udce1 Offline Sensors (No Heartbeat in 10 min)",
+      "title": "📡 Offline Sensors (No Heartbeat in 10 min)",
       "gridPos": {
         "x": 12,
         "y": 13,

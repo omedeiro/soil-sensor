@@ -1,13 +1,11 @@
 {
   "id": null,
   "uid": "rpi-health-v1",
-  "title": "\ud83d\udda5\ufe0f Raspberry Pi Health",
+  "title": "🖥️ Raspberry Pi Health",
   "description": "Monitor Raspberry Pi server health, uptime, storage, and database metrics",
   "tags": [
-    "raspberry-pi",
-    "server",
     "system",
-    "database"
+    "server"
   ],
   "style": "dark",
   "timezone": "browser",
@@ -39,7 +37,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_value: int(v: r._time) / int(v: 1000000000)}))",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_value: int(v: r._time) / int(v: 1000000)}))",
           "refId": "A"
         }
       ],

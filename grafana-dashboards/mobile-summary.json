@@ -1,12 +1,11 @@
 {
   "id": null,
   "uid": "mobile-summary-v2",
-  "title": "\ud83d\udcf1 Mobile Quick View",
+  "title": "📱 Mobile Quick View",
   "description": "Mobile-optimized dashboard for quick status checks - single column layout",
   "tags": [
     "mobile",
-    "summary",
-    "quick-view"
+    "overview"
   ],
   "style": "dark",
   "timezone": "browser",
@@ -38,7 +37,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_value: int(v: r._time) / int(v: 1000000000)}))",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_value: int(v: r._time) / int(v: 1000000)}))",
           "refId": "A"
         }
       ],
@@ -74,7 +73,7 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "\ud83c\udf31 System Status",
+      "title": "🌱 System Status",
       "gridPos": {
         "x": 0,
         "y": 0,
@@ -131,7 +130,7 @@
     {
       "id": 2,
       "type": "table",
-      "title": "\ud83d\udca7 Current Moisture Levels",
+      "title": "💧 Current Moisture Levels",
       "gridPos": {
         "x": 0,
         "y": 5,
@@ -291,7 +290,7 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "\u26a0\ufe0f Alerts",
+      "title": "⚠️ Alerts",
       "gridPos": {
         "x": 0,
         "y": 17,
@@ -358,7 +357,7 @@
     {
       "id": 4,
       "type": "stat",
-      "title": "\ud83d\udca7 Need Water",
+      "title": "💧 Need Water",
       "gridPos": {
         "x": 12,
         "y": 17,
@@ -429,7 +428,7 @@
     {
       "id": 5,
       "type": "timeseries",
-      "title": "\ud83d\udcca Moisture Trends (6 Hours)",
+      "title": "📊 Moisture Trends (6 Hours)",
       "gridPos": {
         "x": 0,
         "y": 22,
@@ -579,7 +578,7 @@
     {
       "id": 6,
       "type": "table",
-      "title": "\ud83d\udce1 Sensor Health",
+      "title": "📡 Sensor Health",
       "gridPos": {
         "x": 0,
         "y": 32,
