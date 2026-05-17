@@ -50,6 +50,54 @@
   },
   "panels": [
     {
+      "id": 999,
+      "type": "stat",
+      "title": "Last Updated",
+      "gridPos": {
+        "x": 20,
+        "y": 0,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\" or r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> last()\n  |> keep(columns: [\"_time\"])\n  |> limit(n: 1)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "value",
+        "textMode": "value",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "dateTimeFromNow",
+          "displayName": "Data Last Received"
+        }
+      }
+    },
+    {
       "id": 1,
       "type": "stat",
       "title": "Current Moisture Level",

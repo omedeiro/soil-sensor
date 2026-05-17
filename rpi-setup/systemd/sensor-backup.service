@@ -4,8 +4,8 @@ Documentation=https://github.com/soil-sensor
 
 [Service]
 Type=oneshot
-User=pi
-Group=pi
+User=root
+Group=root
 ExecStart=/usr/local/bin/sensor-backup.sh
 StandardOutput=append:/mnt/sensor-data/logs/backup.log
 StandardError=append:/mnt/sensor-data/logs/backup.log
