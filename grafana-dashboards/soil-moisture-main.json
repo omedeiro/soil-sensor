@@ -96,7 +96,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_time: r._time, _value: uint(v: r._time) / uint(v: 1000000)}))",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_value: int(v: r._time) / int(v: 1000000000)}))",
           "refId": "A"
         }
       ],
@@ -106,7 +106,6 @@
         "textMode": "value",
         "reduceOptions": {
           "values": false,
-          "fields": "/_value/",
           "calcs": [
             "lastNotNull"
           ]
@@ -189,7 +188,7 @@
     {
       "id": 2,
       "type": "gauge",
-      "title": "$sensor - Moisture",
+      "title": "Moisture",
       "gridPos": {
         "x": 0,
         "y": 3,
@@ -253,6 +252,10 @@
                   "mode": "fixed",
                   "fixedColor": "#73BF69"
                 }
+              },
+              {
+                "id": "displayName",
+                "value": "Sensor 1 (Bed Room)"
               }
             ]
           },
@@ -268,6 +271,10 @@
                   "mode": "fixed",
                   "fixedColor": "#F2CC0C"
                 }
+              },
+              {
+                "id": "displayName",
+                "value": "Sensor 2 (Living Room)"
               }
             ]
           },
@@ -283,6 +290,10 @@
                   "mode": "fixed",
                   "fixedColor": "#5794F2"
                 }
+              },
+              {
+                "id": "displayName",
+                "value": "Sensor 3 (Guest Room)"
               }
             ]
           },
@@ -298,6 +309,10 @@
                   "mode": "fixed",
                   "fixedColor": "#FF6B6B"
                 }
+              },
+              {
+                "id": "displayName",
+                "value": "Sensor 4 (Guest Room)"
               }
             ]
           }
@@ -319,7 +334,7 @@
     {
       "id": 3,
       "type": "timeseries",
-      "title": "Moisture Trends - All Sensors",
+      "title": "Moisture Trends",
       "gridPos": {
         "x": 0,
         "y": 11,
