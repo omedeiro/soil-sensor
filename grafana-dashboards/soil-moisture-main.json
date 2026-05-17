@@ -291,7 +291,7 @@
     {
       "id": 3,
       "type": "timeseries",
-      "title": "Moisture Trends - All Sensors (24h)",
+      "title": "Moisture Trends - All Sensors",
       "gridPos": {
         "x": 0,
         "y": 11,
@@ -304,7 +304,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r.device_id =~ /^${sensor}$/)\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
           "refId": "A"
         }
       ],
@@ -381,20 +381,8 @@
         "overrides": [
           {
             "matcher": {
-              "id": "byFrameRefID",
-              "options": "A"
-            },
-            "properties": [
-              {
-                "id": "displayNameFromDS",
-                "value": "Sensor 1"
-              }
-            ]
-          },
-          {
-            "matcher": {
               "id": "byRegexp",
-              "options": ".*device_id=sensor-1.*"
+              "options": ".*sensor-1.*"
             },
             "properties": [
               {
@@ -406,26 +394,14 @@
               },
               {
                 "id": "displayName",
-                "value": "Sensor 1"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byFrameRefID",
-              "options": "A"
-            },
-            "properties": [
-              {
-                "id": "displayNameFromDS",
-                "value": "Sensor 2"
+                "value": "Sensor 1 (Bed Room)"
               }
             ]
           },
           {
             "matcher": {
               "id": "byRegexp",
-              "options": ".*device_id=sensor-2.*"
+              "options": ".*sensor-2.*"
             },
             "properties": [
               {
@@ -437,26 +413,14 @@
               },
               {
                 "id": "displayName",
-                "value": "Sensor 2"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byFrameRefID",
-              "options": "A"
-            },
-            "properties": [
-              {
-                "id": "displayNameFromDS",
-                "value": "Sensor 3"
+                "value": "Sensor 2 (Living Room)"
               }
             ]
           },
           {
             "matcher": {
               "id": "byRegexp",
-              "options": ".*device_id=sensor-3.*"
+              "options": ".*sensor-3.*"
             },
             "properties": [
               {
@@ -468,26 +432,14 @@
               },
               {
                 "id": "displayName",
-                "value": "Sensor 3"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byFrameRefID",
-              "options": "A"
-            },
-            "properties": [
-              {
-                "id": "displayNameFromDS",
-                "value": "Sensor 4"
+                "value": "Sensor 3 (Guest Room)"
               }
             ]
           },
           {
             "matcher": {
               "id": "byRegexp",
-              "options": ".*device_id=sensor-4.*"
+              "options": ".*sensor-4.*"
             },
             "properties": [
               {
@@ -499,7 +451,7 @@
               },
               {
                 "id": "displayName",
-                "value": "Sensor 4"
+                "value": "Sensor 4 (Guest Room)"
               }
             ]
           }

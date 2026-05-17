@@ -1,7 +1,7 @@
 {
   "id": null,
   "uid": "sensor-details-v2",
-  "title": "\ud83d\udcca Sensor Details - ${sensor} (${__field.labels.location})",
+  "title": "\ud83d\udcca Sensor Details & Diagnostics",
   "description": "Deep dive into individual sensor metrics, WiFi performance, and diagnostic history",
   "tags": [
     "sensors",
@@ -394,76 +394,57 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": ".*"
+              "options": ".*bed-room.*"
             },
             "properties": [
+              {
+                "id": "displayName",
+                "value": "Bed Room"
+              },
               {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#73BF69"
                 }
-              },
-              {
-                "id": "displayName",
-                "value": "${__field.labels.location}"
               }
             ]
           },
           {
             "matcher": {
               "id": "byRegexp",
-              "options": ".*"
+              "options": ".*living-room.*"
             },
             "properties": [
+              {
+                "id": "displayName",
+                "value": "Living Room"
+              },
               {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#F2CC0C"
                 }
-              },
-              {
-                "id": "displayName",
-                "value": "${__field.labels.location}"
               }
             ]
           },
           {
             "matcher": {
               "id": "byRegexp",
-              "options": ".*"
+              "options": ".*guest-room.*"
             },
             "properties": [
+              {
+                "id": "displayName",
+                "value": "Guest Room"
+              },
               {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#5794F2"
                 }
-              },
-              {
-                "id": "displayName",
-                "value": "${__field.labels.location}"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#FF6B6B"
-                }
-              },
-              {
-                "id": "displayName",
-                "value": "${__field.labels.location}"
               }
             ]
           }
@@ -552,12 +533,36 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": ".*"
+              "options": ".*bed-room.*"
             },
             "properties": [
               {
                 "id": "displayName",
-                "value": "${__field.labels.location}"
+                "value": "Bed Room"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*living-room.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Living Room"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*guest-room.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Guest Room"
               }
             ]
           }

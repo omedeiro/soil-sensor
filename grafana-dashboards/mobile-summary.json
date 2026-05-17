@@ -494,7 +494,85 @@
           "color": {
             "mode": "palette-classic"
           }
-        }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-1.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 1 (Bed Room)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-2.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 2 (Living Room)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2CC0C"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-3.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 3 (Guest Room)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-4.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 4 (Guest Room)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF6B6B"
+                }
+              }
+            ]
+          }
+        ]
       }
     },
     {
