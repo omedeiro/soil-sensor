@@ -29,6 +29,14 @@
 #include "reading_queue.h"
 #endif
 
+#if ENABLE_DIAGNOSTICS
+#include "diagnostics.h"
+#endif
+
+#if ENABLE_HEARTBEAT
+#include "heartbeat.h"
+#endif
+
 // ─── Global objects ──────────────────────────────────────────────────────────
 SoilSensor          sensor;
 WifiConnection      wifi;
@@ -43,10 +51,19 @@ ReadingQueue    readingQueue;
 String          deviceId;
 #endif
 
+#if ENABLE_DIAGNOSTICS
+DiagnosticsManager diagnostics;
+#endif
+
+#if ENABLE_HEARTBEAT
+HeartbeatManager heartbeat;
+#endif
+
 unsigned long lastReadTime = 0;
 unsigned long bootTime = 0;
 unsigned long lastCrashTime = 0;
 unsigned long lastDiagnosticsTime = 0;
+unsigned long lastHeapCheck = 0;
 uint32_t      crashCount = 0;
 uint32_t      totalReadings = 0;
 
@@ -90,15 +107,23 @@ void checkForCrash() {
     // 5 = wake from deep sleep
     // 6 = external reset
     
+    bool isCrash = false;
     if (resetInfo->reason == REASON_WDT_RST ||
         resetInfo->reason == REASON_EXCEPTION_RST ||
         resetInfo->reason == REASON_SOFT_WDT_RST) {
+        isCrash = true;
         crashCount++;
         Serial.printf("⚠️  CRASH DETECTED! Count: %u\n", crashCount);
         Serial.println(F("  This may indicate:"));
         Serial.println(F("    - Blocking code preventing watchdog feed"));
         Serial.println(F("    - Memory corruption"));
         Serial.println(F("    - Power supply issues"));
+        
+        #if ENABLE_DIAGNOSTICS
+        // Log crash to diagnostics system (will be sent after WiFi connects)
+        String resetReasonStr = ESP.getResetReason();
+        // Note: diagnostics.logCrashDetected() will be called after WiFi connects
+        #endif
     } else {
         Serial.println(F("✅ Clean boot"));
     }
@@ -123,7 +148,7 @@ void setup() {
     Serial.println();
     Serial.println(F("═══════════════════════════════════════"));
     Serial.println(F("  🌱  Soil Moisture Monitoring System"));
-    Serial.println(F("     InfluxDB + WiFi Stability v2.0"));
+    Serial.println(F("     InfluxDB + WiFi Stability v2.1"));
     Serial.print(F("  Device: "));
     Serial.print(F(DEVICE_ID));
     Serial.print(F("  ("));
@@ -135,7 +160,17 @@ void setup() {
     
     bootTime = millis();
     
+    // Enable hardware watchdog
+    #if ENABLE_HARDWARE_WATCHDOG
+    ESP.wdtEnable(WDTO_8S);
+    Serial.printf("[Watchdog] Hardware watchdog enabled (%d seconds)\n", WATCHDOG_TIMEOUT_SEC);
+    #endif
+    
     // Check for crashes
+    rst_info* resetInfo = ESP.getResetInfoPtr();
+    bool wasCrash = (resetInfo->reason == REASON_WDT_RST ||
+                     resetInfo->reason == REASON_EXCEPTION_RST ||
+                     resetInfo->reason == REASON_SOFT_WDT_RST);
     checkForCrash();
 
     // 1. Sensor
@@ -163,6 +198,21 @@ void setup() {
         Serial.printf("[DB] InfluxDB URL: %s\n", DB_SERVER_URL);
         Serial.printf("[DB] Organization: %s\n", INFLUX_ORG);
         Serial.printf("[DB] Bucket: %s\n", INFLUX_BUCKET);
+        
+        #if ENABLE_DIAGNOSTICS
+        // Initialize diagnostics system
+        diagnostics.begin(deviceId);
+        
+        // Log crash if detected
+        if (wasCrash) {
+            diagnostics.logCrashDetected(resetInfo->reason, ESP.getResetReason());
+        }
+        #endif
+        
+        #if ENABLE_HEARTBEAT
+        // Initialize heartbeat system
+        heartbeat.begin(deviceId, HEARTBEAT_INTERVAL_MS);
+        #endif
     }
 #endif
 
@@ -241,12 +291,22 @@ void setup() {
     
     lastReadTime = millis();
     
+    #if ENABLE_DIAGNOSTICS
+    // Log boot complete event
+    if (wifi.isConnected()) {
+        diagnostics.logBootComplete(millis() - bootTime);
+    }
+    #endif
+    
     Serial.println(F("═══════════════════════════════════════"));
     Serial.printf("Setup complete. Uptime: %lu s\n", (millis() - bootTime) / 1000);
     Serial.printf("Reading interval: %u min\n", (unsigned)(READ_INTERVAL_MS / 60000));
     Serial.printf("Remote DB: %s\n", USE_REMOTE_DB ? "enabled" : "disabled");
     Serial.printf("WiFi Diagnostics: %s\n", ENABLE_WIFI_DIAGNOSTICS ? "enabled" : "disabled");
     Serial.printf("Reading Queue: %s (%d max)\n", QUEUE_FAILED_READINGS ? "enabled" : "disabled", MAX_QUEUE_SIZE);
+    Serial.printf("Diagnostics: %s\n", ENABLE_DIAGNOSTICS ? "enabled" : "disabled");
+    Serial.printf("Heartbeat: %s (%lu s interval)\n", ENABLE_HEARTBEAT ? "enabled" : "disabled", HEARTBEAT_INTERVAL_MS / 1000);
+    Serial.printf("Hardware Watchdog: %s\n", ENABLE_HARDWARE_WATCHDOG ? "enabled" : "disabled");
     Serial.printf("Free heap: %u bytes\n", ESP.getFreeHeap());
     Serial.println(F("═══════════════════════════════════════"));
 }
@@ -254,6 +314,10 @@ void setup() {
 // ─── loop() ──────────────────────────────────────────────────────────────────
 void loop() {
     yield();  // Feed watchdog at start of loop
+    
+    #if ENABLE_HARDWARE_WATCHDOG
+    ESP.wdtFeed();  // Explicitly feed hardware watchdog
+    #endif
     
     // Handle OTA updates
     ArduinoOTA.handle();
@@ -268,6 +332,23 @@ void loop() {
     // WiFi stability monitoring and reconnection
     wifiStability.loop();
     yield();
+    
+    #if ENABLE_HEARTBEAT
+    // Send heartbeat
+    heartbeat.loop();
+    yield();
+    #endif
+    
+    #if ENABLE_DIAGNOSTICS
+    // Check for low heap condition
+    if (millis() - lastHeapCheck > 60000) {  // Check every minute
+        int freeHeap = ESP.getFreeHeap();
+        if (freeHeap < HEAP_LOW_THRESHOLD) {
+            diagnostics.logHeapLowWarning(freeHeap, HEAP_LOW_THRESHOLD);
+        }
+        lastHeapCheck = millis();
+    }
+    #endif
     
 #if ENABLE_WIFI_DIAGNOSTICS
     logWiFiDiagnostics();
@@ -333,6 +414,11 @@ void loop() {
                     Serial.printf("[Queue] Reading queued (%u in queue)\n", readingQueue.count());
                 } else {
                     Serial.println(F("[Queue] ✗ Queue full - reading LOST!"));
+                    
+                    #if ENABLE_DIAGNOSTICS
+                    // Log queue overflow event
+                    diagnostics.logQueueOverflow(readingQueue.count());
+                    #endif
                 }
             }
         }

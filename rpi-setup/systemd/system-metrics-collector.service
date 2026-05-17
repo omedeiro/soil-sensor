@@ -1,0 +1,21 @@
+[Unit]
+Description=System Metrics Collector for Soil Sensor
+Documentation=https://github.com/soil-sensor
+After=network.target influxdb.service
+
+[Service]
+Type=oneshot
+User=pi
+Group=pi
+ExecStart=/usr/bin/python3 /usr/local/bin/system-metrics-collector.py
+StandardOutput=append:/mnt/sensor-data/logs/metrics-collector.log
+StandardError=append:/mnt/sensor-data/logs/metrics-collector.log
+
+# Environment variables (set via /etc/environment or override file)
+Environment="INFLUX_URL=http://localhost:8086"
+Environment="INFLUX_ORG=soil-monitoring"
+Environment="INFLUX_BUCKET=sensor-readings"
+# INFLUX_TOKEN should be set in /etc/environment or systemd override
+
+[Install]
+WantedBy=multi-user.target

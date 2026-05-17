@@ -62,9 +62,7 @@ soil-sensor/
 │   ├── SCHEMATIC.md
 │   └── schematic.json
 └── docs/
-    ├── RPI_SETUP.md
-    ├── MULTI_SENSOR_GUIDE.md
-    └── WIFI_IMPROVEMENTS.md
+    └── README.md                 # WiFi stability, Grafana Cloud setup, InfluxDB notes
 ```
 
 ---
@@ -242,7 +240,7 @@ To share a **read-only, login-free** view from anywhere:
 3. Set expiry (or "Never") → **Publish to snapshot.raintank.io**
 4. Copy the public URL — anyone with the link can view it, no login required
 
-> For a **live** public dashboard, use Grafana Cloud's free tier or a Cloudflare Tunnel reverse proxy.
+> For a **live** public dashboard, see the [Grafana Cloud setup](docs/README.md#grafana-cloud-public-access) in `docs/README.md`.
 
 ---
 

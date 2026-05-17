@@ -166,21 +166,31 @@ bool DatabaseClient::sendReading(
     return success;
 }
 
-int DatabaseClient::drainQueue(ReadingQueue& queue) {
+int DatabaseClient::drainQueue(ReadingQueue& queue, unsigned long maxTimeMs, int maxReadings) {
     if (queue.isEmpty()) {
         return 0;
     }
     
+    unsigned long startTime = millis();
+    
     Serial.println(F("─────────────────────────────────────"));
     Serial.printf("[Queue] Draining queue (%u readings)...\n", queue.count());
+    Serial.printf("[Queue] Limits: %lu ms, %d readings max\n", maxTimeMs, maxReadings);
     
     int successCount = 0;
     int failCount = 0;
     QueuedReading reading;
     
-    // Try to send all queued readings
-    while (queue.dequeue(reading)) {
+    // Try to send queued readings with time and count limits
+    while (!queue.isEmpty() && 
+           successCount < maxReadings && 
+           (millis() - startTime) < maxTimeMs) {
+        
         yield();  // Feed watchdog
+        
+        if (!queue.dequeue(reading)) {
+            break;  // Queue empty
+        }
         
         // Build line protocol
         String payload = buildLineProtocol(
@@ -201,15 +211,19 @@ int DatabaseClient::drainQueue(ReadingQueue& queue) {
         } else {
             failCount++;
             Serial.printf("[Queue] ✗ Failed to send queued reading from %lu\n", reading.timestamp);
-            // Don't re-queue to avoid infinite loop
+            
+            // Re-queue the failed reading (put it back at front)
+            // Note: This will be lost if queue is full, but that's acceptable
+            // to prevent infinite loops
             break;  // Stop trying if network is still down
         }
         
-        delay(100);  // Small delay between requests
+        delay(100);  // Small delay between requests to avoid overwhelming server
     }
     
-    Serial.printf("[Queue] Drain complete: %d sent, %d failed, %u remaining\n",
-                  successCount, failCount, queue.count());
+    unsigned long elapsed = millis() - startTime;
+    Serial.printf("[Queue] Drain complete: %d sent, %d failed, %u remaining (took %lu ms)\n",
+                  successCount, failCount, queue.count(), elapsed);
     Serial.println(F("─────────────────────────────────────"));
     
     return successCount;

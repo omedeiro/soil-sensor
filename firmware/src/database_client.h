@@ -43,11 +43,13 @@ public:
     );
     
     /**
-     * Attempt to drain the reading queue
+     * Attempt to drain the reading queue (non-blocking with time limit)
      * @param queue The queue to drain
+     * @param maxTimeMs Maximum time to spend draining (default: MAX_DRAIN_TIME_MS)
+     * @param maxReadings Maximum readings to drain in this call (default: MAX_DRAIN_PER_LOOP)
      * @return Number of readings successfully sent
      */
-    int drainQueue(ReadingQueue& queue);
+    int drainQueue(ReadingQueue& queue, unsigned long maxTimeMs = MAX_DRAIN_TIME_MS, int maxReadings = MAX_DRAIN_PER_LOOP);
     
     /**
      * Get the device ID (either auto-generated from MAC or custom)

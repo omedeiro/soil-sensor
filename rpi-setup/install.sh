@@ -135,6 +135,7 @@ mount | grep sensor-data
 # Create directory structure
 log_info "Creating directory structure..."
 mkdir -p /mnt/sensor-data/{influxdb,grafana,backups,logs,docs}
+mkdir -p /mnt/sensor-data/grafana/{dashboards,provisioning}
 # influxdb dir will be chowned to influxdb user after install; set rest to sudoer
 chown -R "${SUDO_USER:-omedeiro}:${SUDO_USER:-omedeiro}" /mnt/sensor-data
 
@@ -273,6 +274,19 @@ sed -i "s|^;logs = .*|logs = /mnt/sensor-data/logs/grafana|" /etc/grafana/grafan
 sed -i "s|^;plugins = .*|plugins = /mnt/sensor-data/grafana/plugins|" /etc/grafana/grafana.ini
 sed -i "s|^;http_addr = .*|http_addr = 0.0.0.0|" /etc/grafana/grafana.ini
 
+# Configure provisioning paths
+sed -i "s|^;provisioning = .*|provisioning = /mnt/sensor-data/grafana/provisioning|" /etc/grafana/grafana.ini
+
+# Copy provisioning configuration
+log_info "Setting up Grafana provisioning..."
+cp -r grafana-provisioning/* /mnt/sensor-data/grafana/provisioning/
+chown -R grafana:grafana /mnt/sensor-data/grafana/provisioning
+
+# Copy dashboard JSON files
+log_info "Installing Grafana dashboards..."
+cp ../grafana-dashboards/*.json /mnt/sensor-data/grafana/dashboards/
+chown -R grafana:grafana /mnt/sensor-data/grafana/dashboards
+
 systemctl enable grafana-server
 systemctl start grafana-server
 
@@ -301,6 +315,22 @@ systemctl daemon-reload
 systemctl enable sensor-health-monitor
 systemctl start sensor-health-monitor
 
+# Install system metrics collector
+log_info "Installing system metrics collector..."
+cp scripts/system-metrics-collector.py /usr/local/bin/
+chmod +x /usr/local/bin/system-metrics-collector.py
+cp systemd/system-metrics-collector.service /etc/systemd/system/
+cp systemd/system-metrics-collector.timer /etc/systemd/system/
+
+# Prompt for InfluxDB token (will be configured after InfluxDB setup)
+log_warn "System metrics collector requires InfluxDB token"
+log_warn "After setting up InfluxDB, add INFLUX_TOKEN to /etc/environment:"
+log_warn "  echo 'INFLUX_TOKEN=your_token_here' | sudo tee -a /etc/environment"
+
+systemctl daemon-reload
+systemctl enable system-metrics-collector.timer
+log_info "System metrics collector timer enabled (starts after InfluxDB token configured)"
+
 # ─── Step 7: Install Backup System ──────────────────────────────────────────
 
 log_section "Step 7/8: Installing Backup System"
@@ -327,7 +357,7 @@ timedatectl set-timezone America/New_York
 
 # Install Python dependencies for scripts
 log_info "Installing Python dependencies..."
-pip3 install requests influxdb-client --break-system-packages
+pip3 install requests influxdb-client psutil --break-system-packages
 
 # Copy documentation
 log_info "Copying documentation..."
@@ -364,13 +394,20 @@ cat > /mnt/sensor-data/QUICK_REFERENCE.txt <<'EOF'
 │    - Create org: soil-monitoring                              │
 │    - Create bucket: sensor-readings (365d retention)          │
 │    - Generate ESP8266 write token                             │
+│    - Generate Grafana read token                              │
 │                                                                │
-│ 2. Open Grafana:   http://STATIC_IP_PLACEHOLDER:3000          │
+│ 2. Configure System Metrics:                                  │
+│    - Add InfluxDB token to environment:                       │
+│      echo 'INFLUX_TOKEN=your_token' | sudo tee -a /etc/env... │
+│    - Start metrics collector:                                 │
+│      sudo systemctl start system-metrics-collector.timer      │
+│                                                                │
+│ 3. Open Grafana:   http://STATIC_IP_PLACEHOLDER:3000          │
 │    - Login with admin/admin                                   │
-│    - Add InfluxDB data source                                 │
-│    - Import dashboards from /mnt/sensor-data/docs/            │
+│    - Dashboards auto-loaded via provisioning!                 │
+│    - Configure Slack notifications (optional)                 │
 │                                                                │
-│ 3. Configure ESP8266:                                         │
+│ 4. Configure ESP8266:                                         │
 │    - Update firmware/src/config.h with InfluxDB details       │
 │    - Upload firmware                                           │
 │    - Monitor serial output                                     │
@@ -385,10 +422,11 @@ log_section "Installation Complete! 🎉"
 
 echo ""
 echo "System Status:"
-echo "  InfluxDB:       $(systemctl is-active influxdb)"
-echo "  Grafana:        $(systemctl is-active grafana-server)"
-echo "  Health Monitor: $(systemctl is-active sensor-health-monitor)"
-echo "  Backup Timer:   $(systemctl is-active sensor-backup.timer)"
+echo "  InfluxDB:         $(systemctl is-active influxdb)"
+echo "  Grafana:          $(systemctl is-active grafana-server)"
+echo "  Health Monitor:   $(systemctl is-active sensor-health-monitor)"
+echo "  Metrics Collector: $(systemctl is-active system-metrics-collector.timer)"
+echo "  Backup Timer:     $(systemctl is-active sensor-backup.timer)"
 echo ""
 echo "Access URLs:"
 echo "  InfluxDB:  http://$STATIC_IP:8086"
@@ -399,13 +437,18 @@ echo "  1. Complete InfluxDB setup at http://$STATIC_IP:8086"
 echo "     - Create organization: soil-monitoring"
 echo "     - Create bucket: sensor-readings (365 day retention)"
 echo "     - Generate API tokens for ESP8266 and Grafana"
+echo "     - Generate token for system metrics collector"
 echo ""
-echo "  2. Configure Grafana at http://$STATIC_IP:3000"
+echo "  2. Configure system metrics collector:"
+echo "     echo 'INFLUX_TOKEN=your_token_here' | sudo tee -a /etc/environment"
+echo "     sudo systemctl start system-metrics-collector.timer"
+echo ""
+echo "  3. Configure Grafana at http://$STATIC_IP:3000"
 echo "     - Login: admin / admin (change password!)"
-echo "     - Add InfluxDB data source"
-echo "     - Import dashboards"
+echo "     - Dashboards are auto-loaded via provisioning!"
+echo "     - Configure Slack notifications (optional, see slack.yml.template)"
 echo ""
-echo "  3. Update ESP8266 firmware with InfluxDB settings"
+echo "  4. Update ESP8266 firmware with InfluxDB settings"
 echo ""
 echo "Documentation: /mnt/sensor-data/docs/"
 echo "Quick Reference: /mnt/sensor-data/QUICK_REFERENCE.txt"

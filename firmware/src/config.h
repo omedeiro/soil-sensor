@@ -7,7 +7,7 @@
 #define CONFIG_H
 
 // ─── Version ─────────────────────────────────────────────────────────────────
-#define FIRMWARE_VERSION    "1.0.0"
+#define FIRMWARE_VERSION    "2.1.0"
 #define BUILD_DATE          __DATE__
 #define BUILD_TIME          __TIME__
 
@@ -53,13 +53,24 @@
 // Option 1: Auto-generate from MAC address (e.g., "esp8266-40915141d997")
 // Option 2: Set DEVICE_ID_AUTO=false and provide custom ID below
 #define DEVICE_ID_AUTO      false
-#define DEVICE_ID           "sensor-4"          // Change for each sensor: sensor-1, sensor-2, etc.
-#define DEVICE_LOCATION     "guest-room"        // Optional location tag for Grafana filtering
+#define DEVICE_ID           "sensor-1"          // Change for each sensor: sensor-1, sensor-2, etc.
+#define DEVICE_LOCATION     "bed-room"          // Optional location tag for Grafana filtering
 
 // ─── WiFi Stability & Queue ──────────────────────────────────────────────────
 #define ENABLE_WIFI_DIAGNOSTICS  true   // Enable detailed WiFi logging
 #define QUEUE_FAILED_READINGS    true   // Queue readings when network is down
 #define MAX_QUEUE_SIZE           20     // Maximum queued readings
+
+// ─── Diagnostics & Reliability ───────────────────────────────────────────────
+#define ENABLE_DIAGNOSTICS        true    // Send diagnostic events to InfluxDB
+#define ENABLE_HEARTBEAT          true    // Send periodic heartbeat messages
+#define HEARTBEAT_INTERVAL_MS     60000   // Heartbeat interval (1 minute)
+#define ENABLE_HARDWARE_WATCHDOG  true    // Auto-reset if firmware hangs
+#define WATCHDOG_TIMEOUT_SEC      8       // Hardware watchdog timeout
+#define MAX_DRAIN_TIME_MS         10000   // Max time for queue drain per loop
+#define MAX_DRAIN_PER_LOOP        5       // Max readings to drain per loop
+#define DIAGNOSTIC_QUEUE_SIZE     10      // Max queued diagnostic events
+#define HEAP_LOW_THRESHOLD        10240   // Free heap warning threshold (bytes)
 
 // ─── HTTP Server ─────────────────────────────────────────────────────────────
 #define HTTP_PORT           80

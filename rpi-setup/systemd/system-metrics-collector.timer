@@ -1,0 +1,12 @@
+[Unit]
+Description=System Metrics Collection Timer
+Documentation=https://github.com/soil-sensor
+Requires=system-metrics-collector.service
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=60s
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target
