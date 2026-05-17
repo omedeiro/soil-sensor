@@ -39,7 +39,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> sort(columns: [\"_time\"], desc: true)\n  |> limit(n: 1)",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_time: r._time, _value: uint(v: r._time)}))",
           "refId": "A"
         }
       ],
@@ -49,6 +49,7 @@
         "textMode": "value",
         "reduceOptions": {
           "values": false,
+          "fields": "/_value/",
           "calcs": [
             "lastNotNull"
           ]
@@ -67,7 +68,8 @@
             ]
           },
           "unit": "dateTimeFromNow",
-          "displayName": "Data Last Received"
+          "displayName": "Data Last Received",
+          "decimals": 0
         }
       }
     },

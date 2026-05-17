@@ -28,7 +28,7 @@
         "name": "sensor",
         "label": "Sensor",
         "type": "query",
-        "description": "Select sensor to view",
+        "description": "Select sensor to view (sensor-1 = Bed Room, sensor-2 = Living Room, sensor-3/4 = Guest Room)",
         "datasource": {
           "type": "influxdb",
           "uid": "cflk0i2e2nwu8d"
@@ -37,7 +37,7 @@
           "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -7d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> keep(columns: [\"device_id\"])\n  |> distinct(column: \"device_id\")\n  |> sort()",
           "language": "flux"
         },
-        "refresh": 2,
+        "refresh": 0,
         "regex": "",
         "includeAll": true,
         "multi": false,
@@ -47,7 +47,33 @@
           "text": "All",
           "value": "$__all"
         },
-        "options": [],
+        "options": [
+          {
+            "text": "All",
+            "value": "$__all",
+            "selected": true
+          },
+          {
+            "text": "Sensor 1 (Bed Room)",
+            "value": "sensor-1",
+            "selected": false
+          },
+          {
+            "text": "Sensor 2 (Living Room)",
+            "value": "sensor-2",
+            "selected": false
+          },
+          {
+            "text": "Sensor 3 (Guest Room)",
+            "value": "sensor-3",
+            "selected": false
+          },
+          {
+            "text": "Sensor 4 (Guest Room)",
+            "value": "sensor-4",
+            "selected": false
+          }
+        ],
         "skipUrlSync": false,
         "sort": 1
       }
@@ -70,7 +96,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> sort(columns: [\"_time\"], desc: true)\n  |> limit(n: 1)",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_time: r._time, _value: uint(v: r._time)}))",
           "refId": "A"
         }
       ],
@@ -80,6 +106,7 @@
         "textMode": "value",
         "reduceOptions": {
           "values": false,
+          "fields": "/_value/",
           "calcs": [
             "lastNotNull"
           ]
@@ -98,6 +125,7 @@
             ]
           },
           "unit": "dateTimeFromNow",
+          "decimals": 0,
           "displayName": "Data Last Received"
         }
       }
