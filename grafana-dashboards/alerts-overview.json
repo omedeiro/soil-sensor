@@ -219,7 +219,7 @@
       },
       "targets": [
         {
-          "query": "// Get all known sensors from last 24h\nallSensors = from(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> distinct(column: \"device_id\")\n  |> count()\n\n// Get sensors active in last 10 min\nactiveSensors = from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> distinct(column: \"device_id\")\n  |> count()\n\n// This is a simplified version - in practice you'd use join and map\nactiveSensors\n  |> yield(name: \"active\")",
+          "query": "// Count sensors that haven't sent heartbeat in last 10 minutes\n// Expected sensors = 4 (excluding backyard)\nexpectedSensors = 4\n\nactiveSensors = from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> keep(columns: [\"device_id\"])\n  |> distinct(column: \"device_id\")\n  |> count()\n  |> findRecord(fn: (key) => true, idx: 0)\n\n// Return count of offline sensors\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -1m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> limit(n: 1)\n  |> map(fn: (r) => ({\n      _time: now(),\n      _value: expectedSensors - activeSensors._value,\n      _field: \"offline_count\"\n  }))",
           "refId": "A"
         }
       ],
@@ -285,7 +285,7 @@
       },
       "targets": [
         {
-          "query": "// Health score based on: sensors online, low error rate, Pi resources OK\n// For now, show percentage of sensors online\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> count()\n  |> group()\n  |> count()\n  |> map(fn: (r) => ({r with _value: float(v: r._value) * 33.0}))",
+          "query": "// Health score: (sensors online / 4 expected) * 100%\nactiveSensors = from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> keep(columns: [\"device_id\"])\n  |> distinct(column: \"device_id\")\n  |> count()\n\nactiveSensors\n  |> map(fn: (r) => ({\n      _time: now(),\n      _value: float(v: r._value) / 4.0 * 100.0,\n      _field: \"health_score\"\n  }))",
           "refId": "A"
         }
       ],
@@ -304,19 +304,23 @@
         "defaults": {
           "mappings": [],
           "thresholds": {
-            "mode": "percentage",
+            "mode": "absolute",
             "steps": [
               {
                 "color": "red",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "orange",
                 "value": 50
               },
               {
+                "color": "yellow",
+                "value": 75
+              },
+              {
                 "color": "green",
-                "value": 80
+                "value": 100
               }
             ]
           },
