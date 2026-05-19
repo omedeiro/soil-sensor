@@ -19,7 +19,7 @@
   "fiscalYearStartMonth": 0,
   "liveNow": false,
   "schemaVersion": 38,
-  "version": 1,
+  "version": 2,
   "panels": [
     {
       "id": 999,
@@ -128,12 +128,69 @@
       }
     },
     {
+      "id": 998,
+      "type": "stat",
+      "title": "🖥️ Server Uptime",
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 24,
+        "h": 4
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"uptime_seconds\")\n  |> last()",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "value",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 3600
+              },
+              {
+                "color": "yellow",
+                "value": 86400
+              }
+            ]
+          },
+          "unit": "s",
+          "decimals": 0,
+          "displayName": "Raspberry Pi"
+        }
+      }
+    },
+    {
       "id": 2,
       "type": "table",
       "title": "💧 Current Moisture Levels",
       "gridPos": {
         "x": 0,
-        "y": 5,
+        "y": 9,
         "w": 24,
         "h": 12
       },
@@ -293,7 +350,7 @@
       "title": "⚠️ Alerts",
       "gridPos": {
         "x": 0,
-        "y": 17,
+        "y": 21,
         "w": 12,
         "h": 5
       },
@@ -360,7 +417,7 @@
       "title": "💧 Need Water",
       "gridPos": {
         "x": 12,
-        "y": 17,
+        "y": 21,
         "w": 12,
         "h": 5
       },
@@ -431,7 +488,7 @@
       "title": "📊 Moisture Trends",
       "gridPos": {
         "x": 0,
-        "y": 22,
+        "y": 26,
         "w": 24,
         "h": 10
       },
@@ -581,7 +638,7 @@
       "title": "📡 Sensor Health",
       "gridPos": {
         "x": 0,
-        "y": 32,
+        "y": 36,
         "w": 24,
         "h": 10
       },
