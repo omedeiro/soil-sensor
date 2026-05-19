@@ -1,8 +1,21 @@
-# 🌱 Soil Moisture Monitoring System — v2.2.0
+# 🌱 Soil Moisture Monitoring System — v2.3.0
 
 A production-grade, multi-sensor soil moisture monitoring system built with **ESP8266** microcontrollers, **InfluxDB**, and **Grafana**, hosted on a **Raspberry Pi 5**.
 
 Each sensor reads soil moisture every 5 minutes and posts data to a central time-series database. A live Grafana dashboard visualizes all sensors simultaneously.
+
+---
+
+## 📊 Live Dashboard Preview
+
+**Interactive Snapshots** (no login required):
+
+- [🌱 Soil Moisture Dashboard](http://192.168.99.134:3000/dashboard/snapshot/rNDWAtHiztcOZPsRSsmq01KOOMKprBke) — Main overview with all sensors and **Raspberry Pi uptime**
+- [🖥️ Raspberry Pi Health](http://192.168.99.134:3000/dashboard/snapshot/rKIaQQd6EGDlun3H76qPamegenl9FFQK) — System metrics, CPU, RAM, temperature
+
+**Full Dashboard Access:** http://192.168.99.134:3000 (live data, all 6 dashboards)
+
+> **Note:** Snapshots show data from 2026-05-18. For live data, access Grafana directly.
 
 ---
 
@@ -32,9 +45,10 @@ Each sensor reads soil moisture every 5 minutes and posts data to a central time
 - **NTP timestamps** — every reading is UTC-timestamped
 - **Boot diagnostics** — device ID, MAC address, crash reason printed on every boot
 
-### Raspberry Pi Server
+### Raspberry Pi Server (v2.3.0)
 - **InfluxDB 2.x backend** — time-series storage on USB drive, 365-day retention
-- **Grafana dashboards (6 total)** — soil moisture, sensor details, system health, alerts, mobile view, Pi health
+- **Grafana dashboards (6 total)** — soil moisture with **Pi uptime panel**, sensor details, system health, alerts, mobile view, Pi health
+- **Enhanced logging system** — boot tracking, filesystem corruption detection, Grafana failure logging, log rotation
 - **Anonymous access** — view-only Grafana dashboards without login (Viewer role)
 - **System metrics** — CPU, RAM, disk, temperature monitoring via Python collector (60s interval)
 - **Automated backups** — daily Pi backup via systemd timer
@@ -70,17 +84,26 @@ soil-sensor/
 │   └── README.md                 # Dashboard installation guide
 ├── rpi-setup/
 │   ├── install.sh                # Full Pi setup script
+│   ├── install-logging.sh        # Enhanced logging system installer (v2.3.0)
+│   ├── LOGGING_README.md         # Logging documentation (v2.3.0)
 │   ├── scripts/
 │   │   ├── sensor-backup.sh
-│   │   ├── sensor-health-monitor.sh
+│   │   ├── sensor-health-monitor.sh  # Enhanced with Grafana failure logging
+│   │   ├── startup-logger.sh     # Boot tracking (v2.3.0)
 │   │   └── system-metrics-collector.py  # CPU/RAM/disk monitoring
-│   └── systemd/                  # Service/timer unit files
+│   ├── systemd/
+│   │   ├── startup-logger.service    # Boot event logger (v2.3.0)
+│   │   └── [other service files]
+│   └── logrotate.d/
+│       └── soil-sensor           # Log rotation config (v2.3.0)
 ├── hardware/
 │   ├── BOM.md
 │   ├── SCHEMATIC.md
 │   └── schematic.json
 └── docs/
-    └── README.md                 # WiFi stability, Grafana Cloud setup, InfluxDB notes
+    ├── README.md                 # WiFi stability, Grafana Cloud setup, InfluxDB notes
+    ├── SNAPSHOTS.md              # Grafana snapshot URLs (v2.3.0)
+    └── create-snapshots.sh       # Snapshot creation script (v2.3.0)
 ```
 
 ---
