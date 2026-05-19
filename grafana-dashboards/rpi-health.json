@@ -193,7 +193,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"memory_percent\")\n  |> last()",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"ram_percent\")\n  |> last()",
           "refId": "A"
         }
       ],
@@ -309,7 +309,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"temperature\")\n  |> last()",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"cpu_temp\")\n  |> last()",
           "refId": "A"
         }
       ],
@@ -353,7 +353,7 @@
     {
       "id": 6,
       "type": "stat",
-      "title": "Total Sensor Readings (Last 24h)",
+      "title": "Total Sensor Readings",
       "gridPos": {
         "x": 6,
         "y": 4,
@@ -402,7 +402,7 @@
     {
       "id": 7,
       "type": "stat",
-      "title": "Heartbeats Received (Last 24h)",
+      "title": "Heartbeats Received",
       "gridPos": {
         "x": 12,
         "y": 4,
@@ -706,7 +706,7 @@
     {
       "id": 12,
       "type": "timeseries",
-      "title": "Data Ingestion Rate (Readings/Hour)",
+      "title": "Data Ingestion Rate",
       "gridPos": {
         "x": 12,
         "y": 16,

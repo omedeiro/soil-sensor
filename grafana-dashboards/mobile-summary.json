@@ -303,7 +303,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"severity\")\n  |> filter(fn: (r) => r._value == \"error\" or r._value == \"critical\")\n  |> count()",
+          "query": "// Count critical diagnostic events in last hour\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r.event_type == \"crash_detected\" or r.event_type == \"wifi_reconnect_failed\" or r.event_type == \"queue_overflow\" or r.event_type == \"heap_low_warning\" or r.event_type == \"influxdb_error\" or r.event_type == \"system_restart\")\n  |> group()\n  |> count()",
           "refId": "A"
         }
       ],
@@ -428,7 +428,7 @@
     {
       "id": 5,
       "type": "timeseries",
-      "title": "📊 Moisture Trends (6 Hours)",
+      "title": "📊 Moisture Trends",
       "gridPos": {
         "x": 0,
         "y": 22,

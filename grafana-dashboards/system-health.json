@@ -73,7 +73,7 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "Sensors Online (Last 5 min)",
+      "title": "Sensors Online",
       "gridPos": {
         "x": 0,
         "y": 0,
@@ -540,7 +540,7 @@
     {
       "id": 6,
       "type": "logs",
-      "title": "🚨 Diagnostic Events (Last 6 Hours)",
+      "title": "🚨 Diagnostic Events",
       "gridPos": {
         "x": 0,
         "y": 12,
@@ -553,7 +553,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"event_type\" or r._field == \"severity\" or r._field == \"message\" or r._field == \"detail\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> sort(columns: [\"_time\"], desc: true)\n  |> limit(n: 200)",
+          "query": "// Show diagnostic events with details (last 6h)\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"event_reason\" or r._field == \"free_heap\" or r._field == \"rssi\")\n  |> pivot(rowKey:[\"_time\", \"device_id\", \"event_type\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> sort(columns: [\"_time\"], desc: true)\n  |> limit(n: 200)",
           "refId": "A"
         }
       ],
@@ -578,7 +578,7 @@
     {
       "id": 7,
       "type": "timeseries",
-      "title": "Raspberry Pi System Metrics (6 Hours)",
+      "title": "Raspberry Pi System Metrics",
       "gridPos": {
         "x": 0,
         "y": 22,
@@ -651,7 +651,7 @@
     {
       "id": 8,
       "type": "timeseries",
-      "title": "ESP8266 Free Heap Memory (6 Hours)",
+      "title": "ESP8266 Free Heap Memory",
       "gridPos": {
         "x": 12,
         "y": 22,
@@ -809,7 +809,7 @@
     {
       "id": 9,
       "type": "barchart",
-      "title": "Diagnostic Events by Type (Last 24h)",
+      "title": "Diagnostic Events by Type",
       "gridPos": {
         "x": 0,
         "y": 30,
@@ -822,7 +822,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"event_type\")\n  |> group(columns: [\"_value\"])\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)",
+          "query": "// Count diagnostic events by type (last 24h)\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"event_count\")\n  |> group(columns: [\"event_type\"])\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)",
           "refId": "A"
         }
       ],
@@ -859,7 +859,7 @@
     {
       "id": 10,
       "type": "barchart",
-      "title": "Diagnostic Events by Severity (Last 24h)",
+      "title": "Diagnostic Events: Critical vs Info",
       "gridPos": {
         "x": 12,
         "y": 30,
@@ -872,7 +872,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"severity\")\n  |> group(columns: [\"_value\"])\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: false)",
+          "query": "// Categorize events as Critical or Info\nimport \"strings\"\n\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"event_count\")\n  |> map(fn: (r) => ({\n      r with\n      severity: if r.event_type == \"crash_detected\" or r.event_type == \"wifi_reconnect_failed\" or r.event_type == \"queue_overflow\" or r.event_type == \"heap_low_warning\" or r.event_type == \"influxdb_error\" or r.event_type == \"system_restart\" then \"Critical\" else \"Info\"\n  }))\n  |> group(columns: [\"severity\"])\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: false)",
           "refId": "A"
         }
       ],

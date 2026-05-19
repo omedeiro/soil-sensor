@@ -86,7 +86,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"severity\")\n  |> filter(fn: (r) => r._value == \"critical\" or r._value == \"error\")\n  |> group()\n  |> count()",
+          "query": "// Count critical diagnostic events in last 10 minutes\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r.event_type == \"crash_detected\" or r.event_type == \"wifi_reconnect_failed\" or r.event_type == \"queue_overflow\" or r.event_type == \"heap_low_warning\" or r.event_type == \"influxdb_error\" or r.event_type == \"system_restart\")\n  |> group()\n  |> count()",
           "refId": "A"
         }
       ],
@@ -672,7 +672,7 @@
     {
       "id": 7,
       "type": "table",
-      "title": "📡 Offline Sensors (No Heartbeat in 10 min)",
+      "title": "📡 Offline Sensors",
       "gridPos": {
         "x": 12,
         "y": 13,
@@ -807,7 +807,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"severity\")\n  |> aggregateWindow(every: 1h, fn: count, createEmpty: true)\n  |> fill(value: 0)",
+          "query": "// Count all diagnostic events over time (1h windows)\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"event_count\")\n  |> aggregateWindow(every: 1h, fn: count, createEmpty: true)\n  |> fill(value: 0)",
           "refId": "A"
         }
       ],

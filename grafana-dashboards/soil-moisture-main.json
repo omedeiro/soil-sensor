@@ -19,7 +19,7 @@
   "fiscalYearStartMonth": 0,
   "liveNow": false,
   "schemaVersion": 38,
-  "version": 1,
+  "version": 2,
   "templating": {
     "list": [
       {
@@ -78,6 +78,63 @@
     ]
   },
   "panels": [
+    {
+      "id": 998,
+      "type": "stat",
+      "title": "🖥️ Raspberry Pi Uptime",
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"uptime_seconds\")\n  |> last()",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "value",
+        "textMode": "value",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 3600
+              },
+              {
+                "color": "yellow",
+                "value": 86400
+              }
+            ]
+          },
+          "unit": "s",
+          "decimals": 0,
+          "displayName": "Server Uptime"
+        }
+      }
+    },
     {
       "id": 999,
       "type": "stat",

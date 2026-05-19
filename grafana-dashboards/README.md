@@ -1,114 +1,250 @@
 # Grafana Dashboards Guide
 
-This directory will contain Grafana dashboard configurations for the soil sensor monitoring system.
+6 production-ready dashboards for the Soil Moisture Monitoring System (v2.3.0).
 
-## Dashboard Export Instructions
-
-**To export dashboards from your Grafana instance:**
-
-1. Open Grafana web interface (default: `http://192.168.99.134:3000`)
-2. Navigate to the dashboard you want to export
-3. Click the **Share** icon (or dashboard settings)
-4. Go to the **Export** tab
-5. Click **Save to file**
-6. Save the JSON file to this directory
-
-**Recommended dashboards to create:**
-
-### 1. 🌱 Soil Moisture Dashboard
-
-**Purpose:** Track soil moisture levels across all sensors with easy-to-read visualizations focused on plant care.
-
-**Recommended panels:**
-- **Individual sensor gauges:** Current moisture percentage with color-coded thresholds
-  - Red (0-20%): Very dry - immediate watering needed
-  - Yellow (20-40%): Dry - watering recommended
-  - Green (40-80%): Optimal moisture range
-  - Blue (80-100%): Very wet - may indicate overwatering
-  
-- **Moisture statistics panel:** Current, average, min, and max moisture for selected time range
-
-- **Individual time series plots:** Each sensor gets its own graph showing moisture trends over time
-  - Use Grafana's repeat feature to automatically create a plot for each detected sensor
-  - Color-coded background based on moisture thresholds
-
-**Settings:**
-- Default time range: Last 24 hours
-- Auto-refresh: Every 5 minutes
-- Sensor filter: Variable dropdown to select specific sensor or view all
+All dashboards feature:
+- **High-contrast color scheme** per sensor (Green, Yellow, Blue, Red)
+- **Moisture gradients** — Dark to bright within each color family (0% → 100%)
+- **Dynamic labels** — "Sensor 1 (Bed Room)" format with dropdown selection
+- **Location filtering** — 'backyard' location filtered out
+- **Time-adaptive titles** — Adapt to selected time window (no hardcoded "24h")
+- **Auto-refresh** — 5-minute refresh, 10-second provisioning reload
+- **Raspberry Pi uptime** — System uptime displayed on main dashboard (v2.3.0)
 
 ---
 
-### 2. ⚙️ System Diagnostics Dashboard
+## Dashboard Suite
 
-**Purpose:** Monitor WiFi connectivity, system health, and diagnose technical issues with ESP8266 sensors.
+### 1. 🌱 Soil Moisture Main (`soil-moisture-main.json`)
+**Tags:** `overview`, `sensors`
 
-**Recommended panels:**
+**Purpose:** Main overview dashboard with all sensors, moisture gauges, and trend plots.
 
-#### Top Row - Current Status
-- **WiFi Signal Strength (RSSI):** Gauge showing current signal quality
-  - Excellent: -30 to -50 dBm
-  - Good: -50 to -60 dBm
-  - Fair: -60 to -70 dBm
-  - Weak: -70 to -80 dBm
-  - Very Weak: -80 to -90 dBm
+**Key Panels:**
+- **Raspberry Pi Uptime** — Server uptime in top status bar (v2.3.0)
+- **Moisture gauges** (4) — Current moisture % with color gradients per sensor
+- **Moisture trend plot** — Time series for all sensors (color-coded)
+- **Last updated** — Relative time since most recent reading
+- **System health score** — Percentage of sensors online
+- **Recent readings table** — Latest sensor data with WiFi signal
+- **Watering recommendations** — Sensors below moisture threshold
 
-- **System Uptime:** Time since last restart
-- **Free Heap Memory:** Available RAM on ESP8266 (healthy: >30KB)
-- **Crash Counter:** Number of crashes detected (should be 0)
-
-#### Time Series Graphs
-1. **WiFi Signal Over Time:** Track connection stability
-2. **Free Heap Memory Over Time:** Detect memory leaks
-3. **System Uptime Over Time:** See restart patterns
-4. **Raw ADC Values:** Raw sensor readings for calibration
-
-**Settings:**
-- Default time range: Last 24 hours
-- Auto-refresh: Every 1 minute
-- Device filter: Multi-select to view all or specific devices
+**Use case:** Daily monitoring, quick health check, identifying sensors needing attention.
 
 ---
 
-## Installation (when JSON files exist)
+### 2. 🔍 Sensor Details (`sensor-details.json`)
+**Tags:** `sensors`, `diagnostics`
 
-### Import to Grafana
+**Purpose:** Individual sensor deep-dive with uptime, heap, WiFi signal, and diagnostics.
 
-1. Open Grafana web interface (default: `http://192.168.99.134:3000`)
-2. Click **Dashboards** → **Import**
-3. Click **Upload JSON file**
-4. Select the dashboard file from this directory
-5. Select your InfluxDB datasource (should auto-detect)
-6. Click **Import**
+**Key Panels:**
+- **Sensor dropdown** — Select individual sensor for detailed view
+- **Moisture gauge** — Current moisture with sensor-specific color gradient
+- **WiFi RSSI gauge** — Signal strength (-30 dBm excellent → -90 dBm poor)
+- **Free heap gauge** — ESP8266 available RAM (healthy: >30KB)
+- **Uptime stat** — Seconds since last boot
+- **Moisture history** — Time series for selected sensor
+- **WiFi signal history** — RSSI over time
+- **Free heap history** — Memory usage over time
 
-### Update Existing Dashboard
-
-If you've already imported a dashboard and want to update it:
-
-1. The dashboards have `"overwrite": true` set in the JSON
-2. Simply re-import the file - it will update the existing dashboard
-3. Or manually copy-paste the JSON:
-   - **Dashboards** → Select dashboard → **Settings** (gear icon)
-   - **JSON Model** → Paste new JSON → **Save**
+**Use case:** Troubleshooting individual sensors, calibration, stability monitoring.
 
 ---
 
-## Multi-Sensor Support
+### 3. ⚙️ System Health (`system-health.json`)
+**Tags:** `diagnostics`, `system`
 
-Both dashboards automatically detect all sensors in your InfluxDB database based on the `device_id` tag.
+**Purpose:** ESP8266 diagnostic events, WiFi stability, crash detection, critical events.
 
-**Setting up sensors:**
-```cpp
-// In firmware/src/config.h
-#define DEVICE_ID_AUTO      false
-#define DEVICE_ID           "sensor-1"     // Unique ID for each sensor
-#define DEVICE_LOCATION     "backyard"     // Optional location tag
+**Key Panels:**
+- **Critical events count** — Total critical events (crashes, WiFi failures, queue overflow)
+- **Critical vs Info events** — Categorized event breakdown
+- **Event frequency plot** — Diagnostic events over time
+- **Diagnostic logs table** — Event details with reason, heap, RSSI
+- **WiFi disconnect events** — Count and timeline
+- **InfluxDB error events** — Database connection issues
+
+**Event types tracked:**
+- **Critical:** `crash_detected`, `wifi_reconnect_failed`, `queue_overflow`, `heap_low_warning`, `influxdb_error`, `system_restart`
+- **Info:** `boot_complete`, `wifi_disconnect`, `wifi_reconnect_success`
+
+**Use case:** Diagnosing WiFi stability issues, crash investigation, system reliability monitoring.
+
+---
+
+### 4. 🚨 Alerts Overview (`alerts-overview.json`)
+**Tags:** `alerts`, `monitoring`
+
+**Purpose:** Critical alerts, watering needed notifications, sensor offline detection.
+
+**Key Panels:**
+- **Critical alerts stat** — Count of active critical alerts
+- **Sensors needing water** — List of sensors below moisture threshold
+- **Alert frequency plot** — Alert events over time
+- **Sensor status summary table** — Per-sensor health overview
+
+**Use case:** Quick alert dashboard, identify plants needing water, monitor alert trends.
+
+---
+
+### 5. 📱 Mobile Summary (`mobile-summary.json`)
+**Tags:** `mobile`, `overview`
+
+**Purpose:** Mobile-optimized quick view with essential metrics.
+
+**Key Panels:**
+- **4 moisture gauges** — Current moisture for all sensors (vertical layout)
+- **System health score** — Overall health percentage
+- **Last updated** — Time since most recent reading
+- **Active alerts** — Count of critical alerts
+
+**Use case:** Mobile phone viewing, quick status check on-the-go.
+
+---
+
+### 6. 🖥️ Raspberry Pi Health (`rpi-health.json`)
+**Tags:** `system`, `server`
+
+**Purpose:** Raspberry Pi system metrics — CPU, RAM, disk, temperature monitoring.
+
+**Key Panels:**
+- **CPU usage gauge** — Current CPU % (healthy: <80%)
+- **CPU temperature gauge** — Current CPU temp °C (healthy: <70°C)
+- **RAM usage gauge** — Current RAM % (healthy: <80%)
+- **Disk usage gauge** — Current disk % (healthy: <90%)
+- **System uptime** — Raspberry Pi OS uptime
+- **CPU history plot** — CPU usage over time
+- **Temperature history plot** — CPU temp over time
+- **RAM history plot** — Memory usage over time
+- **Disk history plot** — Disk usage over time
+- **Load averages** — 1-min, 5-min, 15-min load averages
+
+**Data source:** `rpi_system_metrics` measurement (Python collector, 60s interval)
+
+**Use case:** Pi performance monitoring, detecting resource issues, thermal monitoring.
+
+---
+
+## Installation
+
+### Method 1: Automated (Dashboard Provisioning) — Recommended
+
+**On Raspberry Pi:**
+```bash
+# Copy dashboards to provisioning directory
+sudo cp /path/to/soil-sensor/grafana-dashboards/*.json \
+  /mnt/sensor-data/grafana/dashboards/
+
+# Dashboards auto-import within 10 seconds
+# No Grafana restart needed
 ```
 
-**Dashboard behavior:**
-- **Soil Moisture Dashboard:** Creates individual plots for each sensor using Grafana's repeat panels
-- **System Diagnostics Dashboard:** Multi-select dropdown to view all or specific devices
-- Sensors appear automatically when they start posting data
+**Provisioning config:** `/mnt/sensor-data/grafana/provisioning/dashboards/dashboards.yml`
+- **Auto-reload:** 10 seconds
+- **Allow UI updates:** Yes (`allowUiUpdates: true`)
+- **Dashboard editing:** Changes saved to JSON files in provisioning directory
+
+---
+
+### Method 2: Manual Import (via Grafana UI)
+
+1. Open Grafana at `http://<pi-ip>:3000`
+2. Navigate to **Dashboards** → **Import**
+3. Click **Upload JSON file**
+4. Select dashboard from `grafana-dashboards/` directory
+5. Confirm datasource (should auto-detect `InfluxDB`)
+6. Click **Import**
+
+Repeat for all 6 dashboards.
+
+---
+
+### Method 3: API Import
+
+```bash
+# Import single dashboard
+curl -X POST -u admin:admin \
+  -H 'Content-Type: application/json' \
+  -d @grafana-dashboards/soil-moisture-main.json \
+  http://<pi-ip>:3000/api/dashboards/db
+
+# Import all dashboards (bash loop)
+for dashboard in grafana-dashboards/*.json; do
+  curl -X POST -u admin:admin \
+    -H 'Content-Type: application/json' \
+    -d @"$dashboard" \
+    http://<pi-ip>:3000/api/dashboards/db
+  echo "Imported: $(basename $dashboard)"
+done
+```
+
+---
+
+## Dashboard Tags
+
+Each dashboard has exactly 2 functional tags for easy filtering:
+
+| Dashboard | Tag 1 | Tag 2 | Description |
+|-----------|-------|-------|-------------|
+| Soil Moisture Main | overview | sensors | Main overview with all sensors |
+| Sensor Details | sensors | diagnostics | Individual sensor deep-dive |
+| System Health | diagnostics | system | ESP8266 diagnostics and events |
+| Alerts Overview | alerts | monitoring | Critical alerts and notifications |
+| Mobile Summary | mobile | overview | Mobile-optimized quick view |
+| Raspberry Pi Health | system | server | Raspberry Pi system metrics |
+
+**Tag categories:**
+- **overview** — High-level summaries
+- **sensors** — Soil moisture and sensor data
+- **diagnostics** — Technical health metrics
+- **alerts** — Notifications and warnings
+- **monitoring** — Continuous tracking
+- **system** — System-level metrics
+- **server** — Raspberry Pi infrastructure
+- **mobile** — Mobile-optimized views
+
+---
+
+## Color Scheme
+
+### Sensor Colors (High-Contrast)
+- **Sensor-1:** Green (#73BF69)
+- **Sensor-2:** Yellow (#F2CC0C)
+- **Sensor-3:** Blue (#5794F2)
+- **Sensor-4:** Red (#FF6B6B)
+
+### Moisture Gauge Gradients
+Each sensor has a dark→bright gradient (0% dry → 100% wet) within its color family:
+
+| Sensor | 0% (Dry) | 33% | 67% | 100% (Wet) |
+|--------|----------|-----|-----|------------|
+| Sensor-1 (Green) | #2d5016 | #4a7a2c | #73BF69 | #73BF69 |
+| Sensor-2 (Yellow) | #6b5606 | #a3890f | #F2CC0C | #F2CC0C |
+| Sensor-3 (Blue) | #1f3f68 | #3669a8 | #5794F2 | #5794F2 |
+| Sensor-4 (Red) | #6b2323 | #a83838 | #FF6B6B | #FF6B6B |
+
+**Rationale:** Each sensor maintains its unique color for easy reference, with brightness indicating moisture level.
+
+---
+
+## Anonymous Access (Public Viewing)
+
+Enable view-only access without login:
+
+```bash
+cd /path/to/soil-sensor/rpi-setup/scripts
+sudo ./configure-grafana.sh
+```
+
+**What it does:**
+- Enables anonymous authentication in Grafana
+- Sets default role to `Viewer` (read-only)
+- Reloads Grafana configuration
+
+**Access:** `http://<pi-ip>:3000` (no login required)
+
+**Security:** Viewer role can only view dashboards, cannot edit or create.
 
 ---
 
@@ -116,38 +252,82 @@ Both dashboards automatically detect all sensors in your InfluxDB database based
 
 ### Adjusting Moisture Thresholds
 
-In your Grafana dashboard, edit panels to change when colors appear:
+**Current thresholds (in gauge panels):**
+- **0-33%:** Dark color (dry)
+- **33-67%:** Medium color (moderate)
+- **67-100%:** Bright color (wet)
 
-**Recommended thresholds:**
-- Red (0-20%): Very dry
-- Yellow (20-40%): Dry
-- Green (40-80%): Optimal
-- Blue (80-100%): Very wet
+**To customize:**
+1. Edit dashboard JSON → Find `"thresholds"` in gauge panels
+2. Or edit via Grafana UI → Panel → **Thresholds** section
+3. Save dashboard
 
-**Per-sensor thresholds:** Different plants need different moisture levels. To set custom thresholds:
-1. Edit the gauge panel for a specific sensor
-2. Override the threshold values in panel settings
-3. Save the dashboard
+### Per-Plant Thresholds
 
-### Time Range Presets
+Different plants need different moisture levels:
 
-Add quick time range buttons by editing the dashboard settings:
-- Last 6 hours
-- Last 12 hours
-- Last 24 hours (default)
-- Last 7 days
-- Last 30 days
+| Plant Type | Dry Threshold | Wet Threshold |
+|------------|---------------|---------------|
+| Succulents | 10-30% | 40-60% |
+| Vegetables | 40-60% | 70-90% |
+| Tropicals | 50-70% | 80-100% |
 
-### Alert Configuration
+**Recommendation:** Clone `sensor-details.json` and customize thresholds per plant type.
 
-Set up alerts for low moisture levels:
+---
 
-1. Open a time series panel in your dashboard
-2. Go to **Alert** tab
-3. Create alert rule: "If moisture < 20% for 30 minutes, send notification"
-4. Configure notification channel (email, Slack, Discord, etc.)
+## Alert Configuration
 
-See Grafana's [Alert Rules documentation](https://grafana.com/docs/grafana/latest/alerting/) for details.
+Set up Grafana alerts for low moisture levels:
+
+1. Open `alerts-overview.json` dashboard
+2. Navigate to **Alerting** → **Alert rules** (Grafana 9+)
+3. Create new alert rule:
+   ```
+   Query: from(bucket: "sensor-readings") 
+          |> range(start: -30m) 
+          |> filter(fn: (r) => r._measurement == "sensor_reading")
+          |> filter(fn: (r) => r._field == "moisture")
+          |> mean()
+   
+   Condition: moisture < 20
+   Duration: 30 minutes
+   ```
+4. Configure notification channel:
+   - **Slack:** Best for real-time notifications
+   - **Email:** Good for daily summaries
+   - **Discord/Telegram:** Alternative options
+
+**Recommended alert rules:**
+- **Critical low moisture:** < 20% for 30 minutes
+- **Sensor offline:** No heartbeat for 10 minutes
+- **WiFi instability:** > 5 disconnects in 1 hour
+- **Pi high CPU:** > 80% for 10 minutes
+- **Pi high temp:** > 70°C for 5 minutes
+
+---
+
+## Testing Dashboards
+
+Automated panel testing script:
+
+```bash
+cd /path/to/soil-sensor/tests
+export INFLUX_TOKEN="<your-read-token>"
+./check-dashboard-panels.sh
+```
+
+**What it tests:**
+- Queries all panels in all 6 dashboards
+- Verifies data returned from InfluxDB
+- Detects query errors and schema issues
+- Shows actual values for verification
+
+**Expected results:**
+- **31 panels with data** — Normal operation
+- **8 NO DATA panels** — Healthy empty states (no alerts/events)
+- **16 skipped panels** — Grafana variables (can't test via API)
+- **2 errors** — Complex joins (known, non-critical)
 
 ---
 
@@ -156,53 +336,148 @@ See Grafana's [Alert Rules documentation](https://grafana.com/docs/grafana/lates
 ### Dashboard shows "No data"
 
 **Check:**
-1. InfluxDB is running: `http://192.168.99.134:8086/health`
-2. ESP8266 is posting data (check serial monitor for `[DB] ✓ Posted to InfluxDB`)
-3. Data source is configured correctly in Grafana
-4. Time range includes recent data (try "Last 7 days")
+1. InfluxDB running: `http://<pi-ip>:8086/health`
+2. Sensors posting data: `pio device monitor` → `[DB] ✓ Posted to InfluxDB`
+3. Time range includes recent data: Set to "Last 1 hour"
+4. Datasource configured: Grafana → **Connections** → **Data sources**
+
+**Verify data in InfluxDB:**
+```bash
+ssh pi@<pi-ip>
+curl -XPOST "http://localhost:8086/api/v2/query?org=soil-monitoring" \
+  -H "Authorization: Token <read-token>" \
+  -H "Content-Type: application/vnd.flux" \
+  -d 'from(bucket: "sensor-readings") 
+      |> range(start: -1h) 
+      |> filter(fn: (r) => r._measurement == "sensor_reading") 
+      |> filter(fn: (r) => r._field == "moisture")'
+```
+
+---
+
+### Panel shows "NO DATA" (healthy state)
+
+Some panels intentionally show "NO DATA" when everything is healthy:
+
+| Panel | Dashboard | Reason |
+|-------|-----------|--------|
+| Critical Events | system-health.json | No crashes/errors detected (good!) |
+| Sensors Needing Water | alerts-overview.json | All sensors above threshold (good!) |
+| Active Alerts | mobile-summary.json | No alerts triggered (good!) |
+| WiFi Disconnect Events | system-health.json | No WiFi disconnects (good!) |
+
+**This is normal and indicates healthy operation.**
+
+---
 
 ### Sensor doesn't appear in dropdown
 
 **Possible causes:**
-- Sensor hasn't posted data yet (wait 5 minutes for first reading)
-- Device ID contains special characters (use alphanumeric + hyphens only)
-- InfluxDB bucket name doesn't match (default: `sensor-readings`)
+- Sensor hasn't posted data yet (wait 5 minutes)
+- Device ID contains spaces/special chars (use `sensor-1` format)
+- 'backyard' location (filtered out by default)
 
-**Verify data:**
+**Verify sensor posting:**
 ```bash
-# Query InfluxDB directly
-curl -H "Authorization: Token YOUR_READ_TOKEN" \
-  -H "Content-Type: application/json" \
-  "http://192.168.99.134:8086/api/v2/query?org=soil-monitoring" \
-  --data '{"query": "from(bucket: \"sensor-readings\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"sensor_reading\") |> distinct(column: \"device_id\")"}'
+curl -XPOST "http://<pi-ip>:8086/api/v2/query?org=soil-monitoring" \
+  -H "Authorization: Token <read-token>" \
+  -H "Content-Type: application/vnd.flux" \
+  -d 'from(bucket: "sensor-readings") 
+      |> range(start: -1h) 
+      |> filter(fn: (r) => r._measurement == "sensor_reading") 
+      |> group(columns: ["device_id"]) 
+      |> distinct(column: "device_id")'
 ```
 
-### Panels show "Mixed" or wrong device name
+---
 
-This happens when multiple devices are selected. Use a device filter variable at the top of your dashboard to filter to a single device.
+### Dashboard provisioning not working
+
+**Check provisioning config:**
+```bash
+ssh pi@<pi-ip>
+cat /mnt/sensor-data/grafana/provisioning/dashboards/dashboards.yml
+```
+
+**Expected:**
+```yaml
+apiVersion: 1
+providers:
+  - name: 'Soil Sensors'
+    folder: ''
+    type: file
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /mnt/sensor-data/grafana/dashboards
+```
+
+**Verify Grafana sees the config:**
+```bash
+sudo journalctl -u grafana-server -f
+# Look for: "Provisioning dashboards from configuration"
+```
+
+---
+
+### "Last Updated" shows wrong time
+
+**Issue:** Timezone mismatch between InfluxDB (UTC) and Grafana.
+
+**Solution:**
+- InfluxDB stores timestamps in UTC (correct)
+- Grafana converts to browser timezone automatically
+- "Last Updated" panel uses `dateTimeFromNow` unit (relative time)
+
+**If still wrong:**
+1. Check browser timezone settings
+2. Verify Grafana timezone: **Configuration** → **Preferences** → **Timezone**
+3. Verify InfluxDB timestamps are in UTC (should end with `Z`)
+
+---
+
+## Exporting Dashboards
+
+To save dashboard changes back to JSON:
+
+**Via Grafana UI:**
+1. Open dashboard → **Share** → **Export** tab
+2. **Save to file** → Overwrite existing JSON in `grafana-dashboards/`
+3. Commit to git
+
+**Via API:**
+```bash
+# Get dashboard UID from URL (/d/<uid>/dashboard-name)
+UID="soil-moisture-main"
+
+curl -H "Authorization: Bearer <api-key>" \
+  http://<pi-ip>:3000/api/dashboards/uid/$UID \
+  | jq '.dashboard' > grafana-dashboards/$UID.json
+```
+
+**Important:** If using provisioning with `allowUiUpdates: true`, changes are auto-saved to `/mnt/sensor-data/grafana/dashboards/`. Copy back to git repo.
 
 ---
 
 ## Best Practices
 
-1. **Create dashboards** using the recommended panels above
-2. **Set up alerts** for critical moisture levels
-3. **Adjust time ranges** based on your needs:
-   - 24 hours: Daily monitoring
-   - 7 days: Weekly patterns
-   - 30 days: Seasonal trends
-4. **Export data** using Grafana's CSV export for long-term analysis
-5. **Export dashboards** as JSON and commit them to this directory for version control
+1. **Use provisioning** — Auto-reload dashboards, easier version control
+2. **Enable anonymous access** — Convenient for quick checks, still secure (read-only)
+3. **Set up alerts** — Critical low moisture, sensor offline, Pi high temp
+4. **Export regularly** — Commit dashboard JSONs to git after changes
+5. **Test after updates** — Run `check-dashboard-panels.sh` after changes
+6. **Monitor Pi health** — Check `rpi-health.json` weekly for resource issues
+7. **Adjust time ranges** — 24h for daily monitoring, 7d for weekly patterns
 
 ---
 
 ## Related Documentation
 
-- [Technical Documentation](../docs/README.md) - WiFi stability, Grafana Cloud setup, InfluxDB notes
-- [Project README](../README.md) - Complete setup and installation guide
+- [Main README](../README.md) — Complete setup and installation guide
+- [Technical Documentation](../docs/README.md) — WiFi stability, Grafana Cloud setup, InfluxDB notes
+- [AGENTS.md](../AGENTS.md) — Agent instructions and technical reference
+- [CHANGELOG.md](../CHANGELOG.md) — Version history and release notes
 
 ---
 
-**Note:** Dashboard JSON files need to be exported from Grafana and committed to this directory.
-
-Last updated: 2026-05-10
+Last updated: 2026-05-18 (v2.3.0)

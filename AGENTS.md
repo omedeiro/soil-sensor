@@ -259,7 +259,7 @@ Can calibrate via:
 
 1. **Wrong InfluxDB port:** InfluxDB is on 8086, not 5001 (5001 was legacy SQLite server)
 2. **Wrong HTTP status code:** InfluxDB returns 204 (not 201) on successful write
-3. **IP mismatch:** `DB_SERVER_URL` in `config.h` must match Raspberry Pi IP (not Mac IP)
+3. **IP mismatch:** `DB_SERVER_URL` in `config.h` must match Raspberry Pi IP (192.168.99.134)
 4. **Missing/invalid token:** `INFLUX_TOKEN` must be set in `config.h` after InfluxDB setup
 5. **Token permissions:** ESP8266 token needs **write** permission, Grafana token needs **read** permission
 6. **Sensor voltage:** Must power sensor from 3.3V pin, not 5V (ADC max is 1.0V)
@@ -267,6 +267,85 @@ Can calibrate via:
 8. **Duplicate device IDs:** Each sensor must have unique `DEVICE_ID` in multi-sensor setup
 9. **WiFi diagnostics disabled:** Set `ENABLE_WIFI_DIAGNOSTICS = true` in config.h for detailed logging
 10. **Queue disabled:** Set `QUEUE_FAILED_READINGS = true` in config.h to survive network outages
+
+## System Information
+
+**Raspberry Pi 5 Server:**
+- Username: `omedeiro`
+- IP Address: `192.168.99.134`
+- InfluxDB: `http://192.168.99.134:8086`
+- Grafana: `http://192.168.99.134:3000`
+- Data Storage: `/mnt/sensor-data` (256GB USB drive)
+
+**ESP8266 Sensor:**
+- IP Address: `192.168.99.70` (DHCP-assigned)
+- Web Dashboard: `http://192.168.99.70`
+- Reading Interval: 5 minutes (300000ms)
+
+## Troubleshooting Grafana Issues
+
+**If Grafana dashboard is unreachable:**
+
+1. **Check Grafana service status:**
+   ```bash
+   ssh omedeiro@192.168.99.134 "systemctl status grafana-server"
+   ```
+
+2. **Check if services are running:**
+   ```bash
+   ssh omedeiro@192.168.99.134 "systemctl is-active grafana-server influxdb"
+   ```
+
+3. **Restart Grafana if down:**
+   ```bash
+   ssh omedeiro@192.168.99.134 "sudo systemctl restart grafana-server"
+   ```
+
+4. **Check for USB mount issues:**
+   ```bash
+   ssh omedeiro@192.168.99.134 "df -h | grep sensor-data"
+   ssh omedeiro@192.168.99.134 "journalctl -u mnt-sensor\\x2ddata.mount --no-pager"
+   ```
+
+5. **Verify data is still being collected:**
+   - ESP8266 continues writing to InfluxDB even if Grafana is down
+   - Check ESP8266 status: `curl http://192.168.99.70/api/latest`
+   - Check InfluxDB health: `curl http://192.168.99.134:8086/health`
+
+6. **Check system logs for boot/failure reasons:**
+   ```bash
+   # View startup history (boot reasons, filesystem corruption, etc.)
+   ssh omedeiro@192.168.99.134 "cat /mnt/sensor-data/logs/startup_history.log"
+   
+   # View Grafana-specific failures
+   ssh omedeiro@192.168.99.134 "cat /mnt/sensor-data/logs/grafana_failures.log"
+   
+   # View reboot triggers
+   ssh omedeiro@192.168.99.134 "cat /mnt/sensor-data/logs/reboot_reasons.log"
+   
+   # Monitor health checks in real-time
+   ssh omedeiro@192.168.99.134 "tail -f /mnt/sensor-data/logs/health-monitor.log"
+   ```
+
+**Common Grafana failure causes:**
+- **Improper shutdown:** Filesystem corruption from power loss or hard reboot
+- **USB drive unmounting:** `/mnt/sensor-data` not mounted at boot
+- **Systemd restart loop:** Grafana exits cleanly (exit 0) so systemd won't auto-restart
+- **Data directory corruption:** Grafana database files in `/mnt/sensor-data/grafana/data`
+
+**Recovery steps after improper shutdown:**
+1. Check startup log for boot reason: `ssh omedeiro@192.168.99.134 "tail -50 /mnt/sensor-data/logs/startup_history.log"`
+2. Check filesystem: `ssh omedeiro@192.168.99.134 "sudo journalctl -b | grep -E '(fsck|Dirty|corrupt)'"`
+3. Verify mount: `ssh omedeiro@192.168.99.134 "mount | grep sensor-data"`
+4. Check Grafana logs: `ssh omedeiro@192.168.99.134 "sudo journalctl -u grafana-server --no-pager"`
+5. Restart Grafana manually if needed: `sudo systemctl restart grafana-server`
+
+**Enhanced Logging System:**
+- See `/rpi-setup/LOGGING_README.md` for complete logging documentation
+- Startup logger tracks all boot events and reasons
+- Health monitor auto-restarts failed services
+- Log rotation prevents disk space issues
+- Install enhanced logging: `cd ~/rpi-setup && sudo ./install-logging.sh`
 
 ## Status Files Reference
 
