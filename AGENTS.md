@@ -229,6 +229,8 @@ Can calibrate via:
 
 **Raspberry Pi Setup (`/rpi-setup/`):**
 - `install.sh` — one-command installer for InfluxDB + Grafana
+- `install-cloudflare-tunnel.sh` — Cloudflare Tunnel setup for public access
+- `configure-grafana-anonymous.sh` — Configure Grafana for anonymous viewing
 - `systemd/` — service files for health monitor, backup timer
 - `scripts/` — health monitor and backup bash scripts
 - `README.md` — installation guide
@@ -274,8 +276,10 @@ Can calibrate via:
 - Username: `omedeiro`
 - IP Address: `192.168.99.134`
 - InfluxDB: `http://192.168.99.134:8086`
-- Grafana: `http://192.168.99.134:3000`
+- Grafana (local): `http://192.168.99.134:3000`
+- Grafana (public): `https://grafana.owenmedeiros.com`
 - Data Storage: `/mnt/sensor-data` (256GB USB drive)
+- Cloudflare Tunnel: `soil-sensor-grafana` (ID: ec9b412a-098a-45d2-8060-f2fa7b23b477)
 
 **ESP8266 Sensor:**
 - IP Address: `192.168.99.70` (DHCP-assigned)
@@ -286,33 +290,45 @@ Can calibrate via:
 
 **If Grafana dashboard is unreachable:**
 
-1. **Check Grafana service status:**
+1. **Check if public URL is working:**
+   ```bash
+   curl -I https://grafana.owenmedeiros.com
+   ```
+
+2. **Check Cloudflare Tunnel status:**
+   ```bash
+   ssh omedeiro@192.168.99.134 "sudo systemctl status cloudflared"
+   ssh omedeiro@192.168.99.134 "cloudflared tunnel list"
+   ```
+
+3. **Check Grafana service status:**
    ```bash
    ssh omedeiro@192.168.99.134 "systemctl status grafana-server"
    ```
 
-2. **Check if services are running:**
+4. **Check if services are running:**
    ```bash
-   ssh omedeiro@192.168.99.134 "systemctl is-active grafana-server influxdb"
+   ssh omedeiro@192.168.99.134 "systemctl is-active grafana-server influxdb cloudflared"
    ```
 
-3. **Restart Grafana if down:**
+5. **Restart services if down:**
    ```bash
    ssh omedeiro@192.168.99.134 "sudo systemctl restart grafana-server"
+   ssh omedeiro@192.168.99.134 "sudo systemctl restart cloudflared"
    ```
 
-4. **Check for USB mount issues:**
+6. **Check for USB mount issues:**
    ```bash
    ssh omedeiro@192.168.99.134 "df -h | grep sensor-data"
    ssh omedeiro@192.168.99.134 "journalctl -u mnt-sensor\\x2ddata.mount --no-pager"
    ```
 
-5. **Verify data is still being collected:**
+7. **Verify data is still being collected:**
    - ESP8266 continues writing to InfluxDB even if Grafana is down
    - Check ESP8266 status: `curl http://192.168.99.70/api/latest`
    - Check InfluxDB health: `curl http://192.168.99.134:8086/health`
 
-6. **Check system logs for boot/failure reasons:**
+8. **Check system logs for boot/failure reasons:**
    ```bash
    # View startup history (boot reasons, filesystem corruption, etc.)
    ssh omedeiro@192.168.99.134 "cat /mnt/sensor-data/logs/startup_history.log"
@@ -325,6 +341,9 @@ Can calibrate via:
    
    # Monitor health checks in real-time
    ssh omedeiro@192.168.99.134 "tail -f /mnt/sensor-data/logs/health-monitor.log"
+   
+   # View Cloudflare Tunnel logs
+   ssh omedeiro@192.168.99.134 "sudo journalctl -u cloudflared -f"
    ```
 
 **Common Grafana failure causes:**
@@ -346,6 +365,76 @@ Can calibrate via:
 - Health monitor auto-restarts failed services
 - Log rotation prevents disk space issues
 - Install enhanced logging: `cd ~/rpi-setup && sudo ./install-logging.sh`
+
+## Troubleshooting Sensor Offline Issues
+
+**Problem:** ESP8266 sensor stops posting to InfluxDB and requires power cycle to recover.
+
+**Root Causes:**
+1. **Power supply issues** - Insufficient voltage/current during WiFi transmission (most common)
+2. **Firmware crash** - Unhandled exception or watchdog timeout
+3. **WiFi disconnect loop** - Lost connection and failed to recover (automatic restart after 10 failed attempts)
+
+**Detection Methods:**
+
+1. **Manual Check (InfluxDB query):**
+   ```bash
+   ssh omedeiro@192.168.99.134 'curl -s -XPOST "http://localhost:8086/api/v2/query?org=soil-monitoring" \
+     -H "Authorization: Token YOUR_READ_TOKEN" \
+     -H "Content-Type: application/vnd.flux" \
+     -d "from(bucket: \"sensor-readings\")
+     |> range(start: -1h)
+     |> filter(fn: (r) => r.device_id == \"sensor-1\")
+     |> filter(fn: (r) => r._field == \"moisture\")
+     |> last()"'
+   ```
+
+2. **Automated Monitoring (recommended):**
+   ```bash
+   # Install sensor health monitoring on Raspberry Pi
+   ssh omedeiro@192.168.99.134
+   cd ~/rpi-setup
+   ./install-sensor-monitoring.sh
+   
+   # This installs:
+   # - Health check script (runs every 10 minutes)
+   # - Alerts when sensor offline for 15+ minutes
+   # - Logs to system journal for troubleshooting
+   
+   # View monitoring status:
+   systemctl status sensor-health-check.timer
+   journalctl -u sensor-health-check -f
+   ```
+
+3. **Grafana Alerts Dashboard:**
+   - Open `http://grafana.owenmedeiros.com` or `http://192.168.99.134:3000`
+   - Navigate to "⚠️ Alerts & Notifications" dashboard
+   - Check "Sensor Status" panel for offline sensors
+   - Configure alert notifications in Grafana settings
+
+**Recovery Steps:**
+
+1. **Immediate:** Power cycle the ESP8266 (unplug USB, wait 5 seconds, replug)
+2. **If issue persists:** 
+   - Check power supply (use quality USB adapter ≥1A, short USB cable)
+   - Reflash firmware: `cd ~/soil-sensor/firmware && pio run --target upload`
+   - Check WiFi signal strength (RSSI should be > -70 dBm)
+3. **Long-term fix:**
+   - Use dedicated 5V 2A power adapter (not computer USB port)
+   - Reduce WiFi distance to router or add WiFi extender
+   - Enable automatic health monitoring (see above)
+
+**Firmware Recovery Features:**
+- Hardware watchdog (auto-restart if hung for 8 seconds)
+- Crash detection (logs to InfluxDB diagnostics)
+- WiFi auto-reconnect (10 attempts with exponential backoff, then full restart)
+- Reading queue (stores up to 20 failed readings during outages)
+
+**Prevention:**
+- **Install sensor health monitoring** (automated alerts)
+- Use quality power supply and short USB cables
+- Place ESP8266 within good WiFi range (RSSI > -70 dBm)
+- Monitor Grafana alerts dashboard regularly
 
 ## Status Files Reference
 

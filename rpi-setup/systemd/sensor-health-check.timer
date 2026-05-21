@@ -1,0 +1,15 @@
+[Unit]
+Description=Run sensor health check every 10 minutes
+Documentation=file:///home/omedeiro/rpi-setup/README.md
+Requires=sensor-health-check.service
+
+[Timer]
+# Run every 10 minutes
+OnCalendar=*:0/10
+# Run 2 minutes after boot
+OnBootSec=2min
+# If missed due to downtime, run immediately
+Persistent=true
+
+[Install]
+WantedBy=timers.target

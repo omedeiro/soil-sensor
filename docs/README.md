@@ -61,16 +61,52 @@ When InfluxDB is unreachable, readings are buffered in a circular RAM queue (`re
 
 ---
 
-## Grafana Cloud (Public Access)
+## Public Dashboard Access
 
-The goal is to push sensor metrics from the Pi to Grafana Cloud so dashboards can be shared publicly from anywhere — no VPN or home network required.
+The system now supports **public HTTPS access** via **Cloudflare Tunnel**, eliminating the need for Grafana Cloud migration or VPN.
 
-### Architecture
+### Current Solution: Cloudflare Tunnel ✅ Deployed
+
+```
+[ESP8266 sensors] ──► [InfluxDB on Pi] ──► [Grafana on Pi]
+                                                 │
+                                                 ▼
+                                        [Cloudflare Tunnel]
+                                                 │
+                                                 ▼
+                                  https://grafana.owenmedeiros.com
+```
+
+**Features:**
+- ✅ **Public HTTPS access** — anyone can view dashboards from anywhere
+- ✅ **Anonymous read-only viewing** — no login required, Viewer role only
+- ✅ **Automatic SSL/TLS** — managed by Cloudflare
+- ✅ **No port forwarding** — no firewall changes needed
+- ✅ **Local data stays local** — all sensor data remains on the Raspberry Pi
+
+**Setup:**
+```bash
+cd rpi-setup
+./install-cloudflare-tunnel.sh      # One-time setup
+./configure-grafana-anonymous.sh    # Enable anonymous viewing
+```
+
+**Public URL:** https://grafana.owenmedeiros.com
+
+---
+
+## Grafana Cloud (Alternative Public Access - Deprecated)
+
+> **Note:** With Cloudflare Tunnel deployed, Grafana Cloud is no longer needed for public access. This section is kept for reference only.
+
+The goal was to push sensor metrics from the Pi to Grafana Cloud so dashboards could be shared publicly from anywhere — no VPN or home network required.
+
+### Architecture (Not Currently Used)
 
 ```
 [ESP8266 sensors] ──► [InfluxDB on Pi] ──► [Grafana Alloy on Pi] ──► [Grafana Cloud metrics store]
-                                                                                ↓
-                                                                   [Public dashboard URL]
+                                                                                 ↓
+                                                                    [Public dashboard URL]
 ```
 
 ### Current Status (as of May 2026)
@@ -81,8 +117,9 @@ The goal is to push sensor metrics from the Pi to Grafana Cloud so dashboards ca
 | Grafana Alloy v1.16.1 | ✅ Running | linux/arm64, enabled on boot |
 | Alloy → Cloud forwarding | ⚠️ Partial | Pushing InfluxDB internal metrics only — not sensor data yet |
 | Sensor data in Cloud | ❌ Pending | Alloy config needs updating to query `sensor-readings` bucket |
+| **Cloudflare Tunnel** | ✅ **Active** | **Current public access solution** |
 
-**Next step:** Update `/etc/alloy/config.alloy` to query InfluxDB for actual soil readings and push them to Grafana Cloud as Prometheus metrics. See [TODO below](#todo--push-sensor-readings-to-grafana-cloud).
+**Status:** Grafana Cloud setup is incomplete. Cloudflare Tunnel is the preferred solution for public access.
 
 ---
 

@@ -1,0 +1,31 @@
+[Unit]
+Description=Sensor Health Monitoring Check
+Documentation=file:///home/omedeiro/rpi-setup/README.md
+After=network-online.target influxdb.service
+
+[Service]
+Type=oneshot
+User=omedeiro
+Group=omedeiro
+WorkingDirectory=/home/omedeiro/rpi-setup/scripts
+
+# Set InfluxDB read token (replace with actual token)
+Environment="INFLUX_TOKEN=fNL1d7Eg__QMxP_vGqR2Ekw16ADxYO8gDdDxXqEFGs-t3j03sRpHKDY8R7pz0kRIaQ35yWlU3NXhXX9ra0YWNA=="
+Environment="INFLUX_URL=http://localhost:8086"
+Environment="INFLUX_ORG=soil-monitoring"
+Environment="INFLUX_BUCKET=sensor-readings"
+
+# Run health check with 15-minute threshold and notifications enabled
+ExecStart=/home/omedeiro/rpi-setup/scripts/check-sensor-health.sh --alert-minutes 15 --notify
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sensor-health-check
+
+# Resource limits
+MemoryMax=128M
+CPUQuota=10%
+
+[Install]
+WantedBy=multi-user.target

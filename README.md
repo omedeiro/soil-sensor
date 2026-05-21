@@ -6,16 +6,17 @@ Each sensor reads soil moisture every 5 minutes and posts data to a central time
 
 ---
 
-## 📊 Live Dashboard Preview
+## 📊 Live Dashboard Access
 
-**Interactive Snapshots** (no login required):
+**Public Dashboard** (no login required):
 
-- [🌱 Soil Moisture Dashboard](http://192.168.99.134:3000/dashboard/snapshot/rNDWAtHiztcOZPsRSsmq01KOOMKprBke) — Main overview with all sensors and **Raspberry Pi uptime**
-- [🖥️ Raspberry Pi Health](http://192.168.99.134:3000/dashboard/snapshot/rKIaQQd6EGDlun3H76qPamegenl9FFQK) — System metrics, CPU, RAM, temperature
+🌐 **https://grafana.owenmedeiros.com** — View all dashboards live from anywhere
 
-**Full Dashboard Access:** http://192.168.99.134:3000 (live data, all 6 dashboards)
+**Local Network Access:**
+- http://192.168.99.134:3000 — Full dashboard access on local network
+- Admin login available for editing dashboards
 
-> **Note:** Snapshots show data from 2026-05-18. For live data, access Grafana directly.
+> **Note:** Public URL has anonymous read-only access. Only admins can edit dashboards.
 
 ---
 
@@ -27,7 +28,11 @@ Each sensor reads soil moisture every 5 minutes and posts data to a central time
                                ▼
                     [Raspberry Pi 5 Server]
                     ├── InfluxDB 2.x  (:8086)
-                    └── Grafana       (:3000)
+                    ├── Grafana       (:3000)
+                    └── Cloudflare Tunnel
+                              │
+                              ▼
+                    https://grafana.owenmedeiros.com
 ```
 
 ---
@@ -48,6 +53,7 @@ Each sensor reads soil moisture every 5 minutes and posts data to a central time
 ### Raspberry Pi Server (v2.3.0)
 - **InfluxDB 2.x backend** — time-series storage on USB drive, 365-day retention
 - **Grafana dashboards (6 total)** — soil moisture with **Pi uptime panel**, sensor details, system health, alerts, mobile view, Pi health
+- **Cloudflare Tunnel** — public HTTPS access via `grafana.owenmedeiros.com` (anonymous read-only viewing)
 - **Enhanced logging system** — boot tracking, filesystem corruption detection, Grafana failure logging, log rotation
 - **Anonymous access** — view-only Grafana dashboards without login (Viewer role)
 - **System metrics** — CPU, RAM, disk, temperature monitoring via Python collector (60s interval)
@@ -84,6 +90,8 @@ soil-sensor/
 │   └── README.md                 # Dashboard installation guide
 ├── rpi-setup/
 │   ├── install.sh                # Full Pi setup script
+│   ├── install-cloudflare-tunnel.sh  # Cloudflare Tunnel installer (v2.3.0)
+│   ├── configure-grafana-anonymous.sh # Anonymous viewing setup (v2.3.0)
 │   ├── install-logging.sh        # Enhanced logging system installer (v2.3.0)
 │   ├── LOGGING_README.md         # Logging documentation (v2.3.0)
 │   ├── scripts/
@@ -168,12 +176,13 @@ The script installs and configures:
    - Copy dashboards to `/mnt/sensor-data/grafana/dashboards/` (auto-provisioned)
    - Or import manually via UI from `grafana-dashboards/*.json`
 
-3. **Enable anonymous access** (optional, for read-only public viewing)
+3. **Enable anonymous access and public URL** (optional, for read-only public viewing)
    ```bash
-   cd rpi-setup/scripts
-   sudo ./configure-grafana.sh
+   cd rpi-setup
+   ./install-cloudflare-tunnel.sh      # Set up public HTTPS access
+   ./configure-grafana-anonymous.sh    # Enable anonymous viewing
    ```
-   Dashboards will be viewable without login at `http://<pi-ip>:3000`
+   Dashboards will be viewable at `https://grafana.owenmedeiros.com` (replace with your domain)
 
 ---
 
@@ -312,14 +321,22 @@ curl -X POST -u admin:admin \
 
 ### Remote Access
 
-**Option 1: Anonymous Access (recommended)**
+**Public Access (Cloudflare Tunnel)**
 ```bash
-cd rpi-setup/scripts
-sudo ./configure-grafana.sh
+cd rpi-setup
+./install-cloudflare-tunnel.sh
+./configure-grafana-anonymous.sh
+```
+Dashboards publicly accessible at `https://grafana.owenmedeiros.com` (anonymous read-only, no login required).
+
+**Local Anonymous Access**
+```bash
+cd rpi-setup
+./configure-grafana-anonymous.sh
 ```
 Dashboards viewable at `http://<pi-ip>:3000` without login (Viewer role, read-only).
 
-**Option 2: Public Snapshot**
+**Public Snapshot** (static snapshot)
 1. Open dashboard → Share icon → Snapshot tab
 2. Set expiry → Publish to snapshot.raintank.io
 3. Copy public URL (no login required, static snapshot)
@@ -413,20 +430,22 @@ from(bucket: "sensor-readings")
 |---------|-------------|
 | `influxdb` | Time-series database (auto-restart on failure) |
 | `grafana-server` | Dashboard server (auto-restart on failure) |
+| `cloudflared` | Cloudflare Tunnel for public HTTPS access |
 | `sensor-health-monitor` | Monitors InfluxDB/Grafana, alerts on failure |
 | `sensor-backup.timer` | Daily backup at 3:00 AM |
 | `system-metrics-collector` | Pi CPU/RAM/disk monitoring (60s interval) |
 
 ```bash
 # Check service status
-sudo systemctl status influxdb grafana-server system-metrics-collector
+sudo systemctl status influxdb grafana-server cloudflared system-metrics-collector
 
 # View logs
 journalctl -u influxdb -f
+journalctl -u cloudflared -f
 journalctl -u system-metrics-collector -f
 
 # Restart services
-sudo systemctl restart influxdb grafana-server
+sudo systemctl restart influxdb grafana-server cloudflared
 ```
 
 ---
@@ -445,6 +464,8 @@ sudo systemctl restart influxdb grafana-server
 | Dashboard shows no data | Wrong time range | Set range to `Last 1 hour` |
 | Grafana shows "NO DATA" | Normal for empty panels | E.g., no critical events = healthy |
 | Chrome won't load InfluxDB | HSTS cache issue | Use Safari or clear HSTS cache |
+| Public URL unreachable | Cloudflare Tunnel down | `sudo systemctl status cloudflared` |
+| DNS not resolving | Propagation delay | Wait 1-5 minutes after tunnel setup |
 
 ---
 
