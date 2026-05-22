@@ -827,6 +827,13 @@
               "event_type": 2,
               "message": 3,
               "detail": 4
+            },
+            "renameByName": {
+              "_time": "Time",
+              "severity": "Level",
+              "event_type": "Event",
+              "message": "Message",
+              "detail": "Detail"
             }
           }
         }

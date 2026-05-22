@@ -1,0 +1,14 @@
+[Unit]
+Description=System Event Logger - Capture shutdown/reboot events
+DefaultDependencies=no
+Before=shutdown.target reboot.target halt.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/omedeiro/soil-sensor/rpi-setup/scripts/event-logger.sh shutdown
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=shutdown.target reboot.target halt.target

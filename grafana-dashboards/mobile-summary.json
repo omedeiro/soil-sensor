@@ -339,6 +339,11 @@
               "device_id": 0,
               "location": 1,
               "_value": 2
+            },
+            "renameByName": {
+              "device_id": "Sensor",
+              "location": "Location",
+              "_value": "Moisture"
             }
           }
         }
@@ -789,6 +794,11 @@
               "device_id": 0,
               "rssi": 1,
               "free_heap": 2
+            },
+            "renameByName": {
+              "device_id": "Sensor",
+              "rssi": "WiFi",
+              "free_heap": "Memory"
             }
           }
         }

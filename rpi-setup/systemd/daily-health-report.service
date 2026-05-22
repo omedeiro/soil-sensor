@@ -1,0 +1,15 @@
+[Unit]
+Description=Daily Health Report Generator
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/omedeiro/soil-sensor/rpi-setup/scripts/daily-health-report.sh
+StandardOutput=journal
+StandardError=journal
+User=omedeiro
+# Set INFLUX_TOKEN for sensor status queries (optional)
+# Environment="INFLUX_TOKEN=your_read_token_here"
+
+[Install]
+WantedBy=multi-user.target

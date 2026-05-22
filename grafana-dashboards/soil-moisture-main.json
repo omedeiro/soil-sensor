@@ -828,7 +828,13 @@
               "moisture": 3,
               "rssi": 4
             },
-            "renameByName": {}
+            "renameByName": {
+              "device_id": "Sensor",
+              "location": "Location",
+              "moisture": "Moisture %",
+              "rssi": "WiFi Signal",
+              "_time": "Time"
+            }
           }
         }
       ]

@@ -281,9 +281,12 @@ Can calibrate via:
 - Data Storage: `/mnt/sensor-data` (256GB USB drive)
 - Cloudflare Tunnel: `soil-sensor-grafana` (ID: ec9b412a-098a-45d2-8060-f2fa7b23b477)
 
-**ESP8266 Sensor:**
-- IP Address: `192.168.99.70` (DHCP-assigned)
-- Web Dashboard: `http://192.168.99.70`
+**ESP8266 Sensors:**
+- **sensor-1** (bed-room): `192.168.99.110` (MAC: 68:c6:3a:f6:b3:ae) - online
+- **sensor-2** (living-room): `192.168.99.149` (MAC: 48:3f:da:19:c0:86) - online
+- **sensor-3** (guest-room): `192.168.99.70` (MAC: 40:91:51:4f:d9:97) - online
+- **sensor-4** (guest-room): `192.168.99.105` (MAC: 48:3f:da:aa:fe:d7) - online
+- Web Dashboard: `http://<sensor-ip>` (e.g., `http://192.168.99.110`)
 - Reading Interval: 5 minutes (300000ms)
 
 ## Troubleshooting Grafana Issues

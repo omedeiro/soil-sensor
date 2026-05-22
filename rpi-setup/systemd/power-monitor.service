@@ -1,0 +1,13 @@
+[Unit]
+Description=Power Monitor - Tracks voltage, throttling, and power issues
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/omedeiro/soil-sensor/rpi-setup/scripts/power-monitor.sh
+StandardOutput=journal
+StandardError=journal
+User=omedeiro
+
+[Install]
+WantedBy=multi-user.target

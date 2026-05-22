@@ -1,0 +1,11 @@
+[Unit]
+Description=Network Monitor Timer - Run every 5 minutes
+Requires=network-monitor.service
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

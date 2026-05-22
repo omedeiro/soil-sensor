@@ -1,0 +1,13 @@
+[Unit]
+Description=Network Monitor - Tracks connectivity and network issues
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/omedeiro/soil-sensor/rpi-setup/scripts/network-monitor.sh
+StandardOutput=journal
+StandardError=journal
+User=omedeiro
+
+[Install]
+WantedBy=multi-user.target

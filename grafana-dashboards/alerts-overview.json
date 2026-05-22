@@ -500,6 +500,14 @@
               "event_type": 3,
               "message": 4,
               "detail": 5
+            },
+            "renameByName": {
+              "_time": "Time",
+              "severity": "Severity",
+              "device_id": "Sensor",
+              "event_type": "Event Type",
+              "message": "Message",
+              "detail": "Detail"
             }
           }
         }
@@ -664,6 +672,12 @@
               "device_id": 1,
               "location": 2,
               "_time": 3
+            },
+            "renameByName": {
+              "_value": "Moisture",
+              "device_id": "Sensor",
+              "location": "Location",
+              "_time": "Last Update"
             }
           }
         }
@@ -786,6 +800,11 @@
               "device_id": 0,
               "location": 1,
               "_time": 2
+            },
+            "renameByName": {
+              "device_id": "Sensor",
+              "location": "Location",
+              "_time": "Last Seen"
             }
           }
         }
