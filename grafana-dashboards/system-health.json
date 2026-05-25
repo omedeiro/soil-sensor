@@ -1,13 +1,11 @@
 {
   "id": null,
   "uid": "system-health-v2",
-  "title": "\ud83d\udd27 System Health Dashboard",
+  "title": "🔧 System Health Dashboard",
   "description": "Monitor ESP8266 sensors, Raspberry Pi server health, and diagnostic events",
   "tags": [
-    "system",
-    "health",
     "diagnostics",
-    "monitoring"
+    "system"
   ],
   "style": "dark",
   "timezone": "browser",
@@ -24,9 +22,58 @@
   "version": 1,
   "panels": [
     {
+      "id": 999,
+      "type": "stat",
+      "title": "Last Updated",
+      "gridPos": {
+        "x": 20,
+        "y": 0,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_value: int(v: r._time) / int(v: 1000000)}))",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "value",
+        "textMode": "value",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "dateTimeFromNow",
+          "displayName": "Data Last Received",
+          "decimals": 0
+        }
+      }
+    },
+    {
       "id": 1,
       "type": "stat",
-      "title": "Sensors Online (Last 5 min)",
+      "title": "Sensors Online",
       "gridPos": {
         "x": 0,
         "y": 0,
@@ -493,7 +540,7 @@
     {
       "id": 6,
       "type": "logs",
-      "title": "\ud83d\udea8 Diagnostic Events (Last 6 Hours)",
+      "title": "🚨 Diagnostic Events",
       "gridPos": {
         "x": 0,
         "y": 12,
@@ -506,7 +553,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"event_type\" or r._field == \"severity\" or r._field == \"message\" or r._field == \"detail\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> sort(columns: [\"_time\"], desc: true)\n  |> limit(n: 200)",
+          "query": "// Show diagnostic events with details (last 6h)\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"event_reason\" or r._field == \"free_heap\" or r._field == \"rssi\")\n  |> pivot(rowKey:[\"_time\", \"device_id\", \"event_type\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> sort(columns: [\"_time\"], desc: true)\n  |> limit(n: 200)",
           "refId": "A"
         }
       ],
@@ -525,12 +572,13 @@
           "custom": {}
         },
         "overrides": []
-      }
+      },
+      "description": "Shows diagnostic events from ESP8266 sensors. Events appear when crashes, WiFi disconnects, or queue overflows occur. Empty = no issues detected."
     },
     {
       "id": 7,
       "type": "timeseries",
-      "title": "Raspberry Pi System Metrics (6 Hours)",
+      "title": "Raspberry Pi System Metrics",
       "gridPos": {
         "x": 0,
         "y": 22,
@@ -603,7 +651,7 @@
     {
       "id": 8,
       "type": "timeseries",
-      "title": "ESP8266 Free Heap Memory (6 Hours)",
+      "title": "ESP8266 Free Heap Memory",
       "gridPos": {
         "x": 12,
         "y": 22,
@@ -677,13 +725,91 @@
           "color": {
             "mode": "palette-classic"
           }
-        }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-1.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 1 (Bed Room)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-2.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 2 (Living Room)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2CC0C"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-3.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 3 (Guest Room)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-4.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 4 (Guest Room)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF6B6B"
+                }
+              }
+            ]
+          }
+        ]
       }
     },
     {
       "id": 9,
       "type": "barchart",
-      "title": "Diagnostic Events by Type (Last 24h)",
+      "title": "Diagnostic Events by Type",
       "gridPos": {
         "x": 0,
         "y": 30,
@@ -696,7 +822,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"event_type\")\n  |> group(columns: [\"_value\"])\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)",
+          "query": "// Count diagnostic events by type (last 24h)\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"event_count\")\n  |> group(columns: [\"event_type\"])\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)",
           "refId": "A"
         }
       ],
@@ -733,7 +859,7 @@
     {
       "id": 10,
       "type": "barchart",
-      "title": "Diagnostic Events by Severity (Last 24h)",
+      "title": "Diagnostic Events: Critical vs Info",
       "gridPos": {
         "x": 12,
         "y": 30,
@@ -746,7 +872,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"severity\")\n  |> group(columns: [\"_value\"])\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: false)",
+          "query": "// Categorize events as Critical or Info\nimport \"strings\"\n\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"event_count\")\n  |> map(fn: (r) => ({\n      r with\n      severity: if r.event_type == \"crash_detected\" or r.event_type == \"wifi_reconnect_failed\" or r.event_type == \"queue_overflow\" or r.event_type == \"heap_low_warning\" or r.event_type == \"influxdb_error\" or r.event_type == \"system_restart\" then \"Critical\" else \"Info\"\n  }))\n  |> group(columns: [\"severity\"])\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: false)",
           "refId": "A"
         }
       ],

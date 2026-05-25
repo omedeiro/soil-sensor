@@ -1,0 +1,12 @@
+[Unit]
+Description=Daily Health Report Timer - Run at 8 AM every day
+Requires=daily-health-report.service
+
+[Timer]
+OnCalendar=daily
+OnCalendar=*-*-* 08:00:00
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

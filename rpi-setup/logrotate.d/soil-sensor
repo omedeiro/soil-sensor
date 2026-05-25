@@ -1,0 +1,47 @@
+/mnt/sensor-data/logs/health-monitor.log {
+    daily
+    rotate 7
+    maxsize 100M
+    compress
+    delaycompress
+    notifempty
+    missingok
+    create 0644 root root
+    sharedscripts
+    postrotate
+        systemctl reload sensor-health-monitor.service > /dev/null 2>&1 || true
+    endscript
+}
+
+/mnt/sensor-data/logs/startup_history.log {
+    monthly
+    rotate 12
+    maxsize 10M
+    compress
+    delaycompress
+    notifempty
+    missingok
+    create 0644 root root
+}
+
+/mnt/sensor-data/logs/metrics-collector.log {
+    daily
+    rotate 7
+    maxsize 50M
+    compress
+    delaycompress
+    notifempty
+    missingok
+    create 0644 root root
+}
+
+/mnt/sensor-data/logs/backup.log {
+    weekly
+    rotate 4
+    maxsize 10M
+    compress
+    delaycompress
+    notifempty
+    missingok
+    create 0644 root root
+}

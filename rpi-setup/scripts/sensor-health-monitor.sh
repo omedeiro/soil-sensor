@@ -5,6 +5,7 @@
 
 LOG_FILE="/mnt/sensor-data/logs/health-monitor.log"
 REBOOT_LOG="/mnt/sensor-data/logs/reboot_reasons.log"
+GRAFANA_FAILURE_LOG="/mnt/sensor-data/logs/grafana_failures.log"
 INFLUX_URL="http://localhost:8086/health"
 GRAFANA_URL="http://localhost:3000/api/health"
 CHECK_INTERVAL=60  # seconds
@@ -19,8 +20,13 @@ REBOOT_COOLDOWN=86400  # 24 hours in seconds
 # State file for tracking failures
 STATE_FILE="/var/run/health-monitor-state"
 
+# Ensure log files exist
+mkdir -p "$(dirname "$LOG_FILE")"
+touch "$LOG_FILE" "$REBOOT_LOG" "$GRAFANA_FAILURE_LOG"
+
 log() {
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+    local msg="[$(date +'%Y-%m-%d %H:%M:%S')] $1"
+    echo "$msg" >> "$LOG_FILE" 2>/dev/null || echo "$msg"  # Fallback if file write fails
 }
 
 # Initialize state
@@ -62,7 +68,15 @@ check_service() {
         return 0  # Healthy
     else
         log "✗ $service_name is unhealthy - restarting $systemd_service"
-        sudo systemctl restart "$systemd_service"
+        
+        # Log Grafana-specific failures
+        if [ "$service_name" = "Grafana" ]; then
+            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Grafana health check failed - URL: $health_url" >> "$GRAFANA_FAILURE_LOG"
+            systemctl status grafana-server --no-pager >> "$GRAFANA_FAILURE_LOG" 2>&1
+            echo "---" >> "$GRAFANA_FAILURE_LOG"
+        fi
+        
+        sudo systemctl restart "$systemd_service" 2>&1 | head -5 >> "$LOG_FILE"
         sleep 10
         
         # Check again after restart

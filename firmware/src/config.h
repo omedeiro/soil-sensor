@@ -7,7 +7,7 @@
 #define CONFIG_H
 
 // ─── Version ─────────────────────────────────────────────────────────────────
-#define FIRMWARE_VERSION    "2.1.0"
+#define FIRMWARE_VERSION    "2.2.0"
 #define BUILD_DATE          __DATE__
 #define BUILD_TIME          __TIME__
 
@@ -53,8 +53,8 @@
 // Option 1: Auto-generate from MAC address (e.g., "esp8266-40915141d997")
 // Option 2: Set DEVICE_ID_AUTO=false and provide custom ID below
 #define DEVICE_ID_AUTO      false
-#define DEVICE_ID           "sensor-1"          // Change for each sensor: sensor-1, sensor-2, etc.
-#define DEVICE_LOCATION     "bed-room"          // Optional location tag for Grafana filtering
+#define DEVICE_ID           "sensor-7"          // Change for each sensor: sensor-1, sensor-2, etc.
+#define DEVICE_LOCATION     "guest-room"        // Optional location tag for Grafana filtering
 
 // ─── WiFi Stability & Queue ──────────────────────────────────────────────────
 #define ENABLE_WIFI_DIAGNOSTICS  true   // Enable detailed WiFi logging

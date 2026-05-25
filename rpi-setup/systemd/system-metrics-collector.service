@@ -5,17 +5,17 @@ After=network.target influxdb.service
 
 [Service]
 Type=oneshot
-User=pi
-Group=pi
+User=root
+Group=root
 ExecStart=/usr/bin/python3 /usr/local/bin/system-metrics-collector.py
 StandardOutput=append:/mnt/sensor-data/logs/metrics-collector.log
 StandardError=append:/mnt/sensor-data/logs/metrics-collector.log
 
-# Environment variables (set via /etc/environment or override file)
+# Environment variables
 Environment="INFLUX_URL=http://localhost:8086"
 Environment="INFLUX_ORG=soil-monitoring"
 Environment="INFLUX_BUCKET=sensor-readings"
-# INFLUX_TOKEN should be set in /etc/environment or systemd override
+Environment="INFLUX_TOKEN=fNL1d7Eg__QMxP_vGqR2Ekw16ADxYO8gDdDxXqEFGs-t3j03sRpHKDY8R7pz0kRIaQ35yWlU3NXhXX9ra0YWNA=="
 
 [Install]
 WantedBy=multi-user.target

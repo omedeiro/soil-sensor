@@ -1,0 +1,19 @@
+[Unit]
+Description=System Audit Logger for Soil Sensor
+Documentation=https://github.com/soil-sensor
+After=network.target influxdb.service grafana-server.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+EnvironmentFile=/etc/environment
+ExecStart=/usr/local/bin/system-audit-logger.sh
+StandardOutput=append:/mnt/sensor-data/logs/system-audit.log
+StandardError=append:/mnt/sensor-data/logs/system-audit.log
+
+# Don't fail if audit finds issues - just log them
+SuccessExitStatus=0 1
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,17 @@
+[Unit]
+Description=Startup Reason Logger
+Documentation=https://github.com/soil-sensor
+After=multi-user.target influxdb.service grafana-server.service
+After=mnt-sensor\x2ddata.mount
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStart=/usr/local/bin/startup-logger.sh
+RemainAfterExit=no
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

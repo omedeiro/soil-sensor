@@ -1,0 +1,755 @@
+{
+  "id": null,
+  "uid": "rpi-health-v1",
+  "title": "🖥️ Raspberry Pi Health",
+  "description": "Monitor Raspberry Pi server health, uptime, storage, and database metrics",
+  "tags": [
+    "system",
+    "server"
+  ],
+  "style": "dark",
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "refresh": "1m",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "fiscalYearStartMonth": 0,
+  "liveNow": false,
+  "schemaVersion": 38,
+  "version": 1,
+  "panels": [
+    {
+      "id": 999,
+      "type": "stat",
+      "title": "Last Updated",
+      "gridPos": {
+        "x": 20,
+        "y": 0,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_value: int(v: r._time) / int(v: 1000000)}))",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "value",
+        "textMode": "value",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "dateTimeFromNow",
+          "displayName": "Data Last Received",
+          "decimals": 0
+        }
+      }
+    },
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "System Uptime",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"uptime_seconds\")\n  |> last()",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "value",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "s",
+          "displayName": "Uptime",
+          "decimals": 0
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "gauge",
+      "title": "CPU Usage",
+      "gridPos": {
+        "x": 5,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"cpu_percent\")\n  |> last()",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "orientation": "auto",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "mappings": []
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "gauge",
+      "title": "Memory Usage",
+      "gridPos": {
+        "x": 10,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"ram_percent\")\n  |> last()",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "orientation": "auto",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "mappings": []
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "gauge",
+      "title": "Disk Usage (/mnt/sensor-data)",
+      "gridPos": {
+        "x": 15,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"disk_percent\")\n  |> last()",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "orientation": "auto",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "mappings": []
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "CPU Temperature",
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"cpu_temp\")\n  |> last()",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 70
+              }
+            ]
+          },
+          "mappings": [],
+          "displayName": "Temperature"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Total Sensor Readings",
+      "gridPos": {
+        "x": 6,
+        "y": 4,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> count()",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "area",
+        "colorMode": "value",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "sum"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [],
+          "displayName": "Readings (24h)"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Heartbeats Received",
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r._field == \"uptime\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> count()",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "area",
+        "colorMode": "value",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "sum"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [],
+          "displayName": "Heartbeats (24h)"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "InfluxDB Status",
+      "gridPos": {
+        "x": 18,
+        "y": 4,
+        "w": 6,
+        "h": 4
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "// Check if InfluxDB is responding by querying recent data\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -1m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\" or r._measurement == \"sensor_reading\")\n  |> last()\n  |> count()\n  |> map(fn: (r) => ({\n      _time: now(),\n      _value: if r._value > 0 then 1 else 0,\n      _field: \"status\"\n  }))",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "textMode": "value",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "value": "0",
+              "text": "DOWN"
+            },
+            {
+              "type": "value",
+              "value": "1",
+              "text": "UP"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "displayName": "InfluxDB"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "CPU Usage History",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"cpu_percent\")\n  |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": 300000,
+            "showPoints": "never"
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "displayName": "CPU %"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Memory & Disk Usage History",
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"memory_percent\")\n  |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)",
+          "refId": "A"
+        },
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"disk_percent\")\n  |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)",
+          "refId": "B"
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": 300000,
+            "showPoints": "never"
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*memory.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Memory %"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*disk.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Disk %"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "CPU Temperature History",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"cpu_temp\")\n  |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "spanNulls": 300000,
+            "showPoints": "never"
+          },
+          "unit": "celsius",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          },
+          "displayName": "CPU Temperature"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Data Ingestion Rate",
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> aggregateWindow(every: 1h, fn: count, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 50,
+            "showPoints": "never"
+          },
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "displayName": "Readings per Hour"
+        }
+      }
+    }
+  ]
+}

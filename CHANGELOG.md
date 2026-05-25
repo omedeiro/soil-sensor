@@ -1,0 +1,258 @@
+# Changelog
+
+All notable changes to the Soil Moisture Monitoring System are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [2.4.0] - 2026-05-25
+
+### Added
+
+#### Multi-Sensor Expansion (7 Sensors)
+- **3 new sensors deployed** — sensor-5 (bed-room), sensor-6 (living-room), sensor-7 (guest-room)
+- **Extended color palette** — Added purple (#B877D9), orange (#FF9830), cyan (#5DDBDB) for sensors 5-7
+- **Enhanced dashboard support** — Updated soil-moisture-main.json with 7-sensor configuration
+- **Sensor dropdown labels** — All 7 sensors now show proper labels: "Sensor X (Location)"
+- **Radial gauge gradients** — Each new sensor has unique dark→bright color gradient (0% → 100%)
+- **Trend plot colors** — All 7 sensors display with distinct, high-contrast colors
+- **Clean tooltip labels** — Tooltips show "Sensor 5 (Bed Room)" instead of raw field names
+
+#### Firmware Configuration
+- **Sensor-5 configuration** — Device ID: sensor-5, Location: bed-room, IP: 192.168.99.89, MAC: 34:ab:95:16:51:d9
+- **Sensor-6 configuration** — Device ID: sensor-6, Location: living-room, IP: 192.168.99.38, MAC: 48:3f:da:62:f9:07
+- **Sensor-7 configuration** — Device ID: sensor-7, Location: guest-room, IP: 192.168.99.141, MAC: 84:cc:a8:a7:96:32
+
+#### Documentation
+- **Updated AGENTS.md** — Added all 7 sensors to system information with IPs, MACs, hardware details
+- **Updated dashboard README** — Expanded color scheme documentation to include sensors 5-7 with gradients
+- **Version updates** — Firmware v2.2.0, Dashboard v3, Documentation v2.4.0
+
+### Changed
+
+#### Grafana Dashboard (soil-moisture-main.json v3)
+- **Sensor variable options** — Expanded from 4 to 7 sensors with location-tagged labels
+- **Gauge panel overrides** — Added field overrides for sensors 5-7 with displayName and color thresholds
+- **Trend plot overrides** — Added fixed colors and display names for sensors 5-7
+- **Color distribution** — Improved visual distinction across 7 sensors for easier identification
+
+#### System Scale
+- **Multi-location coverage** — Now monitoring 7 sensors across 3 locations (bed-room: 2, living-room: 2, guest-room: 3)
+- **Expanded capacity** — System proven to handle 7 concurrent sensors with stable WiFi and InfluxDB performance
+
+### Fixed
+- **Dashboard label consistency** — New sensors now display proper labels under radial gauges
+- **Tooltip formatting** — Trend plot tooltips show human-readable labels instead of raw InfluxDB field names
+- **Color matching** — Radial gauge colors now match trend plot colors (purple, orange, cyan)
+
+---
+
+## [2.3.0] - 2026-05-18
+
+### Added
+
+#### Raspberry Pi Enhanced Logging System
+- **Startup logger** — Tracks boot reasons, filesystem corruption, kernel panics, USB mount status, service health
+- **Boot event logging** — Logs every system boot with timestamp, uptime, boot reason, CPU temperature, service status
+- **Grafana failure logging** — Dedicated log file for Grafana-specific failures with timestamps
+- **Auto-reboot tracking** — Logs automatic reboot triggers to separate file
+- **Log rotation** — Prevents 12GB log files (daily for health-monitor, monthly for startup logs)
+- **Installation script** — One-command deployment via `install-logging.sh`
+- **Comprehensive logging documentation** — `rpi-setup/LOGGING_README.md` with viewing logs, understanding boot reasons, troubleshooting
+
+#### Grafana Dashboards
+- **Raspberry Pi uptime panel** — Main dashboard now displays server uptime in top status bar (next to "Last Updated")
+- **System uptime visibility** — Quick visibility into Raspberry Pi stability and reboot frequency
+
+#### Documentation
+- **Enhanced Grafana troubleshooting** — AGENTS.md updated with detailed Grafana failure recovery steps
+- **System information accuracy** — Corrected username (omedeiro), IP addresses, file paths in AGENTS.md
+- **Logging system reference** — Complete documentation of boot tracking, health monitoring, log rotation
+
+### Changed
+
+#### Raspberry Pi Monitoring
+- **Health monitor improvements** — Enhanced error handling with fallback to prevent I/O errors
+- **Large log rotation** — Automatically rotates existing 12GB health-monitor.log during install
+- **Grafana-specific logging** — Separate log file for Grafana failures instead of mixed with general health checks
+
+#### Dashboard Layout
+- **soil-moisture-main.json v2** — Added Raspberry Pi uptime panel, improved top status bar
+- **Version bump** — Dashboard schema version updated to v2
+
+### Fixed
+
+#### Incident Response (2026-05-18)
+- **Root cause identified** — 18.5-hour Grafana outage caused by unclean shutdown at May 17 23:58:54
+- **Filesystem corruption** — Dirty bit detected, fsck recovery triggered at boot
+- **Silent failure** — Grafana exited cleanly (exit 0), systemd didn't auto-restart due to `Restart=on-failure`
+- **Health monitor I/O errors** — 12GB log file caused write failures, preventing logging
+- **No reboot tracking** — REBOOT_LOG path defined but file never created
+
+#### System Reliability
+- **Startup logger service** — Now captures all future boot events with detailed diagnostics
+- **Log file management** — Log rotation prevents disk space exhaustion
+- **Enhanced visibility** — Boot reasons, filesystem issues, service failures now tracked automatically
+
+---
+
+## [2.2.0] - 2026-05-17
+
+### Added
+
+#### Grafana Dashboards
+- **6 dedicated dashboards** replacing single monolithic dashboard:
+  - `soil-moisture-main.json` — Main overview with all sensors (tags: overview, sensors)
+  - `sensor-details.json` — Individual sensor deep-dive (tags: sensors, diagnostics)
+  - `system-health.json` — ESP8266 diagnostics and events (tags: diagnostics, system)
+  - `alerts-overview.json` — Critical alerts and notifications (tags: alerts, monitoring)
+  - `mobile-summary.json` — Mobile-optimized quick view (tags: mobile, overview)
+  - `rpi-health.json` — Raspberry Pi system metrics (tags: system, server)
+- **High-contrast color scheme** per sensor:
+  - Sensor-1: Green (#73BF69)
+  - Sensor-2: Yellow (#F2CC0C)
+  - Sensor-3: Blue (#5794F2)
+  - Sensor-4: Red (#FF6B6B)
+- **Moisture gauge color gradients** — Dark to bright within each sensor's color family (0% dry → 100% wet)
+- **Consistent sensor labels** — "Sensor 1 (Bed Room)" format with dropdown selection
+- **Anonymous Grafana access** — View-only dashboards without login (Viewer role)
+- **Dashboard provisioning** — Auto-reload from `/mnt/sensor-data/grafana/dashboards/` every 10 seconds
+- **Automated panel testing** — `tests/check-dashboard-panels.sh` verifies all panels return data
+
+#### Raspberry Pi Monitoring
+- **System metrics collector** — Python script monitoring CPU, RAM, disk, temperature every 60 seconds
+- **New InfluxDB measurement** — `rpi_system_metrics` with 12 fields (cpu_percent, cpu_temp, ram_percent, etc.)
+- **systemd service** — `system-metrics-collector.service` with embedded InfluxDB token
+- **Pi health dashboard** — `rpi-health.json` visualizing all Raspberry Pi metrics
+
+#### Documentation
+- **configure-grafana.sh** — Script to enable anonymous access with one command
+- **Expanded README.md** — v2.2.0 features, 6 dashboards, system metrics, OTA updates
+- **CHANGELOG.md** — This file
+
+### Changed
+
+#### Dashboard Improvements
+- **Fixed "Last Updated" panel** — Now correctly converts InfluxDB nanoseconds to milliseconds (`/1000000`)
+- **Fixed health score query** — Changed from `distinct() |> count()` to `group() |> count() |> group() |> count()`, now shows 100% (was 25%)
+- **Fixed offline sensors stat** — Removed broken `findRecord()`, now shows correct count
+- **Fixed diagnostic panels** — Corrected `event_type` tag vs field usage, removed non-existent `severity` field
+- **Fixed Raspberry Pi field names** — `cpu_temp` (was `temperature`), `ram_percent` (was `memory_percent`)
+- **Cleaned up dashboard tags** — Reduced from 3-4 per dashboard to exactly 2, total 8 unique tags
+- **Removed time references from panel titles** — No more "(24h)" or "(12h)", titles adapt to selected time window
+- **Sensor dropdown labels** — Shows "Sensor 1 (Bed Room)" instead of "sensor-1"
+- **Location filtering** — All dashboards filter out 'backyard' location
+- **Diagnostic event categorization** — "Critical vs Info Events" panel using map() to categorize event types
+
+#### System Reliability
+- **systemd service User config** — Changed from `pi` to `root` (pi user doesn't exist on system)
+- **InfluxDB auto-restart** — Added `Restart=always` and `RestartSec=10` to systemd override
+- **INFLUX_TOKEN in service file** — Embedded token in `system-metrics-collector.service` for reliability
+
+### Fixed
+- **Dashboard panel queries** — 31 panels verified working, 8 healthy "NO DATA" states, 16 skipped (Grafana variables)
+- **Diagnostic logs panel** — Now uses correct fields (`event_reason`, `free_heap`, `rssi`) with pivot on event_type tag
+- **Repurposed severity panel** — Changed "Diagnostic Events by Severity" to "Critical vs Info Events" with working categorization
+- **Table panel pivots** — Fixed schema errors in complex join queries (2 known issues remain, non-critical)
+- **Sensor uptime panel** — Shows ESP8266 uptime correctly (not Raspberry Pi uptime)
+- **Last Updated relative time** — Shows "a few seconds ago" using Grafana's dateTimeFromNow unit
+
+### Infrastructure
+- **Git tag v2.2.0** — Tagged commit `54f91c6` on `feature/system-stability-improvements` branch
+- **Dashboard deployment** — All 6 dashboards deployed to Pi at `/mnt/sensor-data/grafana/dashboards/`
+- **Dashboard provisioning config** — Created `/mnt/sensor-data/grafana/provisioning/dashboards/dashboards.yml` with 10s updateInterval
+
+### Incident Response
+- **2026-05-17 10:38:35 EDT** — USB storage disconnect, 9-second outage
+  - InfluxDB auto-restarted at 10:50:43 EDT
+  - Grafana auto-restarted at 10:51:15 EDT
+  - All services restored with no data loss
+
+---
+
+## [2.1.0] - 2026-05-15
+
+### Added
+
+#### Firmware
+- **Hardware watchdog** — 8-second ESP8266 hardware watchdog prevents infinite loops
+- **OTA updates** — Flash firmware remotely via WiFi (password: `soilmon2026`)
+- **Heartbeat system** — 60-second telemetry with uptime, free heap, WiFi RSSI, queue status
+- **Diagnostic events system** — Tracks crashes, WiFi events, InfluxDB errors in dedicated measurement
+- **WiFi stability improvements** — Exponential backoff reconnect (5s → 60s), automatic retry, max TX power
+- **New InfluxDB measurements**:
+  - `sensor_heartbeat` — 60-second health telemetry
+  - `sensor_diagnostics` — On-demand event tracking with event_type tag
+- **Diagnostic event types**:
+  - `boot_complete` — Clean boot detected
+  - `crash_detected` — Crash on previous boot
+  - `wifi_disconnect` — WiFi connection lost
+  - `wifi_reconnect_success` — WiFi restored
+  - `wifi_reconnect_failed` — Reconnect attempts exhausted
+  - `queue_overflow` — Offline queue full
+  - `heap_low_warning` — RAM critically low
+  - `influxdb_error` — Database POST failed
+  - `system_restart` — Manual or watchdog restart
+
+#### Source Files
+- `firmware/src/heartbeat.h/.cpp` — 60-second health telemetry
+- `firmware/src/diagnostics.h/.cpp` — Event tracking and categorization
+- `firmware/src/wifi_stability.h/.cpp` — Enhanced reconnection logic
+
+### Changed
+- **Firmware version** — Updated to v2.1.0 in `config.h`
+- **WiFi reconnection strategy** — Changed from 3-attempt fixed to exponential backoff (10 attempts, 5s → 60s)
+- **Boot diagnostics** — Now shows crash detection status and clean boot confirmation
+- **Serial output** — Enhanced with `✅`, `⚠️`, `✓`, `✗` symbols for better readability
+- **InfluxDB response validation** — Expects HTTP 204 (not 201) for successful writes
+
+### Fixed
+- **WiFi stability on power loss** — Hardware watchdog prevents hangs during reconnection
+- **Queue drain blocking** — Non-blocking drain (max 10s per loop, max 5 readings)
+- **Memory leaks** — Fixed heap fragmentation in WiFi reconnection logic
+
+---
+
+## [2.0.0] - 2026-05-10
+
+### Added
+- **Multi-sensor support** — Unlimited ESP8266 sensors with unique `DEVICE_ID`
+- **InfluxDB 2.x backend** — Time-series database on Raspberry Pi 5
+- **Grafana dashboard** — Live visualization with gauges, charts, filtering
+- **WiFi captive portal** — WiFiManager for easy credential setup
+- **Offline reading queue** — Buffer up to 20 readings during network outages
+- **NTP time sync** — UTC timestamps for all readings
+- **Raspberry Pi installer** — One-command setup script (`rpi-setup/install.sh`)
+- **Automated backups** — Daily systemd timer at 3:00 AM
+- **Health monitoring** — systemd service monitoring InfluxDB/Grafana
+
+### Infrastructure
+- **Raspberry Pi 5** — Dedicated server with 256GB USB storage
+- **InfluxDB 2.7.12** — Pinned version (v2.9+ has ARM64 issues)
+- **systemd services** — Auto-start, health monitoring, backups
+- **UFW firewall** — Ports 22, 8086, 3000 open
+
+### Initial Release Features
+- ESP8266 firmware with PlatformIO
+- Capacitive soil moisture sensor support
+- WiFi stability with scan-before-connect
+- In-memory ring buffer (50 readings)
+- Local HTTP server (optional)
+- Sensor calibration via HTTP API
+- InfluxDB line protocol integration
+
+---
+
+## Version Numbering
+
+- **Firmware versions** (e.g., v2.1.0) — Incremented for ESP8266 code changes
+- **System versions** (e.g., v2.2.0) — Incremented for infrastructure/dashboard changes
+- Firmware and system versions may diverge (current: firmware v2.1.0, system v2.2.0)
+
+---
+
+[2.2.0]: https://github.com/omedeiro/soil-sensor/compare/v2.1.0...v2.2.0
+[2.1.0]: https://github.com/omedeiro/soil-sensor/compare/v2.0.0...v2.1.0
+[2.0.0]: https://github.com/omedeiro/soil-sensor/releases/tag/v2.0.0

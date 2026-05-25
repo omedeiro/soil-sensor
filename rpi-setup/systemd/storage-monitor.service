@@ -1,0 +1,13 @@
+[Unit]
+Description=Storage Health Monitor - Tracks USB drive health and I/O issues
+After=mnt-sensor\x2ddata.mount
+
+[Service]
+Type=oneshot
+ExecStart=/home/omedeiro/soil-sensor/rpi-setup/scripts/storage-monitor.sh
+StandardOutput=journal
+StandardError=journal
+User=root
+
+[Install]
+WantedBy=multi-user.target

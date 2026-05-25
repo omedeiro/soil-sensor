@@ -1,0 +1,14 @@
+[Unit]
+Description=Run System Audit Logger every 5 minutes
+Documentation=https://github.com/soil-sensor
+
+[Timer]
+# Run 1 minute after boot
+OnBootSec=1min
+# Run every 5 minutes
+OnUnitActiveSec=5min
+# Also run on calendar schedule as backup
+OnCalendar=*:0/5
+
+[Install]
+WantedBy=timers.target

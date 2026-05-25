@@ -1,12 +1,11 @@
 {
   "id": null,
   "uid": "mobile-summary-v2",
-  "title": "\ud83d\udcf1 Mobile Quick View",
+  "title": "📱 Mobile Quick View",
   "description": "Mobile-optimized dashboard for quick status checks - single column layout",
   "tags": [
     "mobile",
-    "summary",
-    "quick-view"
+    "overview"
   ],
   "style": "dark",
   "timezone": "browser",
@@ -20,12 +19,61 @@
   "fiscalYearStartMonth": 0,
   "liveNow": false,
   "schemaVersion": 38,
-  "version": 1,
+  "version": 2,
   "panels": [
+    {
+      "id": 999,
+      "type": "stat",
+      "title": "Last Updated",
+      "gridPos": {
+        "x": 20,
+        "y": 0,
+        "w": 4,
+        "h": 3
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_value: int(v: r._time) / int(v: 1000000)}))",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "value",
+        "textMode": "value",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "dateTimeFromNow",
+          "displayName": "Data Last Received",
+          "decimals": 0
+        }
+      }
+    },
     {
       "id": 1,
       "type": "stat",
-      "title": "\ud83c\udf31 System Status",
+      "title": "🌱 System Status",
       "gridPos": {
         "x": 0,
         "y": 0,
@@ -80,12 +128,69 @@
       }
     },
     {
-      "id": 2,
-      "type": "table",
-      "title": "\ud83d\udca7 Current Moisture Levels",
+      "id": 998,
+      "type": "stat",
+      "title": "🖥️ Server Uptime",
       "gridPos": {
         "x": 0,
         "y": 5,
+        "w": 24,
+        "h": 4
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"uptime_seconds\")\n  |> last()",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "value",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 3600
+              },
+              {
+                "color": "yellow",
+                "value": 86400
+              }
+            ]
+          },
+          "unit": "s",
+          "decimals": 0,
+          "displayName": "Raspberry Pi"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "💧 Current Moisture Levels",
+      "gridPos": {
+        "x": 0,
+        "y": 9,
         "w": 24,
         "h": 12
       },
@@ -234,6 +339,11 @@
               "device_id": 0,
               "location": 1,
               "_value": 2
+            },
+            "renameByName": {
+              "device_id": "Sensor",
+              "location": "Location",
+              "_value": "Moisture"
             }
           }
         }
@@ -242,10 +352,10 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "\u26a0\ufe0f Alerts",
+      "title": "⚠️ Alerts",
       "gridPos": {
         "x": 0,
-        "y": 17,
+        "y": 21,
         "w": 12,
         "h": 5
       },
@@ -255,7 +365,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"severity\")\n  |> filter(fn: (r) => r._value == \"error\" or r._value == \"critical\")\n  |> count()",
+          "query": "// Count critical diagnostic events in last hour\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r.event_type == \"crash_detected\" or r.event_type == \"wifi_reconnect_failed\" or r.event_type == \"queue_overflow\" or r.event_type == \"heap_low_warning\" or r.event_type == \"influxdb_error\" or r.event_type == \"system_restart\")\n  |> group()\n  |> count()",
           "refId": "A"
         }
       ],
@@ -309,10 +419,10 @@
     {
       "id": 4,
       "type": "stat",
-      "title": "\ud83d\udca7 Need Water",
+      "title": "💧 Need Water",
       "gridPos": {
         "x": 12,
-        "y": 17,
+        "y": 21,
         "w": 12,
         "h": 5
       },
@@ -380,10 +490,10 @@
     {
       "id": 5,
       "type": "timeseries",
-      "title": "\ud83d\udcca Moisture Trends (6 Hours)",
+      "title": "📊 Moisture Trends",
       "gridPos": {
         "x": 0,
-        "y": 22,
+        "y": 26,
         "w": 24,
         "h": 10
       },
@@ -446,16 +556,94 @@
           "color": {
             "mode": "palette-classic"
           }
-        }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-1.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 1 (Bed Room)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-2.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 2 (Living Room)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2CC0C"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-3.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 3 (Guest Room)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-4.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 4 (Guest Room)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF6B6B"
+                }
+              }
+            ]
+          }
+        ]
       }
     },
     {
       "id": 6,
       "type": "table",
-      "title": "\ud83d\udce1 Sensor Health",
+      "title": "📡 Sensor Health",
       "gridPos": {
         "x": 0,
-        "y": 32,
+        "y": 36,
         "w": 24,
         "h": 10
       },
@@ -606,6 +794,11 @@
               "device_id": 0,
               "rssi": 1,
               "free_heap": 2
+            },
+            "renameByName": {
+              "device_id": "Sensor",
+              "rssi": "WiFi",
+              "free_heap": "Memory"
             }
           }
         }

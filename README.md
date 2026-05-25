@@ -1,8 +1,22 @@
-# 🌱 Soil Moisture Monitoring System — v2.0
+# 🌱 Soil Moisture Monitoring System — v2.3.0
 
 A production-grade, multi-sensor soil moisture monitoring system built with **ESP8266** microcontrollers, **InfluxDB**, and **Grafana**, hosted on a **Raspberry Pi 5**.
 
 Each sensor reads soil moisture every 5 minutes and posts data to a central time-series database. A live Grafana dashboard visualizes all sensors simultaneously.
+
+---
+
+## 📊 Live Dashboard Access
+
+**Public Dashboard** (no login required):
+
+🌐 **https://grafana.owenmedeiros.com** — View all dashboards live from anywhere
+
+**Local Network Access:**
+- http://192.168.99.134:3000 — Full dashboard access on local network
+- Admin login available for editing dashboards
+
+> **Note:** Public URL has anonymous read-only access. Only admins can edit dashboards.
 
 ---
 
@@ -14,22 +28,37 @@ Each sensor reads soil moisture every 5 minutes and posts data to a central time
                                ▼
                     [Raspberry Pi 5 Server]
                     ├── InfluxDB 2.x  (:8086)
-                    └── Grafana       (:3000)
+                    ├── Grafana       (:3000)
+                    └── Cloudflare Tunnel
+                              │
+                              ▼
+                    https://grafana.owenmedeiros.com
 ```
 
 ---
 
 ## Features
 
+### ESP8266 Firmware (v2.1.0)
 - **Multi-sensor support** — unlimited ESP8266 sensors, each identified by `DEVICE_ID`
-- **InfluxDB 2.x backend** — time-series storage on USB drive, 365-day retention
-- **Grafana dashboard** — live charts, gauges, per-sensor filtering, auto-refresh every 5 min
-- **WiFi stability** — scan-before-connect, 3-attempt retry, auto-reconnect, max TX power
+- **WiFi stability** — scan-before-connect, exponential backoff reconnect (5s→60s), max TX power
 - **Offline queue** — up to 20 readings buffered in RAM when WiFi/server is unavailable
+- **Hardware watchdog** — 8-second ESP8266 hardware watchdog prevents infinite loops
+- **OTA updates** — flash firmware remotely via WiFi (no USB cable needed)
+- **Heartbeat telemetry** — 60-second heartbeat with uptime, free heap, WiFi RSSI, queue status
+- **Diagnostic events** — crash detection, WiFi events, InfluxDB errors tracked in dedicated measurement
 - **NTP timestamps** — every reading is UTC-timestamped
 - **Boot diagnostics** — device ID, MAC address, crash reason printed on every boot
-- **Health telemetry** — free heap, uptime, WiFi RSSI, crash count sent to InfluxDB
+
+### Raspberry Pi Server (v2.3.0)
+- **InfluxDB 2.x backend** — time-series storage on USB drive, 365-day retention
+- **Grafana dashboards (6 total)** — soil moisture with **Pi uptime panel**, sensor details, system health, alerts, mobile view, Pi health
+- **Cloudflare Tunnel** — public HTTPS access via `grafana.owenmedeiros.com` (anonymous read-only viewing)
+- **Enhanced logging system** — boot tracking, filesystem corruption detection, Grafana failure logging, log rotation
+- **Anonymous access** — view-only Grafana dashboards without login (Viewer role)
+- **System metrics** — CPU, RAM, disk, temperature monitoring via Python collector (60s interval)
 - **Automated backups** — daily Pi backup via systemd timer
+- **Health monitoring** — auto-restart InfluxDB/Grafana on failure (3 failures in 10 min triggers reboot)
 
 ---
 
@@ -44,25 +73,45 @@ soil-sensor/
 │       ├── main.cpp
 │       ├── sensor.h/.cpp         # ADC driver & moisture %
 │       ├── wifi_manager.h/.cpp   # WiFi connect, scan, retry
-│       ├── wifi_stability.h/.cpp # Reconnect watchdog
+│       ├── wifi_stability.h/.cpp # Reconnect watchdog, exponential backoff
 │       ├── database_client.h/.cpp# InfluxDB line protocol HTTP POST
+│       ├── heartbeat.h/.cpp      # 60s health telemetry
+│       ├── diagnostics.h/.cpp    # Event tracking (crash, WiFi, errors)
 │       ├── data_logger.h/.cpp    # In-RAM ring buffer
-│       ├── reading_queue.h/.cpp  # Offline queue
-│       └── web_server.h/.cpp     # Local HTTP server
+│       ├── reading_queue.h/.cpp  # Offline queue (max 20 readings)
+│       └── web_server.h/.cpp     # Local HTTP server (optional)
 ├── grafana-dashboards/
-│   └── soil-sensor.json          # Dashboard JSON (importable)
+│   ├── soil-moisture-main.json   # Main overview dashboard
+│   ├── sensor-details.json       # Individual sensor deep-dive
+│   ├── system-health.json        # ESP8266 diagnostics & events
+│   ├── alerts-overview.json      # Critical alerts & notifications
+│   ├── mobile-summary.json       # Mobile-optimized view
+│   ├── rpi-health.json           # Raspberry Pi system metrics
+│   └── README.md                 # Dashboard installation guide
 ├── rpi-setup/
 │   ├── install.sh                # Full Pi setup script
+│   ├── install-cloudflare-tunnel.sh  # Cloudflare Tunnel installer (v2.3.0)
+│   ├── configure-grafana-anonymous.sh # Anonymous viewing setup (v2.3.0)
+│   ├── install-logging.sh        # Enhanced logging system installer (v2.3.0)
+│   ├── LOGGING_README.md         # Logging documentation (v2.3.0)
 │   ├── scripts/
 │   │   ├── sensor-backup.sh
-│   │   └── sensor-health-monitor.sh
-│   └── systemd/                  # Service/timer unit files
+│   │   ├── sensor-health-monitor.sh  # Enhanced with Grafana failure logging
+│   │   ├── startup-logger.sh     # Boot tracking (v2.3.0)
+│   │   └── system-metrics-collector.py  # CPU/RAM/disk monitoring
+│   ├── systemd/
+│   │   ├── startup-logger.service    # Boot event logger (v2.3.0)
+│   │   └── [other service files]
+│   └── logrotate.d/
+│       └── soil-sensor           # Log rotation config (v2.3.0)
 ├── hardware/
 │   ├── BOM.md
 │   ├── SCHEMATIC.md
 │   └── schematic.json
 └── docs/
-    └── README.md                 # WiFi stability, Grafana Cloud setup, InfluxDB notes
+    ├── README.md                 # WiFi stability, Grafana Cloud setup, InfluxDB notes
+    ├── SNAPSHOTS.md              # Grafana snapshot URLs (v2.3.0)
+    └── create-snapshots.sh       # Snapshot creation script (v2.3.0)
 ```
 
 ---
@@ -115,15 +164,25 @@ The script installs and configures:
 
 ### After Install
 
-1. Open InfluxDB at `http://<pi-ip>:8086`
+1. **Configure InfluxDB** at `http://<pi-ip>:8086`
    - Create org: `soil-monitoring`
    - Create bucket: `sensor-readings` (365-day retention)
-   - Generate an API token for the sensors
+   - Generate write token for ESP8266 sensors
+   - Generate read token for Grafana
 
-2. Open Grafana at `http://<pi-ip>:3000`
+2. **Configure Grafana** at `http://<pi-ip>:3000`
    - Login: `admin` / `admin` (change on first login)
    - Add InfluxDB datasource (Flux mode, URL: `http://localhost:8086`)
-   - Import dashboard from `grafana-dashboards/soil-sensor.json`
+   - Copy dashboards to `/mnt/sensor-data/grafana/dashboards/` (auto-provisioned)
+   - Or import manually via UI from `grafana-dashboards/*.json`
+
+3. **Enable anonymous access and public URL** (optional, for read-only public viewing)
+   ```bash
+   cd rpi-setup
+   ./install-cloudflare-tunnel.sh      # Set up public HTTPS access
+   ./configure-grafana-anonymous.sh    # Enable anonymous viewing
+   ```
+   Dashboards will be viewable at `https://grafana.owenmedeiros.com` (replace with your domain)
 
 ---
 
@@ -175,24 +234,39 @@ pio device monitor --port /dev/cu.usbserial-XXXX --baud 115200
 ```
 ═══════════════════════════════════════
   🌱  Soil Moisture Monitoring System
-     InfluxDB + WiFi Stability v2.0
-  Device: sensor-1  (living-room)
+     InfluxDB + WiFi Stability v2.1.0
+  Device: sensor-1  (bed-room)
   MAC:    68:C6:3A:F6:B3:AE
 ═══════════════════════════════════════
+✅ Clean boot (no crashes detected)
 [WiFi] Scanning for networks...
   Found: YourNetwork (-53 dBm)
 [WiFi] Attempt 1/3 connecting to YourNetwork
-[WiFi] ✓ Connected! IP: 192.168.x.x
+[WiFi] ✓ Connected! IP: 192.168.x.x, RSSI: -45 dBm (excellent)
 [NTP] Time synced
-[DB] ✓ Posted to InfluxDB: sensor-1 @ 62.4%
+[DB] Using InfluxDB: http://192.168.99.134:8086
+[DB] ✓ Posted to InfluxDB (HTTP 204): sensor-1 @ 62.4%
+[Heartbeat] ✓ Posted (uptime: 8s, heap: 38KB, queue: 0/20)
 Setup complete. Uptime: 8 s
 ```
 
 ### Adding a New Sensor
 
 1. Edit `config.h`: set a unique `DEVICE_ID` and `DEVICE_LOCATION`
-2. Upload firmware to the new board
+2. Upload firmware to the new board via USB or OTA
 3. The sensor appears automatically in the Grafana **Sensor** dropdown
+
+### OTA (Over-The-Air) Firmware Updates
+
+After the first USB flash, you can update sensors remotely:
+
+```bash
+# From firmware/ directory
+pio run --target upload --upload-port <sensor-ip>
+# Password: soilmon2026
+```
+
+Find sensor IPs in Grafana or via router DHCP leases.
 
 ---
 
@@ -206,52 +280,81 @@ The ESP8266 ADC is 10-bit (0–1023). Capacitive sensors read **high when dry** 
 
 ---
 
-## Grafana Dashboard
+## Grafana Dashboards
 
-### Import
+### Dashboard Suite (6 dashboards)
 
+| Dashboard | Tags | Description |
+|-----------|------|-------------|
+| **Soil Moisture Main** | overview, sensors | Main overview with all sensors, moisture gauges, trend plots |
+| **Sensor Details** | sensors, diagnostics | Individual sensor deep-dive with uptime, heap, WiFi |
+| **System Health** | diagnostics, system | ESP8266 diagnostic events, WiFi stability, critical events |
+| **Alerts Overview** | alerts, monitoring | Critical alerts, watering needed, sensor offline detection |
+| **Mobile Summary** | mobile, overview | Mobile-optimized quick view |
+| **Raspberry Pi Health** | system, server | Pi CPU, RAM, disk, temperature monitoring |
+
+### Features
+- **High-contrast colors** — Green (sensor-1), Yellow (sensor-2), Blue (sensor-3), Red (sensor-4)
+- **Moisture gradients** — Dark to bright within each color family (0% dry → 100% wet)
+- **Dynamic labels** — "Sensor 1 (Bed Room)" format with dropdown selection
+- **Location filtering** — 'backyard' location filtered out from all dashboards
+- **Time-adaptive** — Panel titles adjust to selected time window (no hardcoded "24h")
+- **Anonymous access** — View dashboards without login (optional, Viewer role)
+- **Auto-refresh** — 5-minute refresh, 10-second dashboard provisioning reload
+
+### Import Dashboards
+
+**Automated (via provisioning):**
 ```bash
-# Push via API (replace IP and password)
-curl -X POST -u admin:yourpassword \
+# Copy to Pi's Grafana provisioning directory
+scp grafana-dashboards/*.json pi@<pi-ip>:/mnt/sensor-data/grafana/dashboards/
+# Auto-imported within 10 seconds
+```
+
+**Manual (via API):**
+```bash
+curl -X POST -u admin:admin \
   -H 'Content-Type: application/json' \
-  -d @grafana-dashboards/soil-sensor.json \
+  -d @grafana-dashboards/soil-moisture-main.json \
   http://<pi-ip>:3000/api/dashboards/db
 ```
 
-### Panels
+### Remote Access
 
-| Panel | Type | Description |
-|-------|------|-------------|
-| Soil Moisture % | Gauge | Current moisture per sensor |
-| WiFi Signal (RSSI) | Gauge | Current signal strength |
-| Uptime | Stat | Seconds since last boot |
-| Free Heap | Stat | ESP8266 available RAM |
-| Crashes | Stat | Crash count since last flash |
-| Soil Moisture Over Time | Time series | 24h history, all sensors |
-| WiFi Signal Over Time | Time series | RSSI history |
-| Free Heap Over Time | Time series | Memory health history |
+**Public Access (Cloudflare Tunnel)**
+```bash
+cd rpi-setup
+./install-cloudflare-tunnel.sh
+./configure-grafana-anonymous.sh
+```
+Dashboards publicly accessible at `https://grafana.owenmedeiros.com` (anonymous read-only, no login required).
 
-### Remote Access (Public Snapshot)
+**Local Anonymous Access**
+```bash
+cd rpi-setup
+./configure-grafana-anonymous.sh
+```
+Dashboards viewable at `http://<pi-ip>:3000` without login (Viewer role, read-only).
 
-To share a **read-only, login-free** view from anywhere:
+**Public Snapshot** (static snapshot)
+1. Open dashboard → Share icon → Snapshot tab
+2. Set expiry → Publish to snapshot.raintank.io
+3. Copy public URL (no login required, static snapshot)
 
-1. Open the dashboard in Grafana
-2. Click the **Share** icon → **Snapshot** tab
-3. Set expiry (or "Never") → **Publish to snapshot.raintank.io**
-4. Copy the public URL — anyone with the link can view it, no login required
-
-> For a **live** public dashboard, see the [Grafana Cloud setup](docs/README.md#grafana-cloud-public-access) in `docs/README.md`.
+> For **Grafana Cloud** live public dashboards, see [docs/README.md](docs/README.md#grafana-cloud-public-access).
 
 ---
 
 ## InfluxDB Data Schema
 
-**Measurement**: `sensor_reading`
+### Measurements
+
+**1. `sensor_reading`** — Soil moisture and telemetry (every 5 minutes)
 
 | Tag | Example | Description |
 |-----|---------|-------------|
 | `device_id` | `sensor-1` | Sensor identifier |
-| `location` | `living-room` | Physical location |
+| `location` | `bed-room` | Physical location |
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -261,6 +364,53 @@ To share a **read-only, login-free** view from anywhere:
 | `uptime` | int | Seconds since boot |
 | `free_heap` | int | Available RAM bytes |
 | `crashes` | int | Crash counter |
+
+**2. `sensor_heartbeat`** — Health telemetry (every 60 seconds)
+
+| Tag | Example | Description |
+|-----|---------|-------------|
+| `device_id` | `sensor-1` | Sensor identifier |
+| `location` | `bed-room` | Physical location |
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `uptime` | int | Seconds since boot |
+| `free_heap` | int | Available RAM bytes |
+| `rssi` | int | WiFi signal dBm |
+| `queue_size` | int | Offline queue depth (0-20) |
+
+**3. `sensor_diagnostics`** — Event tracking (on-demand)
+
+| Tag | Example | Description |
+|-----|---------|-------------|
+| `device_id` | `sensor-1` | Sensor identifier |
+| `location` | `bed-room` | Physical location |
+| `event_type` | `wifi_disconnect` | Event category |
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `event_reason` | string | Human-readable reason |
+| `event_count` | int | Cumulative event count |
+| `free_heap` | int | RAM at event time |
+| `rssi` | int | WiFi signal at event time |
+| `queue_size` | int | Queue depth at event time |
+
+**4. `rpi_system_metrics`** — Raspberry Pi health (every 60 seconds)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `cpu_percent` | float | CPU usage % |
+| `cpu_temp` | float | CPU temperature °C |
+| `ram_percent` | float | RAM usage % |
+| `ram_used_mb` | int | Used RAM MB |
+| `ram_free_mb` | int | Free RAM MB |
+| `disk_percent` | float | Disk usage % |
+| `disk_used_gb` | float | Used disk GB |
+| `disk_free_gb` | float | Free disk GB |
+| `uptime_seconds` | int | System uptime |
+| `load_1min` | float | 1-min load average |
+| `load_5min` | float | 5-min load average |
+| `load_15min` | float | 15-min load average |
 
 **Example Flux query:**
 
@@ -278,15 +428,24 @@ from(bucket: "sensor-readings")
 
 | Service | Description |
 |---------|-------------|
-| `influxdb` | Time-series database |
-| `grafana-server` | Dashboard server |
-| `sensor-health-monitor` | Alerts if services go down |
+| `influxdb` | Time-series database (auto-restart on failure) |
+| `grafana-server` | Dashboard server (auto-restart on failure) |
+| `cloudflared` | Cloudflare Tunnel for public HTTPS access |
+| `sensor-health-monitor` | Monitors InfluxDB/Grafana, alerts on failure |
 | `sensor-backup.timer` | Daily backup at 3:00 AM |
+| `system-metrics-collector` | Pi CPU/RAM/disk monitoring (60s interval) |
 
 ```bash
-sudo systemctl status influxdb grafana-server
+# Check service status
+sudo systemctl status influxdb grafana-server cloudflared system-metrics-collector
+
+# View logs
 journalctl -u influxdb -f
-sudo systemctl restart influxdb
+journalctl -u cloudflared -f
+journalctl -u system-metrics-collector -f
+
+# Restart services
+sudo systemctl restart influxdb grafana-server cloudflared
 ```
 
 ---
@@ -298,10 +457,15 @@ sudo systemctl restart influxdb
 | Upload times out | Serial monitor holding port | Close monitor, retry |
 | WiFi `Status: 7` | Router auth reject / temp ban | Power cycle router |
 | WiFi `Status: 0` | Board never saw router | Check 2.4 GHz band, move closer |
+| `⚠️ CRASH DETECTED!` | Power supply issue | Try different USB cable/adapter |
+| `[DB] ✗ POST failed (HTTP 401)` | Invalid InfluxDB token | Check `INFLUX_TOKEN` in config.h |
+| `[DB] ✗ POST failed (connection refused)` | InfluxDB not running | `sudo systemctl status influxdb` |
 | InfluxDB won't start | USB drive not mounted | `mount \| grep sensor-data` |
 | Dashboard shows no data | Wrong time range | Set range to `Last 1 hour` |
-| "All" sensor no data | Grafana variable misconfigured | Use `=~ /${device:regex}/`, not `contains()` |
+| Grafana shows "NO DATA" | Normal for empty panels | E.g., no critical events = healthy |
 | Chrome won't load InfluxDB | HSTS cache issue | Use Safari or clear HSTS cache |
+| Public URL unreachable | Cloudflare Tunnel down | `sudo systemctl status cloudflared` |
+| DNS not resolving | Propagation delay | Wait 1-5 minutes after tunnel setup |
 
 ---
 

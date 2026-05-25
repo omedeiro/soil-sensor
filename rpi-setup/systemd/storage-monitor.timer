@@ -1,0 +1,11 @@
+[Unit]
+Description=Storage Monitor Timer - Run every 3 minutes
+Requires=storage-monitor.service
+
+[Timer]
+OnBootSec=30sec
+OnUnitActiveSec=3min
+AccuracySec=15s
+
+[Install]
+WantedBy=timers.target
