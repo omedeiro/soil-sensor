@@ -450,6 +450,52 @@ sudo systemctl restart influxdb grafana-server cloudflared
 
 ---
 
+## Development & Releases
+
+### Version Bump Automation
+
+Use the automated version bump script to update all version references consistently:
+
+```bash
+# Bump minor version for system/infrastructure updates
+./scripts/bump-version.sh minor system  # 2.5.0 → 2.6.0
+
+# Bump minor version for firmware updates
+./scripts/bump-version.sh minor firmware  # 2.2.0 → 2.3.0
+
+# Bump patch version for docs/bug fixes
+./scripts/bump-version.sh patch docs  # 2.5.0 → 2.5.1
+```
+
+**What it updates automatically:**
+- `CHANGELOG.md` — Adds new version entry
+- `README.md` — Updates version headers
+- `firmware/src/config.h` — Updates firmware version (if firmware bump)
+- `grafana-dashboards/README.md` — Updates dashboard suite version
+
+**After running the script:**
+1. Edit `CHANGELOG.md` and replace "TODO: Add changes here" with actual changes
+2. Review changes: `git diff`
+3. Commit and create PR: See [docs/BRANCH_PROTECTION.md](docs/BRANCH_PROTECTION.md)
+
+### Branch Protection
+
+The `main` branch should be protected to prevent direct pushes and enforce PR workflow.
+
+**Setup instructions:** See [docs/BRANCH_PROTECTION.md](docs/BRANCH_PROTECTION.md)
+
+**Quick setup via GitHub CLI:**
+
+```bash
+gh api repos/omedeiro/soil-sensor/branches/main/protection \
+  --method PUT \
+  --field required_pull_request_reviews[required_approving_review_count]=0 \
+  --field enforce_admins=true \
+  --field allow_force_pushes=false
+```
+
+---
+
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
