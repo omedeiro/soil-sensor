@@ -633,6 +633,63 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-5.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 5 (Bed Room)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-6.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 6 (Living Room)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-7.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 7 (Guest Room)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5DDBDB"
+                }
+              }
+            ]
           }
         ]
       }
