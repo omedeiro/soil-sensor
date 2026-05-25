@@ -1,7 +1,7 @@
 {
   "id": null,
   "uid": "sensor-details-v2",
-  "title": "📊 Sensor Details & Diagnostics",
+  "title": "\ud83d\udcca Sensor Details & Diagnostics",
   "description": "Deep dive into individual sensor metrics, WiFi performance, and diagnostic history",
   "tags": [
     "sensors",
@@ -26,7 +26,7 @@
         "name": "sensor",
         "label": "Sensor",
         "type": "query",
-        "description": "Select sensor to view (sensor-1 = Bed Room, sensor-2 = Living Room, sensor-3/4 = Guest Room)",
+        "description": "Select sensor to view (with plant types)",
         "datasource": {
           "type": "influxdb",
           "uid": "cflk0i2e2nwu8d"
@@ -46,22 +46,22 @@
         },
         "options": [
           {
-            "text": "Sensor 1 (Bed Room)",
+            "text": "Sensor 1 (Bed Room, Rubber Tree)",
             "value": "sensor-1",
             "selected": true
           },
           {
-            "text": "Sensor 2 (Living Room)",
+            "text": "Sensor 2 (Living Room, Monstera)",
             "value": "sensor-2",
             "selected": false
           },
           {
-            "text": "Sensor 3 (Guest Room)",
+            "text": "Sensor 3 (Living Room, Avocado)",
             "value": "sensor-3",
             "selected": false
           },
           {
-            "text": "Sensor 4 (Guest Room)",
+            "text": "Sensor 4 (Guest Room, Basil - auk)",
             "value": "sensor-4",
             "selected": false
           }
