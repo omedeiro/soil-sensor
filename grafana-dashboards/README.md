@@ -1,15 +1,16 @@
 # Grafana Dashboards Guide
 
-6 production-ready dashboards for the Soil Moisture Monitoring System (v2.3.0).
+6 production-ready dashboards for the Soil Moisture Monitoring System (v2.4.0).
 
 All dashboards feature:
-- **High-contrast color scheme** per sensor (Green, Yellow, Blue, Red)
+- **High-contrast color scheme** per sensor (7 distinct colors for easy identification)
 - **Moisture gradients** — Dark to bright within each color family (0% → 100%)
 - **Dynamic labels** — "Sensor 1 (Bed Room)" format with dropdown selection
 - **Location filtering** — 'backyard' location filtered out
 - **Time-adaptive titles** — Adapt to selected time window (no hardcoded "24h")
 - **Auto-refresh** — 5-minute refresh, 10-second provisioning reload
 - **Raspberry Pi uptime** — System uptime displayed on main dashboard (v2.3.0)
+- **7-sensor support** — Supports up to 7 sensors with unique colors (v2.4.0)
 
 ---
 
@@ -22,7 +23,7 @@ All dashboards feature:
 
 **Key Panels:**
 - **Raspberry Pi Uptime** — Server uptime in top status bar (v2.3.0)
-- **Moisture gauges** (4) — Current moisture % with color gradients per sensor
+- **Moisture gauges** (7) — Current moisture % with color gradients per sensor (v2.4.0)
 - **Moisture trend plot** — Time series for all sensors (color-coded)
 - **Last updated** — Relative time since most recent reading
 - **System health score** — Percentage of sensors online
@@ -208,11 +209,14 @@ Each dashboard has exactly 2 functional tags for easy filtering:
 
 ## Color Scheme
 
-### Sensor Colors (High-Contrast)
+### Sensor Colors (High-Contrast, 7-Sensor Support)
 - **Sensor-1:** Green (#73BF69)
 - **Sensor-2:** Yellow (#F2CC0C)
 - **Sensor-3:** Blue (#5794F2)
 - **Sensor-4:** Red (#FF6B6B)
+- **Sensor-5:** Purple (#B877D9) - *Added in v2.4.0*
+- **Sensor-6:** Orange (#FF9830) - *Added in v2.4.0*
+- **Sensor-7:** Cyan (#5DDBDB) - *Added in v2.4.0*
 
 ### Moisture Gauge Gradients
 Each sensor has a dark→bright gradient (0% dry → 100% wet) within its color family:
@@ -223,6 +227,9 @@ Each sensor has a dark→bright gradient (0% dry → 100% wet) within its color 
 | Sensor-2 (Yellow) | #6b5606 | #a3890f | #F2CC0C | #F2CC0C |
 | Sensor-3 (Blue) | #1f3f68 | #3669a8 | #5794F2 | #5794F2 |
 | Sensor-4 (Red) | #6b2323 | #a83838 | #FF6B6B | #FF6B6B |
+| Sensor-5 (Purple) | #4a2b57 | #7d4a9b | #B877D9 | #B877D9 |
+| Sensor-6 (Orange) | #663c13 | #b36420 | #FF9830 | #FF9830 |
+| Sensor-7 (Cyan) | #255858 | #3f9999 | #5DDBDB | #5DDBDB |
 
 **Rationale:** Each sensor maintains its unique color for easy reference, with brightness indicating moisture level.
 
@@ -480,4 +487,4 @@ curl -H "Authorization: Bearer <api-key>" \
 
 ---
 
-Last updated: 2026-05-18 (v2.3.0)
+Last updated: 2026-05-25 (v2.4.0)

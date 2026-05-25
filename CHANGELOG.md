@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.4.0] - 2026-05-25
+
+### Added
+
+#### Multi-Sensor Expansion (7 Sensors)
+- **3 new sensors deployed** — sensor-5 (bed-room), sensor-6 (living-room), sensor-7 (guest-room)
+- **Extended color palette** — Added purple (#B877D9), orange (#FF9830), cyan (#5DDBDB) for sensors 5-7
+- **Enhanced dashboard support** — Updated soil-moisture-main.json with 7-sensor configuration
+- **Sensor dropdown labels** — All 7 sensors now show proper labels: "Sensor X (Location)"
+- **Radial gauge gradients** — Each new sensor has unique dark→bright color gradient (0% → 100%)
+- **Trend plot colors** — All 7 sensors display with distinct, high-contrast colors
+- **Clean tooltip labels** — Tooltips show "Sensor 5 (Bed Room)" instead of raw field names
+
+#### Firmware Configuration
+- **Sensor-5 configuration** — Device ID: sensor-5, Location: bed-room, IP: 192.168.99.89, MAC: 34:ab:95:16:51:d9
+- **Sensor-6 configuration** — Device ID: sensor-6, Location: living-room, IP: 192.168.99.38, MAC: 48:3f:da:62:f9:07
+- **Sensor-7 configuration** — Device ID: sensor-7, Location: guest-room, IP: 192.168.99.141, MAC: 84:cc:a8:a7:96:32
+
+#### Documentation
+- **Updated AGENTS.md** — Added all 7 sensors to system information with IPs, MACs, hardware details
+- **Updated dashboard README** — Expanded color scheme documentation to include sensors 5-7 with gradients
+- **Version updates** — Firmware v2.2.0, Dashboard v3, Documentation v2.4.0
+
+### Changed
+
+#### Grafana Dashboard (soil-moisture-main.json v3)
+- **Sensor variable options** — Expanded from 4 to 7 sensors with location-tagged labels
+- **Gauge panel overrides** — Added field overrides for sensors 5-7 with displayName and color thresholds
+- **Trend plot overrides** — Added fixed colors and display names for sensors 5-7
+- **Color distribution** — Improved visual distinction across 7 sensors for easier identification
+
+#### System Scale
+- **Multi-location coverage** — Now monitoring 7 sensors across 3 locations (bed-room: 2, living-room: 2, guest-room: 3)
+- **Expanded capacity** — System proven to handle 7 concurrent sensors with stable WiFi and InfluxDB performance
+
+### Fixed
+- **Dashboard label consistency** — New sensors now display proper labels under radial gauges
+- **Tooltip formatting** — Trend plot tooltips show human-readable labels instead of raw InfluxDB field names
+- **Color matching** — Radial gauge colors now match trend plot colors (purple, orange, cyan)
+
+---
+
 ## [2.3.0] - 2026-05-18
 
 ### Added

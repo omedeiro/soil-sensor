@@ -286,6 +286,9 @@ Can calibrate via:
 - **sensor-2** (living-room): `192.168.99.149` (MAC: 48:3f:da:19:c0:86) - online
 - **sensor-3** (guest-room): `192.168.99.70` (MAC: 40:91:51:4f:d9:97) - online
 - **sensor-4** (guest-room): `192.168.99.105` (MAC: 48:3f:da:aa:fe:d7) - online
+- **sensor-5** (bed-room): `192.168.99.89` (MAC: 34:ab:95:16:51:d9) (ESP-1651D9, Wi-Fi 2.4GHz n) - online
+- **sensor-6** (living-room): `192.168.99.38` (MAC: 48:3f:da:62:f9:07) (Wi-Fi 2.4GHz n) - online
+- **sensor-7** (guest-room): `192.168.99.141` (MAC: 84:cc:a8:a7:96:32) (Wi-Fi 2.4GHz n) - online
 - Web Dashboard: `http://<sensor-ip>` (e.g., `http://192.168.99.110`)
 - Reading Interval: 5 minutes (300000ms)
 

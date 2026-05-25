@@ -19,14 +19,14 @@
   "fiscalYearStartMonth": 0,
   "liveNow": false,
   "schemaVersion": 38,
-  "version": 2,
+  "version": 3,
   "templating": {
     "list": [
       {
         "name": "sensor",
         "label": "Sensor",
         "type": "query",
-        "description": "Select sensor to view (sensor-1 = Bed Room, sensor-2 = Living Room, sensor-3/4 = Guest Room)",
+        "description": "Select sensor to view (sensors 1,5 = Bed Room | sensors 2,6 = Living Room | sensors 3,4,7 = Guest Room)",
         "datasource": {
           "type": "influxdb",
           "uid": "cflk0i2e2nwu8d"
@@ -69,6 +69,21 @@
           {
             "text": "Sensor 4 (Guest Room)",
             "value": "sensor-4",
+            "selected": false
+          },
+          {
+            "text": "Sensor 5 (Bed Room)",
+            "value": "sensor-5",
+            "selected": false
+          },
+          {
+            "text": "Sensor 6 (Living Room)",
+            "value": "sensor-6",
+            "selected": false
+          },
+          {
+            "text": "Sensor 7 (Guest Room)",
+            "value": "sensor-7",
             "selected": false
           }
         ],
@@ -454,6 +469,120 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-5.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 5 (Bed Room)"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#4a2b57",
+                      "value": null
+                    },
+                    {
+                      "color": "#7d4a9b",
+                      "value": 33
+                    },
+                    {
+                      "color": "#B877D9",
+                      "value": 67
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-6.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 6 (Living Room)"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#663c13",
+                      "value": null
+                    },
+                    {
+                      "color": "#b36420",
+                      "value": 33
+                    },
+                    {
+                      "color": "#FF9830",
+                      "value": 67
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-7.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 7 (Guest Room)"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#255858",
+                      "value": null
+                    },
+                    {
+                      "color": "#3f9999",
+                      "value": 33
+                    },
+                    {
+                      "color": "#5DDBDB",
+                      "value": 67
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
           }
         ]
       },
@@ -634,6 +763,63 @@
               {
                 "id": "displayName",
                 "value": "Sensor 4 (Guest Room)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-5.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Sensor 5 (Bed Room)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-6.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Sensor 6 (Living Room)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-7.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5DDBDB"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "Sensor 7 (Guest Room)"
               }
             ]
           }
