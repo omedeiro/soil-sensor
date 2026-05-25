@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.0] - 2026-05-25
+
+### Added
+
+#### Plant Type Information
+- **Plant names in dashboards** — Sensor labels now include plant type: "Sensor 1 (Bed Room, Rubber Tree)"
+- **Updated sensor mapping** — All 7 sensors documented with plant types in AGENTS.md
+- **Enhanced dashboard labels** — soil-moisture-main.json and sensor-details.json include plant information
+
+#### Plant Inventory
+- **sensor-1** (bed-room) — Rubber Tree
+- **sensor-2** (living-room) — Monstera
+- **sensor-3** (living-room) — Avocado (location corrected from guest-room)
+- **sensor-4** (guest-room) — Basil - auk
+- **sensor-5** (bed-room) — ZZ Plant
+- **sensor-6** (living-room) — Ficus Elastica Ruby
+- **sensor-7** (guest-room) — Basil - pot
+
+#### Tooling
+- **Dashboard update script** — `scripts/update_dashboard_plant_names.py` for automated plant name updates
+- **Automated label generation** — Python script updates all sensor dropdowns with plant information
+
+### Changed
+
+#### Grafana Dashboards
+- **soil-moisture-main.json** — Updated sensor dropdown with plant names for all 7 sensors
+- **sensor-details.json** — Updated sensor variable with plant type labels
+- **Dashboard description** — Changed from location-only to "Select sensor to view (with plant types)"
+
+#### Documentation
+- **AGENTS.md** — Updated ESP8266 Sensors section with plant types for each sensor
+- **sensor-3 location** — Corrected location from guest-room to living-room
+- **grafana-dashboards/README.md** — Version updated to 2.6.0 with new label format
+
+### Fixed
+- **sensor-3 location** — Corrected from guest-room to living-room in all documentation
+
+---
+
 ## [2.5.0] - 2026-05-25
 
 ### Changed

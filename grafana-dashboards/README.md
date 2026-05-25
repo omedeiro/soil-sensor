@@ -1,11 +1,11 @@
 # Grafana Dashboards Guide
 
-6 production-ready dashboards for the Soil Moisture Monitoring System (v2.4.0).
+6 production-ready dashboards for the Soil Moisture Monitoring System (v2.6.0).
 
 All dashboards feature:
 - **High-contrast color scheme** per sensor (7 distinct colors for easy identification)
 - **Moisture gradients** — Dark to bright within each color family (0% → 100%)
-- **Dynamic labels** — "Sensor 1 (Bed Room)" format with dropdown selection
+- **Dynamic labels** — "Sensor 1 (Bed Room, Rubber Tree)" format with plant types (v2.6.0)
 - **Location filtering** — 'backyard' location filtered out
 - **Time-adaptive titles** — Adapt to selected time window (no hardcoded "24h")
 - **Auto-refresh** — 5-minute refresh, 10-second provisioning reload
@@ -640,4 +640,4 @@ curl -H "Authorization: Bearer <api-key>" \
 
 ---
 
-Last updated: 2026-05-25 (v2.4.0)
+Last updated: 2026-05-25 (v2.6.0)

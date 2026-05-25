@@ -1,7 +1,7 @@
 {
   "id": null,
   "uid": "soil-moisture-main-v2",
-  "title": "🌱 Soil Moisture Dashboard",
+  "title": "\ud83c\udf31 Soil Moisture Dashboard",
   "description": "Main dashboard for monitoring soil moisture across all sensors - Mobile optimized",
   "tags": [
     "overview",
@@ -26,7 +26,7 @@
         "name": "sensor",
         "label": "Sensor",
         "type": "query",
-        "description": "Select sensor to view (sensors 1,5 = Bed Room | sensors 2,6 = Living Room | sensors 3,4,7 = Guest Room)",
+        "description": "Select sensor to view (with plant types)",
         "datasource": {
           "type": "influxdb",
           "uid": "cflk0i2e2nwu8d"
@@ -52,37 +52,37 @@
             "selected": true
           },
           {
-            "text": "Sensor 1 (Bed Room)",
+            "text": "Sensor 1 (Bed Room, Rubber Tree)",
             "value": "sensor-1",
             "selected": false
           },
           {
-            "text": "Sensor 2 (Living Room)",
+            "text": "Sensor 2 (Living Room, Monstera)",
             "value": "sensor-2",
             "selected": false
           },
           {
-            "text": "Sensor 3 (Guest Room)",
+            "text": "Sensor 3 (Living Room, Avocado)",
             "value": "sensor-3",
             "selected": false
           },
           {
-            "text": "Sensor 4 (Guest Room)",
+            "text": "Sensor 4 (Guest Room, Basil - auk)",
             "value": "sensor-4",
             "selected": false
           },
           {
-            "text": "Sensor 5 (Bed Room)",
+            "text": "Sensor 5 (Bed Room, ZZ Plant)",
             "value": "sensor-5",
             "selected": false
           },
           {
-            "text": "Sensor 6 (Living Room)",
+            "text": "Sensor 6 (Living Room, Ficus Elastica Ruby)",
             "value": "sensor-6",
             "selected": false
           },
           {
-            "text": "Sensor 7 (Guest Room)",
+            "text": "Sensor 7 (Guest Room, Basil - pot)",
             "value": "sensor-7",
             "selected": false
           }
@@ -96,7 +96,7 @@
     {
       "id": 998,
       "type": "stat",
-      "title": "🖥️ Raspberry Pi Uptime",
+      "title": "\ud83d\udda5\ufe0f Raspberry Pi Uptime",
       "gridPos": {
         "x": 16,
         "y": 0,
