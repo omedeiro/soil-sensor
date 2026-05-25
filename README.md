@@ -1,4 +1,4 @@
-# 🌱 Soil Moisture Monitoring System — v2.3.0
+# 🌱 Soil Moisture Monitoring System — v2.6.0
 
 A production-grade, multi-sensor soil moisture monitoring system built with **ESP8266** microcontrollers, **InfluxDB**, and **Grafana**, hosted on a **Raspberry Pi 5**.
 
