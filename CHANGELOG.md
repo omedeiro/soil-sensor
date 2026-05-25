@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.0] - 2026-05-25
+
+### Changed
+
+#### Documentation
+- **Communication guidelines** — Added critical instruction to AGENTS.md prohibiting validating language ("You're absolutely right!" etc.)
+- **Professional objectivity** — Reinforced focus on direct, objective technical information without emotional validation
+
+---
+
 ## [2.4.0] - 2026-05-25
 
 ### Added

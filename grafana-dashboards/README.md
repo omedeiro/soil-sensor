@@ -161,23 +161,176 @@ Repeat for all 6 dashboards.
 
 ---
 
-### Method 3: API Import
+### Method 3: API Import/Update
+
+**⚠️ WARNING:** Always include `folderUid` when importing to preserve dashboard organization in the "Soil Monitoring" folder.
 
 ```bash
-# Import single dashboard
-curl -X POST -u admin:admin \
+# Get the Soil Monitoring folder UID
+FOLDER_UID=$(curl -s -u admin:admin http://<pi-ip>:3000/api/folders | \
+  python3 -c 'import sys, json; folders=json.load(sys.stdin); print([f["uid"] for f in folders if f["title"]=="Soil Monitoring"][0])')
+
+echo "Soil Monitoring folder UID: $FOLDER_UID"
+
+# Import single dashboard with folder
+cat grafana-dashboards/soil-moisture-main.json | python3 -c "
+import sys, json, os
+dashboard = json.load(sys.stdin)
+wrapper = {
+  'dashboard': dashboard,
+  'folderUid': os.environ['FOLDER_UID'],
+  'overwrite': True
+}
+print(json.dumps(wrapper))
+" | curl -X POST -u admin:admin \
   -H 'Content-Type: application/json' \
-  -d @grafana-dashboards/soil-moisture-main.json \
+  -d @- \
   http://<pi-ip>:3000/api/dashboards/db
 
-# Import all dashboards (bash loop)
+# Import all dashboards into Soil Monitoring folder
 for dashboard in grafana-dashboards/*.json; do
-  curl -X POST -u admin:admin \
+  # Skip mobile-summary (stays in root)
+  if [[ $(basename "$dashboard") == "mobile-summary.json" ]]; then
+    FOLDER=""
+  else
+    FOLDER="$FOLDER_UID"
+  fi
+  
+  cat "$dashboard" | python3 -c "
+import sys, json, os
+dashboard = json.load(sys.stdin)
+wrapper = {
+  'dashboard': dashboard,
+  'overwrite': True
+}
+folder = os.environ.get('FOLDER', '')
+if folder:
+  wrapper['folderUid'] = folder
+print(json.dumps(wrapper))
+" | curl -X POST -u admin:admin \
     -H 'Content-Type: application/json' \
-    -d @"$dashboard" \
+    -d @- \
     http://<pi-ip>:3000/api/dashboards/db
   echo "Imported: $(basename $dashboard)"
 done
+```
+
+**Important:** When updating dashboards via API, Grafana stores them in its **database**, not as JSON files. This means:
+1. Changes to JSON files in `grafana-dashboards/` won't auto-update in Grafana
+2. You must re-import via API whenever JSON files are updated
+3. Dashboard changes in Grafana UI won't update the JSON files (export needed)
+4. **CRITICAL:** Omitting `folderUid` will move dashboards to the root folder!
+
+---
+
+## Deployment Workflow
+
+### Current System Configuration
+
+The production Grafana instance stores dashboards in its **SQLite database**, not as provisioned JSON files.
+
+**This means:**
+- Dashboard JSON files in `/mnt/sensor-data/grafana/dashboards/` are **reference copies only**
+- Changes to these JSON files won't automatically appear in Grafana
+- Dashboards must be updated via Grafana API or UI
+
+### Updating Dashboards in Production
+
+**Step 1: Update local JSON files**
+```bash
+# Edit dashboard JSON in grafana-dashboards/
+cd /path/to/soil-sensor/grafana-dashboards
+# ... make changes to *.json files ...
+git commit -m "fix: update dashboard labels"
+```
+
+**Step 2: Copy to Raspberry Pi**
+```bash
+scp grafana-dashboards/soil-moisture-main.json \
+  user@raspberrypi:/tmp/soil-moisture-main.json
+```
+
+**Step 3: Update reference copy**
+```bash
+ssh user@raspberrypi
+sudo cp /tmp/soil-moisture-main.json \
+  /mnt/sensor-data/grafana/dashboards/soil-moisture-main.json
+sudo chown grafana:grafana \
+  /mnt/sensor-data/grafana/dashboards/soil-moisture-main.json
+```
+
+**Step 4: Import to Grafana via API**
+
+**CRITICAL:** Always specify the `folderUid` when importing, otherwise the dashboard will be moved out of the "Soil Monitoring" folder.
+
+```bash
+# Get the Soil Monitoring folder UID first
+FOLDER_UID=$(curl -s -u admin:admin http://localhost:3000/api/folders | \
+  python3 -c 'import sys, json; folders=json.load(sys.stdin); print([f["uid"] for f in folders if f["title"]=="Soil Monitoring"][0])')
+
+# Import dashboard into the correct folder
+cat /mnt/sensor-data/grafana/dashboards/soil-moisture-main.json | python3 -c "
+import sys, json
+dashboard = json.load(sys.stdin)
+wrapper = {
+  'dashboard': dashboard,
+  'folderUid': '$FOLDER_UID',
+  'overwrite': True
+}
+print(json.dumps(wrapper))
+" | curl -X POST -u admin:admin \
+  -H 'Content-Type: application/json' \
+  -d @- \
+  http://localhost:3000/api/dashboards/db
+```
+
+**Current folder UID:** `afma8ap3k5csgb` (Soil Monitoring)
+
+**Step 5: Verify in browser**
+- Open https://grafana.owenmedeiros.com
+- Hard refresh (Ctrl+Shift+R / Cmd+Shift+R)
+- Check that changes appear
+
+### Setting Default Home Dashboard
+
+```bash
+# Set org-wide home dashboard
+curl -X PUT -u 'admin:admin' \
+  'http://localhost:3000/api/org/preferences' \
+  -H 'Content-Type: application/json' \
+  -d '{"homeDashboardUID": "soil-moisture-main-v2"}'
+```
+
+### Migrating to Provisioning (Future)
+
+To enable auto-updates from JSON files:
+
+1. **Create provisioning config:**
+```bash
+sudo mkdir -p /etc/grafana/provisioning/dashboards
+sudo cat > /etc/grafana/provisioning/dashboards/soil-sensors.yaml <<EOF
+apiVersion: 1
+providers:
+  - name: 'Soil Sensors'
+    folder: ''
+    type: file
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /mnt/sensor-data/grafana/dashboards
+EOF
+```
+
+2. **Restart Grafana:**
+```bash
+sudo systemctl restart grafana-server
+```
+
+3. **Future updates:**
+```bash
+# Just copy files - Grafana auto-imports
+sudo cp new-dashboard.json /mnt/sensor-data/grafana/dashboards/
+# Grafana reloads within 10 seconds
 ```
 
 ---

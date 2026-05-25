@@ -1,5 +1,9 @@
 # Agent Instructions — Soil Sensor Project
 
+## Communication Guidelines
+
+**CRITICAL:** The phrase "You're absolutely right!" should NEVER be used in responses. Provide direct, objective technical information without validating language.
+
 ## Architecture
 
 **NEW SYSTEM (InfluxDB + Grafana on Raspberry Pi 5):**
