@@ -161,23 +161,142 @@ Repeat for all 6 dashboards.
 
 ---
 
-### Method 3: API Import
+### Method 3: API Import/Update
 
 ```bash
-# Import single dashboard
+# Import single dashboard (creates new or updates existing)
 curl -X POST -u admin:admin \
   -H 'Content-Type: application/json' \
   -d @grafana-dashboards/soil-moisture-main.json \
   http://<pi-ip>:3000/api/dashboards/db
 
+# Update existing dashboard (overwrites)
+cat grafana-dashboards/soil-moisture-main.json | python3 -c '
+import sys, json
+dashboard = json.load(sys.stdin)
+wrapper = {"dashboard": dashboard, "overwrite": True}
+print(json.dumps(wrapper))
+' | curl -X POST -u admin:admin \
+  -H 'Content-Type: application/json' \
+  -d @- \
+  http://<pi-ip>:3000/api/dashboards/db
+
 # Import all dashboards (bash loop)
 for dashboard in grafana-dashboards/*.json; do
-  curl -X POST -u admin:admin \
+  cat "$dashboard" | python3 -c '
+import sys, json
+dashboard = json.load(sys.stdin)
+wrapper = {"dashboard": dashboard, "overwrite": True}
+print(json.dumps(wrapper))
+' | curl -X POST -u admin:admin \
     -H 'Content-Type: application/json' \
-    -d @"$dashboard" \
+    -d @- \
     http://<pi-ip>:3000/api/dashboards/db
   echo "Imported: $(basename $dashboard)"
 done
+```
+
+**Important:** When updating dashboards via API, Grafana stores them in its **database**, not as JSON files. This means:
+1. Changes to JSON files in `grafana-dashboards/` won't auto-update in Grafana
+2. You must re-import via API whenever JSON files are updated
+3. Dashboard changes in Grafana UI won't update the JSON files (export needed)
+
+---
+
+## Deployment Workflow
+
+### Current System Configuration
+
+The production Grafana instance stores dashboards in its **SQLite database**, not as provisioned JSON files.
+
+**This means:**
+- Dashboard JSON files in `/mnt/sensor-data/grafana/dashboards/` are **reference copies only**
+- Changes to these JSON files won't automatically appear in Grafana
+- Dashboards must be updated via Grafana API or UI
+
+### Updating Dashboards in Production
+
+**Step 1: Update local JSON files**
+```bash
+# Edit dashboard JSON in grafana-dashboards/
+cd /path/to/soil-sensor/grafana-dashboards
+# ... make changes to *.json files ...
+git commit -m "fix: update dashboard labels"
+```
+
+**Step 2: Copy to Raspberry Pi**
+```bash
+scp grafana-dashboards/soil-moisture-main.json \
+  user@raspberrypi:/tmp/soil-moisture-main.json
+```
+
+**Step 3: Update reference copy**
+```bash
+ssh user@raspberrypi
+sudo cp /tmp/soil-moisture-main.json \
+  /mnt/sensor-data/grafana/dashboards/soil-moisture-main.json
+sudo chown grafana:grafana \
+  /mnt/sensor-data/grafana/dashboards/soil-moisture-main.json
+```
+
+**Step 4: Import to Grafana via API**
+```bash
+cat /mnt/sensor-data/grafana/dashboards/soil-moisture-main.json | python3 -c '
+import sys, json
+dashboard = json.load(sys.stdin)
+wrapper = {"dashboard": dashboard, "overwrite": True}
+print(json.dumps(wrapper))
+' | curl -X POST -u admin:admin \
+  -H 'Content-Type: application/json' \
+  -d @- \
+  http://localhost:3000/api/dashboards/db
+```
+
+**Step 5: Verify in browser**
+- Open https://grafana.owenmedeiros.com
+- Hard refresh (Ctrl+Shift+R / Cmd+Shift+R)
+- Check that changes appear
+
+### Setting Default Home Dashboard
+
+```bash
+# Set org-wide home dashboard
+curl -X PUT -u 'admin:admin' \
+  'http://localhost:3000/api/org/preferences' \
+  -H 'Content-Type: application/json' \
+  -d '{"homeDashboardUID": "soil-moisture-main-v2"}'
+```
+
+### Migrating to Provisioning (Future)
+
+To enable auto-updates from JSON files:
+
+1. **Create provisioning config:**
+```bash
+sudo mkdir -p /etc/grafana/provisioning/dashboards
+sudo cat > /etc/grafana/provisioning/dashboards/soil-sensors.yaml <<EOF
+apiVersion: 1
+providers:
+  - name: 'Soil Sensors'
+    folder: ''
+    type: file
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /mnt/sensor-data/grafana/dashboards
+EOF
+```
+
+2. **Restart Grafana:**
+```bash
+sudo systemctl restart grafana-server
+```
+
+3. **Future updates:**
+```bash
+# Just copy files - Grafana auto-imports
+sudo cp new-dashboard.json /mnt/sensor-data/grafana/dashboards/
+# Grafana reloads within 10 seconds
 ```
 
 ---
