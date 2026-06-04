@@ -1,0 +1,1000 @@
+{
+  "id": null,
+  "uid": "watering-history-v1",
+  "title": "\ud83d\udeb0 Watering History",
+  "description": "Detects and visualizes watering events based on sharp moisture increases",
+  "tags": [
+    "watering",
+    "monitoring"
+  ],
+  "style": "dark",
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "refresh": "5m",
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "fiscalYearStartMonth": 0,
+  "liveNow": false,
+  "schemaVersion": 38,
+  "version": 1,
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"text-align: center; padding: 15px;\">\n  <h1 style=\"font-size: 36px; margin: 0;\">\ud83d\udeb0 Watering History</h1>\n  <p style=\"font-size: 14px; color: #888; margin-top: 5px;\">Automatic detection of watering events (15%+ moisture increase in 30 minutes)</p>\n</div>"
+      },
+      "transparent": true
+    },
+    {
+      "id": 2,
+      "type": "state-timeline",
+      "title": "Watering Events Timeline",
+      "description": "Green bars indicate when each sensor was watered (2-hour watered status after detection)",
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 24,
+        "h": 10
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "// Get moisture readings for all sensors\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> sort(columns: [\"_time\"])\n\n// Calculate point-to-point difference to detect sharp increases\nwatering_events = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> map(fn: (r) => ({\n      r with\n      _value: if r._value >= 15.0 then 1.0 else 0.0\n    }))\n  |> aggregateWindow(every: 2h, fn: max, createEmpty: false)\n\nwatering_events",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "mergeValues": true,
+        "showValue": "never",
+        "alignValue": "left",
+        "rowHeight": 0.9,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 80
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Normal",
+                  "color": "transparent"
+                },
+                "1": {
+                  "text": "Watered",
+                  "color": "green"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sensor_reading {device_id=\"sensor-1\"}"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 1 (Rubber Tree)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sensor_reading {device_id=\"sensor-2\"}"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 2 (Monstera)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2CC0C"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sensor_reading {device_id=\"sensor-3\"}"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 3 (Avocado)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sensor_reading {device_id=\"sensor-4\"}"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 4 (Basil - auk)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF6B6B"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sensor_reading {device_id=\"sensor-5\"}"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 5 (ZZ Plant)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sensor_reading {device_id=\"sensor-6\"}"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 6 (Ficus Elastica Ruby)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sensor_reading {device_id=\"sensor-7\"}"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 7 (Basil - pot)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5DDBDB"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Moisture Trend with Watering Markers",
+      "description": "Moisture levels over time with vertical markers showing detected watering events",
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 24,
+        "h": 10
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
+          "refId": "A"
+        },
+        {
+          "query": "// Detect watering events (15%+ increase between readings)\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> sort(columns: [\"_time\"])\n\ndata\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n  |> map(fn: (r) => ({r with _value: 100.0}))",
+          "refId": "B"
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "last",
+            "min",
+            "max"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "pointSize": 5,
+            "showPoints": "never",
+            "spanNulls": false,
+            "lineInterpolation": "smooth",
+            "axisPlacement": "auto",
+            "drawStyle": "line"
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "displayName",
+                "value": "Watering Event"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sensor_reading moisture {device_id=\"sensor-1\", location=\"bed-room\"}"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 1 (Rubber Tree)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sensor_reading moisture {device_id=\"sensor-2\", location=\"living-room\"}"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 2 (Monstera)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2CC0C"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sensor_reading moisture {device_id=\"sensor-3\", location=\"living-room\"}"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 3 (Avocado)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sensor_reading moisture {device_id=\"sensor-4\", location=\"guest-room\"}"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 4 (Basil - auk)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF6B6B"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sensor_reading moisture {device_id=\"sensor-5\", location=\"bed-room\"}"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 5 (ZZ Plant)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sensor_reading moisture {device_id=\"sensor-6\", location=\"living-room\"}"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 6 (Ficus Elastica Ruby)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sensor_reading moisture {device_id=\"sensor-7\", location=\"guest-room\"}"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Sensor 7 (Basil - pot)"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5DDBDB"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 101,
+      "type": "stat",
+      "title": "Sensor 1 - Last Watered",
+      "description": "Time since Rubber Tree was last watered",
+      "gridPos": {
+        "x": 0,
+        "y": 23,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "data = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-1\")\n  |> group()\n  |> sort(columns: [\"_time\"])\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "textMode": "value",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 172800000
+              },
+              {
+                "color": "orange",
+                "value": 432000000
+              },
+              {
+                "color": "red",
+                "value": 604800000
+              }
+            ]
+          },
+          "unit": "dateTimeFromNow",
+          "displayName": "Rubber Tree",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#73BF69"
+          }
+        }
+      }
+    },
+    {
+      "id": 102,
+      "type": "stat",
+      "title": "Sensor 2 - Last Watered",
+      "description": "Time since Monstera was last watered",
+      "gridPos": {
+        "x": 6,
+        "y": 23,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "data = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-2\")\n  |> group()\n  |> sort(columns: [\"_time\"])\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "textMode": "value",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 172800000
+              },
+              {
+                "color": "orange",
+                "value": 432000000
+              },
+              {
+                "color": "red",
+                "value": 604800000
+              }
+            ]
+          },
+          "unit": "dateTimeFromNow",
+          "displayName": "Monstera",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#F2CC0C"
+          }
+        }
+      }
+    },
+    {
+      "id": 103,
+      "type": "stat",
+      "title": "Sensor 3 - Last Watered",
+      "description": "Time since Avocado was last watered",
+      "gridPos": {
+        "x": 12,
+        "y": 23,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "data = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-3\")\n  |> group()\n  |> sort(columns: [\"_time\"])\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "textMode": "value",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 172800000
+              },
+              {
+                "color": "orange",
+                "value": 432000000
+              },
+              {
+                "color": "red",
+                "value": 604800000
+              }
+            ]
+          },
+          "unit": "dateTimeFromNow",
+          "displayName": "Avocado",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#5794F2"
+          }
+        }
+      }
+    },
+    {
+      "id": 104,
+      "type": "stat",
+      "title": "Sensor 4 - Last Watered",
+      "description": "Time since Basil (auk) was last watered",
+      "gridPos": {
+        "x": 18,
+        "y": 23,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "data = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-4\")\n  |> group()\n  |> sort(columns: [\"_time\"])\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "textMode": "value",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 172800000
+              },
+              {
+                "color": "orange",
+                "value": 432000000
+              },
+              {
+                "color": "red",
+                "value": 604800000
+              }
+            ]
+          },
+          "unit": "dateTimeFromNow",
+          "displayName": "Basil (auk)",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#FF6B6B"
+          }
+        }
+      }
+    },
+    {
+      "id": 105,
+      "type": "stat",
+      "title": "Sensor 5 - Last Watered",
+      "description": "Time since ZZ Plant was last watered",
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 8,
+        "h": 5
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "data = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-5\")\n  |> group()\n  |> sort(columns: [\"_time\"])\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "textMode": "value",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 172800000
+              },
+              {
+                "color": "orange",
+                "value": 432000000
+              },
+              {
+                "color": "red",
+                "value": 604800000
+              }
+            ]
+          },
+          "unit": "dateTimeFromNow",
+          "displayName": "ZZ Plant",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#B877D9"
+          }
+        }
+      }
+    },
+    {
+      "id": 106,
+      "type": "stat",
+      "title": "Sensor 6 - Last Watered",
+      "description": "Time since Ficus Elastica Ruby was last watered",
+      "gridPos": {
+        "x": 8,
+        "y": 28,
+        "w": 8,
+        "h": 5
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "data = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-6\")\n  |> group()\n  |> sort(columns: [\"_time\"])\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "textMode": "value",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 172800000
+              },
+              {
+                "color": "orange",
+                "value": 432000000
+              },
+              {
+                "color": "red",
+                "value": 604800000
+              }
+            ]
+          },
+          "unit": "dateTimeFromNow",
+          "displayName": "Ficus Elastica Ruby",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#FF9830"
+          }
+        }
+      }
+    },
+    {
+      "id": 107,
+      "type": "stat",
+      "title": "Sensor 7 - Last Watered",
+      "description": "Time since Basil (pot) was last watered",
+      "gridPos": {
+        "x": 16,
+        "y": 28,
+        "w": 8,
+        "h": 5
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "data = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-7\")\n  |> group()\n  |> sort(columns: [\"_time\"])\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "textMode": "value",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 172800000
+              },
+              {
+                "color": "orange",
+                "value": 432000000
+              },
+              {
+                "color": "red",
+                "value": 604800000
+              }
+            ]
+          },
+          "unit": "dateTimeFromNow",
+          "displayName": "Basil (pot)",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#5DDBDB"
+          }
+        }
+      }
+    },
+    {
+      "id": 200,
+      "type": "heatmap",
+      "title": "Watering Frequency by Day & Hour",
+      "description": "Heatmap showing when watering events typically occur",
+      "gridPos": {
+        "x": 0,
+        "y": 33,
+        "w": 24,
+        "h": 10
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "import \"date\"\n\n// Detect all watering events\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> sort(columns: [\"_time\"])\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\n// Extract hour and day of week\nevents\n  |> map(fn: (r) => ({\n      _time: r._time,\n      _value: 1.0,\n      hour: date.hour(t: r._time),\n      weekday: date.weekDay(t: r._time)\n    }))\n  |> group(columns: [\"hour\", \"weekday\"])\n  |> sum()\n  |> group()",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "calculate": false,
+        "cellGap": 2,
+        "color": {
+          "mode": "scheme",
+          "scheme": "Spectral",
+          "steps": 64
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false
+        },
+        "tooltip": {
+          "show": true,
+          "yHistogram": false
+        },
+        "legend": {
+          "show": true
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "annotations": {
+    "list": []
+  }
+}

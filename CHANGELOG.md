@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.7.0] - 2026-06-03
+
+### Added
+
+#### Centralized Sensor Configuration System
+- **sensors-config.json** — Master configuration file for all sensor information (plant names, locations, IPs, MACs, colors, thresholds)
+- **generate-dashboard.py** — Python script to auto-generate Grafana dashboards from config
+- **validate-config.py** — Configuration validator with comprehensive error checking
+- **upload-dashboard-to-pi.sh** — One-command dashboard deployment to Grafana
+- **QUICK_REFERENCE.md** — Quick reference for common sensor management tasks (includes configuration guide)
+
+#### Dashboard Improvements
+- **Dynamic plant name display** — Large heading shows "🌱 [Plant Name]" when specific sensor selected
+- **7-day default time window** — Changed from 24h to 7d for better trend visibility
+- **Plant-only labels** — Removed room locations from labels (now shows just "Rubber Tree" instead of "Sensor 1 (Bed Room, Rubber Tree)")
+- **Enhanced dropdown** — Dropdown shows plant names directly ("Rubber Tree" not "sensor-1")
+- **Functional filtering** — Fixed dropdown filter to properly filter all panels when sensor selected
+
+### Changed
+
+#### Configuration Management
+- **Dashboard generation** — Now automated via Python script instead of manual JSON editing
+- **Single source of truth** — All sensor info centralized in sensors-config.json
+- **Validation workflow** — Automatic validation runs before dashboard generation
+
+#### Dashboard Layout
+- **Added text panel** — New panel at top shows selected plant name
+- **Adjusted panel positions** — All panels moved down to accommodate plant name header
+- **Time window** — Default changed from "now-24h" to "now-7d"
+
+### Fixed
+- **Dropdown filter not working** — Added proper device_id filter to all panel queries
+- **Missing plant identification** — Added dynamic plant name display for single-sensor view
+- **Manual configuration pain points** — Eliminated need for manual JSON editing
+
+---
+
 ## [2.6.0] - 2026-05-25
 
 ### Added

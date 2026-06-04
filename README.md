@@ -66,6 +66,10 @@ Each sensor reads soil moisture every 5 minutes and posts data to a central time
 
 ```
 soil-sensor/
+├── sensors-config.json           # ← Centralized sensor configuration
+├── generate-dashboard.py         # Generate Grafana dashboards from config
+├── upload-dashboard-to-pi.sh     # Deploy dashboards to Grafana
+├── QUICK_REFERENCE.md            # Quick reference for common sensor tasks
 ├── firmware/                     # ESP8266 PlatformIO firmware
 │   ├── platformio.ini
 │   └── src/
@@ -81,7 +85,7 @@ soil-sensor/
 │       ├── reading_queue.h/.cpp  # Offline queue (max 20 readings)
 │       └── web_server.h/.cpp     # Local HTTP server (optional)
 ├── grafana-dashboards/
-│   ├── soil-moisture-main.json   # Main overview dashboard
+│   ├── soil-moisture-main.json   # Main overview dashboard (auto-generated)
 │   ├── sensor-details.json       # Individual sensor deep-dive
 │   ├── system-health.json        # ESP8266 diagnostics & events
 │   ├── alerts-overview.json      # Critical alerts & notifications
@@ -252,6 +256,33 @@ Setup complete. Uptime: 8 s
 
 ### Adding a New Sensor
 
+**Quick Method (Recommended):**
+
+1. Edit `sensors-config.json` to add the new sensor:
+   ```json
+   {
+     "id": "sensor-8",
+     "plant": "Snake Plant",
+     "location": "office",
+     "ip": "192.168.99.XXX",
+     "mac": "XX:XX:XX:XX:XX:XX",
+     "color": "#00FF00",
+     "thresholds": {"low": 33, "medium": 67},
+     "colorSteps": [...]
+   }
+   ```
+2. Generate and upload the dashboard:
+   ```bash
+   ./generate-dashboard.py
+   ./upload-dashboard-to-pi.sh
+   ```
+3. Edit `firmware/src/config.h` with matching `DEVICE_ID` and `DEVICE_LOCATION`
+4. Upload firmware to the new ESP8266
+
+See **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** for detailed sensor management guide.
+
+**Manual Method:**
+
 1. Edit `config.h`: set a unique `DEVICE_ID` and `DEVICE_LOCATION`
 2. Upload firmware to the new board via USB or OTA
 3. The sensor appears automatically in the Grafana **Sensor** dropdown
@@ -294,9 +325,12 @@ The ESP8266 ADC is 10-bit (0–1023). Capacitive sensors read **high when dry** 
 | **Raspberry Pi Health** | system, server | Pi CPU, RAM, disk, temperature monitoring |
 
 ### Features
-- **High-contrast colors** — Green (sensor-1), Yellow (sensor-2), Blue (sensor-3), Red (sensor-4)
+- **Centralized configuration** — `sensors-config.json` manages all sensor info, colors, and labels
+- **Auto-generated dashboards** — Run `./generate-dashboard.py` to update from config
+- **High-contrast colors** — Each sensor has a unique color for easy identification
 - **Moisture gradients** — Dark to bright within each color family (0% dry → 100% wet)
-- **Dynamic labels** — "Sensor 1 (Bed Room)" format with dropdown selection
+- **Plant name labels** — "Rubber Tree", "Monstera" (no "sensor-1" IDs in display)
+- **Dropdown filtering** — Select individual sensors or view all at once
 - **Location filtering** — 'backyard' location filtered out from all dashboards
 - **Time-adaptive** — Panel titles adjust to selected time window (no hardcoded "24h")
 - **Anonymous access** — View dashboards without login (optional, Viewer role)
@@ -493,6 +527,19 @@ gh api repos/omedeiro/soil-sensor/branches/main/protection \
   --field enforce_admins=true \
   --field allow_force_pushes=false
 ```
+
+---
+
+## Documentation
+
+| Document | Purpose |
+|----------|---------|
+| **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** | Quick reference for common sensor management tasks |
+| **[grafana-dashboards/README.md](grafana-dashboards/README.md)** | Dashboard setup and customization |
+| **[rpi-setup/README.md](rpi-setup/README.md)** | Raspberry Pi installation guide |
+| **[firmware/README.md](firmware/README.md)** | ESP8266 firmware guide |
+| **[docs/README.md](docs/README.md)** | Technical documentation |
+| **[CHANGELOG.md](CHANGELOG.md)** | Version history and release notes |
 
 ---
 
