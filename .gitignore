@@ -17,3 +17,6 @@ grafana-dashboards/*.json.backup
 *.elf
 *.bin
 *.hex
+
+# SD card recovery backup (contains WiFi password + user password hashes)
+rpi-setup/sd-card-backup/
