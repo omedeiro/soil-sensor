@@ -45,7 +45,7 @@
 // InfluxDB Configuration
 // NOTE: Update these after setting up InfluxDB on Raspberry Pi!
 #define DB_SERVER_URL       "http://192.168.99.134:8086/api/v2/write"
-#define INFLUX_TOKEN        "fNL1d7Eg__QMxP_vGqR2Ekw16ADxYO8gDdDxXqEFGs-t3j03sRpHKDY8R7pz0kRIaQ35yWlU3NXhXX9ra0YWNA=="  // Operator token
+#define INFLUX_TOKEN        "r7LONiwdc3ABOcEYSS5nCL6c6sdUZEPy81Q1D7w7nAyXZDAteUD1C6BYZJe21qX4eOwhRvG2ARYwRkaHwQf17w=="  // Write token (Docker rebuild 2026-06-10)
 #define INFLUX_ORG          "soil-monitoring"
 #define INFLUX_BUCKET       "sensor-readings"
 
@@ -53,8 +53,8 @@
 // Option 1: Auto-generate from MAC address (e.g., "esp8266-40915141d997")
 // Option 2: Set DEVICE_ID_AUTO=false and provide custom ID below
 #define DEVICE_ID_AUTO      false
-#define DEVICE_ID           "sensor-7"          // Change for each sensor: sensor-1, sensor-2, etc.
-#define DEVICE_LOCATION     "guest-room"        // Optional location tag for Grafana filtering
+#define DEVICE_ID           "sensor-6"          // Change for each sensor: sensor-1, sensor-2, etc.
+#define DEVICE_LOCATION     "living-room"       // Room location for this sensor
 
 // ─── WiFi Stability & Queue ──────────────────────────────────────────────────
 #define ENABLE_WIFI_DIAGNOSTICS  true   // Enable detailed WiFi logging
