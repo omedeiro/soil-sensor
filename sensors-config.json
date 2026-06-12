@@ -1,0 +1,128 @@
+{
+  "sensors": [
+    {
+      "id": "sensor-1",
+      "plant": "Rubber Tree",
+      "location": "bed-room",
+      "ip": "192.168.99.110",
+      "mac": "68:c6:3a:f6:b3:ae",
+      "color": "#73BF69",
+      "thresholds": {
+        "low": 33,
+        "medium": 67
+      },
+      "colorSteps": [
+        {"value": null, "color": "#2d5016"},
+        {"value": 33, "color": "#4a7c2a"},
+        {"value": 67, "color": "#73BF69"}
+      ]
+    },
+    {
+      "id": "sensor-2",
+      "plant": "Monstera",
+      "location": "living-room",
+      "ip": "192.168.99.149",
+      "mac": "48:3f:da:19:c0:86",
+      "color": "#F2CC0C",
+      "thresholds": {
+        "low": 33,
+        "medium": 67
+      },
+      "colorSteps": [
+        {"value": null, "color": "#6b5606"},
+        {"value": 33, "color": "#a88a09"},
+        {"value": 67, "color": "#F2CC0C"}
+      ]
+    },
+    {
+      "id": "sensor-3",
+      "plant": "Avocado",
+      "location": "living-room",
+      "ip": "192.168.99.70",
+      "mac": "40:91:51:4f:d9:97",
+      "color": "#5794F2",
+      "thresholds": {
+        "low": 33,
+        "medium": 67
+      },
+      "colorSteps": [
+        {"value": null, "color": "#1f3f68"},
+        {"value": 33, "color": "#3b6aad"},
+        {"value": 67, "color": "#5794F2"}
+      ]
+    },
+    {
+      "id": "sensor-4",
+      "plant": "Basil - auk",
+      "location": "guest-room",
+      "ip": "192.168.99.105",
+      "mac": "48:3f:da:aa:fe:d7",
+      "color": "#FF6B6B",
+      "thresholds": {
+        "low": 33,
+        "medium": 67
+      },
+      "colorSteps": [
+        {"value": null, "color": "#6b2323"},
+        {"value": 33, "color": "#b54747"},
+        {"value": 67, "color": "#FF6B6B"}
+      ]
+    },
+    {
+      "id": "sensor-5",
+      "plant": "ZZ Plant",
+      "location": "bed-room",
+      "ip": "192.168.99.89",
+      "mac": "34:ab:95:16:51:d9",
+      "color": "#B877D9",
+      "thresholds": {
+        "low": 33,
+        "medium": 67
+      },
+      "colorSteps": [
+        {"value": null, "color": "#4a2b57"},
+        {"value": 33, "color": "#7d4a9b"},
+        {"value": 67, "color": "#B877D9"}
+      ]
+    },
+    {
+      "id": "sensor-6",
+      "plant": "Ficus Elastica Ruby",
+      "location": "living-room",
+      "ip": "192.168.99.38",
+      "mac": "48:3f:da:62:f9:07",
+      "color": "#FF9830",
+      "thresholds": {
+        "low": 33,
+        "medium": 67
+      },
+      "colorSteps": [
+        {"value": null, "color": "#663c13"},
+        {"value": 33, "color": "#b36420"},
+        {"value": 67, "color": "#FF9830"}
+      ]
+    },
+    {
+      "id": "sensor-7",
+      "plant": "Basil - pot",
+      "location": "guest-room",
+      "ip": "192.168.99.141",
+      "mac": "84:cc:a8:a7:96:32",
+      "color": "#5DDBDB",
+      "thresholds": {
+        "low": 33,
+        "medium": 67
+      },
+      "colorSteps": [
+        {"value": null, "color": "#255858"},
+        {"value": 33, "color": "#3f9999"},
+        {"value": 67, "color": "#5DDBDB"}
+      ]
+    }
+  ],
+  "grafana": {
+    "influxdb_datasource_uid": "cflk0i2e2nwu8d",
+    "bucket": "sensor-readings",
+    "measurement": "sensor_reading"
+  }
+}

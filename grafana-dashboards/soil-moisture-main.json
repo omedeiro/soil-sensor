@@ -13,20 +13,20 @@
   "graphTooltip": 1,
   "refresh": "5m",
   "time": {
-    "from": "now-24h",
+    "from": "now-7d",
     "to": "now"
   },
   "fiscalYearStartMonth": 0,
   "liveNow": false,
   "schemaVersion": 38,
-  "version": 3,
+  "version": 4,
   "templating": {
     "list": [
       {
         "name": "sensor",
         "label": "Sensor",
         "type": "query",
-        "description": "Select sensor to view (with plant types)",
+        "description": "Select sensor to view",
         "datasource": {
           "type": "influxdb",
           "uid": "cflk0i2e2nwu8d"
@@ -52,37 +52,37 @@
             "selected": true
           },
           {
-            "text": "Sensor 1 (Bed Room, Rubber Tree)",
+            "text": "Rubber Tree",
             "value": "sensor-1",
             "selected": false
           },
           {
-            "text": "Sensor 2 (Living Room, Monstera)",
+            "text": "Monstera",
             "value": "sensor-2",
             "selected": false
           },
           {
-            "text": "Sensor 3 (Living Room, Avocado)",
+            "text": "Avocado",
             "value": "sensor-3",
             "selected": false
           },
           {
-            "text": "Sensor 4 (Guest Room, Basil - auk)",
+            "text": "Basil - auk",
             "value": "sensor-4",
             "selected": false
           },
           {
-            "text": "Sensor 5 (Bed Room, ZZ Plant)",
+            "text": "ZZ Plant",
             "value": "sensor-5",
             "selected": false
           },
           {
-            "text": "Sensor 6 (Living Room, Ficus Elastica Ruby)",
+            "text": "Ficus Elastica Ruby",
             "value": "sensor-6",
             "selected": false
           },
           {
-            "text": "Sensor 7 (Guest Room, Basil - pot)",
+            "text": "Basil - pot",
             "value": "sensor-7",
             "selected": false
           }
@@ -94,14 +94,196 @@
   },
   "panels": [
     {
+      "id": 1001,
+      "type": "stat",
+      "title": "",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "import \"array\"\nimport \"experimental\"\n\nsensor = \"${sensor}\"\n\ndata = if sensor == \".*\" then [{_time: now(), _value: \"All Plants\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-1\" then [{_time: now(), _value: \"Rubber Tree\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-2\" then [{_time: now(), _value: \"Monstera\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-3\" then [{_time: now(), _value: \"Avocado\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-4\" then [{_time: now(), _value: \"Basil - auk\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-5\" then [{_time: now(), _value: \"ZZ Plant\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-6\" then [{_time: now(), _value: \"Ficus Elastica Ruby\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-7\" then [{_time: now(), _value: \"Basil - pot\", _field: \"plant_name\"}]\n  else [{_time: now(), _value: \"All Plants\", _field: \"plant_name\"}]\n\narray.from(rows: data)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "textMode": "value",
+        "reduceOptions": {
+          "values": true,
+          "fields": "/_value/",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "text": {
+          "titleSize": 16,
+          "valueSize": 48
+        }
+      },
+      "transparent": false,
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "All Plants": {
+                  "color": "#5794F2",
+                  "index": 0
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "Rubber Tree": {
+                  "color": "#73BF69",
+                  "index": 1
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "Monstera": {
+                  "color": "#F2CC0C",
+                  "index": 2
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "Avocado": {
+                  "color": "#5794F2",
+                  "index": 3
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "Basil - auk": {
+                  "color": "#FF6B6B",
+                  "index": 4
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "ZZ Plant": {
+                  "color": "#B877D9",
+                  "index": 5
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "Ficus Elastica Ruby": {
+                  "color": "#FF9830",
+                  "index": 6
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "Basil - pot": {
+                  "color": "#5DDBDB",
+                  "index": 7
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "System Status",
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 8,
+        "h": 4
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> count()\n  |> group()\n  |> count()",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "textMode": "value_and_name",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "green",
+                "value": 3
+              }
+            ]
+          },
+          "unit": "short",
+          "displayName": "Sensors Online"
+        }
+      }
+    },
+    {
       "id": 998,
       "type": "stat",
-      "title": "\ud83d\udda5\ufe0f Raspberry Pi Uptime",
+      "title": "🖥️ Raspberry Pi Uptime",
       "gridPos": {
-        "x": 16,
-        "y": 0,
-        "w": 4,
-        "h": 3
+        "x": 8,
+        "y": 3,
+        "w": 8,
+        "h": 4
       },
       "datasource": {
         "type": "influxdb",
@@ -155,10 +337,10 @@
       "type": "stat",
       "title": "Last Updated",
       "gridPos": {
-        "x": 20,
-        "y": 0,
-        "w": 4,
-        "h": 3
+        "x": 16,
+        "y": 3,
+        "w": 8,
+        "h": 4
       },
       "datasource": {
         "type": "influxdb",
@@ -200,88 +382,31 @@
       }
     },
     {
-      "id": 1,
-      "type": "stat",
-      "title": "System Status",
-      "gridPos": {
-        "x": 0,
-        "y": 0,
-        "w": 24,
-        "h": 3
-      },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
-      },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> count()\n  |> group()\n  |> count()",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "none",
-        "colorMode": "background",
-        "textMode": "value_and_name",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 1
-              },
-              {
-                "color": "green",
-                "value": 3
-              }
-            ]
-          },
-          "unit": "short",
-          "displayName": "Sensors Online"
-        }
-      }
-    },
-    {
       "id": 2,
-      "type": "gauge",
-      "title": "Moisture",
+      "type": "bargauge",
+      "title": "Current Moisture Levels",
       "gridPos": {
         "x": 0,
-        "y": 3,
-        "w": 6,
+        "y": 7,
+        "w": 24,
         "h": 8
       },
-      "repeat": "sensor",
-      "repeatDirection": "h",
-      "maxPerRow": 4,
       "datasource": {
         "type": "influxdb",
         "uid": "cflk0i2e2nwu8d"
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id =~ /^${sensor}$/)\n  |> last()",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id =~ /^${sensor}$/)\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> sort(columns: [\"device_id\"])",
           "refId": "A"
         }
       ],
       "options": {
-        "orientation": "auto",
-        "showThresholdLabels": true,
-        "showThresholdMarkers": true,
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "minVizWidth": 0,
+        "minVizHeight": 10,
         "reduceOptions": {
           "values": false,
           "calcs": [
@@ -326,7 +451,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 1 (Bed Room)"
+                "value": "Rubber Tree"
               },
               {
                 "id": "thresholds",
@@ -334,16 +459,16 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#2d5016",
-                      "value": null
+                      "value": null,
+                      "color": "#2d5016"
                     },
                     {
-                      "color": "#4a7c2a",
-                      "value": 33
+                      "value": 33,
+                      "color": "#4a7c2a"
                     },
                     {
-                      "color": "#73BF69",
-                      "value": 67
+                      "value": 67,
+                      "color": "#73BF69"
                     }
                   ]
                 }
@@ -364,7 +489,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 2 (Living Room)"
+                "value": "Monstera"
               },
               {
                 "id": "thresholds",
@@ -372,16 +497,16 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#6b5606",
-                      "value": null
+                      "value": null,
+                      "color": "#6b5606"
                     },
                     {
-                      "color": "#a88a09",
-                      "value": 33
+                      "value": 33,
+                      "color": "#a88a09"
                     },
                     {
-                      "color": "#F2CC0C",
-                      "value": 67
+                      "value": 67,
+                      "color": "#F2CC0C"
                     }
                   ]
                 }
@@ -402,7 +527,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 3 (Guest Room)"
+                "value": "Avocado"
               },
               {
                 "id": "thresholds",
@@ -410,16 +535,16 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#1f3f68",
-                      "value": null
+                      "value": null,
+                      "color": "#1f3f68"
                     },
                     {
-                      "color": "#3b6aad",
-                      "value": 33
+                      "value": 33,
+                      "color": "#3b6aad"
                     },
                     {
-                      "color": "#5794F2",
-                      "value": 67
+                      "value": 67,
+                      "color": "#5794F2"
                     }
                   ]
                 }
@@ -440,7 +565,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 4 (Guest Room)"
+                "value": "Basil - auk"
               },
               {
                 "id": "thresholds",
@@ -448,16 +573,16 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#6b2323",
-                      "value": null
+                      "value": null,
+                      "color": "#6b2323"
                     },
                     {
-                      "color": "#b54747",
-                      "value": 33
+                      "value": 33,
+                      "color": "#b54747"
                     },
                     {
-                      "color": "#FF6B6B",
-                      "value": 67
+                      "value": 67,
+                      "color": "#FF6B6B"
                     }
                   ]
                 }
@@ -478,7 +603,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 5 (Bed Room)"
+                "value": "ZZ Plant"
               },
               {
                 "id": "thresholds",
@@ -486,16 +611,16 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#4a2b57",
-                      "value": null
+                      "value": null,
+                      "color": "#4a2b57"
                     },
                     {
-                      "color": "#7d4a9b",
-                      "value": 33
+                      "value": 33,
+                      "color": "#7d4a9b"
                     },
                     {
-                      "color": "#B877D9",
-                      "value": 67
+                      "value": 67,
+                      "color": "#B877D9"
                     }
                   ]
                 }
@@ -516,7 +641,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 6 (Living Room)"
+                "value": "Ficus Elastica Ruby"
               },
               {
                 "id": "thresholds",
@@ -524,16 +649,16 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#663c13",
-                      "value": null
+                      "value": null,
+                      "color": "#663c13"
                     },
                     {
-                      "color": "#b36420",
-                      "value": 33
+                      "value": 33,
+                      "color": "#b36420"
                     },
                     {
-                      "color": "#FF9830",
-                      "value": 67
+                      "value": 67,
+                      "color": "#FF9830"
                     }
                   ]
                 }
@@ -554,7 +679,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 7 (Guest Room)"
+                "value": "Basil - pot"
               },
               {
                 "id": "thresholds",
@@ -562,16 +687,16 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#255858",
-                      "value": null
+                      "value": null,
+                      "color": "#255858"
                     },
                     {
-                      "color": "#3f9999",
-                      "value": 33
+                      "value": 33,
+                      "color": "#3f9999"
                     },
                     {
-                      "color": "#5DDBDB",
-                      "value": 67
+                      "value": 67,
+                      "color": "#5DDBDB"
                     }
                   ]
                 }
@@ -585,19 +710,7 @@
             ]
           }
         ]
-      },
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "indexByName": {},
-            "renameByName": {
-              "_value": "${sensor}"
-            }
-          }
-        }
-      ]
+      }
     },
     {
       "id": 3,
@@ -605,7 +718,7 @@
       "title": "Moisture Trends",
       "gridPos": {
         "x": 0,
-        "y": 11,
+        "y": 15,
         "w": 24,
         "h": 10
       },
@@ -697,15 +810,15 @@
             },
             "properties": [
               {
+                "id": "displayName",
+                "value": "Rubber Tree"
+              },
+              {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#73BF69"
                 }
-              },
-              {
-                "id": "displayName",
-                "value": "Sensor 1 (Bed Room)"
               }
             ]
           },
@@ -716,15 +829,15 @@
             },
             "properties": [
               {
+                "id": "displayName",
+                "value": "Monstera"
+              },
+              {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#F2CC0C"
                 }
-              },
-              {
-                "id": "displayName",
-                "value": "Sensor 2 (Living Room)"
               }
             ]
           },
@@ -735,15 +848,15 @@
             },
             "properties": [
               {
+                "id": "displayName",
+                "value": "Avocado"
+              },
+              {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#5794F2"
                 }
-              },
-              {
-                "id": "displayName",
-                "value": "Sensor 3 (Guest Room)"
               }
             ]
           },
@@ -754,15 +867,15 @@
             },
             "properties": [
               {
+                "id": "displayName",
+                "value": "Basil - auk"
+              },
+              {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#FF6B6B"
                 }
-              },
-              {
-                "id": "displayName",
-                "value": "Sensor 4 (Guest Room)"
               }
             ]
           },
@@ -773,15 +886,15 @@
             },
             "properties": [
               {
+                "id": "displayName",
+                "value": "ZZ Plant"
+              },
+              {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#B877D9"
                 }
-              },
-              {
-                "id": "displayName",
-                "value": "Sensor 5 (Bed Room)"
               }
             ]
           },
@@ -792,15 +905,15 @@
             },
             "properties": [
               {
+                "id": "displayName",
+                "value": "Ficus Elastica Ruby"
+              },
+              {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#FF9830"
                 }
-              },
-              {
-                "id": "displayName",
-                "value": "Sensor 6 (Living Room)"
               }
             ]
           },
@@ -811,15 +924,15 @@
             },
             "properties": [
               {
+                "id": "displayName",
+                "value": "Basil - pot"
+              },
+              {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#5DDBDB"
                 }
-              },
-              {
-                "id": "displayName",
-                "value": "Sensor 7 (Guest Room)"
               }
             ]
           }
@@ -827,14 +940,14 @@
       }
     },
     {
-      "id": 4,
-      "type": "table",
-      "title": "Recent Readings",
+      "id": 5,
+      "type": "timeseries",
+      "title": "Raw ADC Values",
       "gridPos": {
         "x": 0,
-        "y": 21,
-        "w": 12,
-        "h": 8
+        "y": 25,
+        "w": 24,
+        "h": 10
       },
       "datasource": {
         "type": "influxdb",
@@ -842,157 +955,65 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\" or r._field == \"rssi\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> sort(columns: [\"_time\"], desc: true)\n  |> limit(n: 20)",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"raw_adc\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r.device_id =~ /^${sensor}$/)\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
           "refId": "A"
         }
       ],
       "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "displayName": "_time",
-            "desc": true
-          }
-        ],
-        "footer": {
-          "show": false,
-          "reducer": [
-            "sum"
-          ],
-          "fields": ""
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "min",
+            "max"
+          ]
         }
       },
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "align": "auto",
-            "displayMode": "auto",
-            "inspect": false
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "spanNulls": 3600000,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "ADC Value",
+            "scaleDistribution": {
+              "type": "linear"
+            }
           },
-          "mappings": [],
+          "unit": "short",
+          "min": 0,
+          "max": 1023,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "transparent",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
+          },
+          "color": {
+            "mode": "palette-classic"
           }
         },
         "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "moisture"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Moisture %"
-              },
-              {
-                "id": "unit",
-                "value": "percent"
-              },
-              {
-                "id": "decimals",
-                "value": 1
-              },
-              {
-                "id": "custom.displayMode",
-                "value": "color-background"
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "red",
-                      "value": null
-                    },
-                    {
-                      "color": "yellow",
-                      "value": 20
-                    },
-                    {
-                      "color": "green",
-                      "value": 40
-                    },
-                    {
-                      "color": "blue",
-                      "value": 80
-                    }
-                  ]
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "rssi"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "WiFi Signal"
-              },
-              {
-                "id": "unit",
-                "value": "dBm"
-              },
-              {
-                "id": "custom.displayMode",
-                "value": "color-text"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "device_id"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Sensor"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "location"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Location"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "_time"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Time"
-              },
-              {
-                "id": "custom.width",
-                "value": 180
-              }
-            ]
-          },
           {
             "matcher": {
               "id": "byRegexp",
@@ -1001,7 +1022,14 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 1 (Bed Room)"
+                "value": "Rubber Tree"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
               }
             ]
           },
@@ -1013,7 +1041,14 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 2 (Living Room)"
+                "value": "Monstera"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2CC0C"
+                }
               }
             ]
           },
@@ -1025,7 +1060,14 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 3 (Guest Room)"
+                "value": "Avocado"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
               }
             ]
           },
@@ -1037,7 +1079,14 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 4 (Guest Room)"
+                "value": "Basil - auk"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF6B6B"
+                }
               }
             ]
           },
@@ -1049,7 +1098,14 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 5 (Bed Room)"
+                "value": "ZZ Plant"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
               }
             ]
           },
@@ -1061,7 +1117,14 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 6 (Living Room)"
+                "value": "Ficus Elastica Ruby"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
               }
             ]
           },
@@ -1073,41 +1136,19 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 7 (Guest Room)"
+                "value": "Basil - pot"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5DDBDB"
+                }
               }
             ]
           }
         ]
-      },
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "_start": true,
-              "_stop": true,
-              "_measurement": true,
-              "_field": true,
-              "result": true,
-              "table": true
-            },
-            "indexByName": {
-              "_time": 0,
-              "device_id": 1,
-              "location": 2,
-              "moisture": 3,
-              "rssi": 4
-            },
-            "renameByName": {
-              "device_id": "Sensor",
-              "location": "Location",
-              "moisture": "Moisture %",
-              "rssi": "WiFi Signal",
-              "_time": "Time"
-            }
-          }
-        }
-      ]
+      }
     }
   ]
 }

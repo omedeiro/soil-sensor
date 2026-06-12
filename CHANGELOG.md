@@ -7,6 +7,104 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.8.0] - 2026-06-11
+
+### Added
+
+#### System Recovery & Safety Tools
+- **flash-ota-canary.sh** — Canary deployment script for safe OTA updates (tests 1 sensor first, monitors health for 10 minutes, then deploys to remaining sensors)
+- **validate-config.sh** — Pre-flight firmware configuration validator (prevents DEVICE_ID conflicts, validates WiFi/InfluxDB settings, checks network connectivity)
+- **system-metrics-collector.sh** — Bash-based Raspberry Pi metrics collector (CPU, RAM, disk, temperature, uptime posted to InfluxDB every 60 seconds)
+- **install-system-metrics.sh** — One-command installer for system metrics collection with systemd timer
+- **docker-compose.yml** — Docker Compose configuration for InfluxDB + Grafana with health checks and automatic restart
+- **update-grafana-datasources.sh** — Script to migrate Grafana datasources from hardcoded IPs to container names
+
+#### Documentation
+- **RESTORATION_REPORT_2026-06-11.md** — Comprehensive system recovery report with timeline, lessons learned, and 13 robustness recommendations
+- **SYSTEM_IMPROVEMENT_SUMMARY.md** — Session summary covering recovery process, new tools, workflows, and command reference
+- **DOCKER_COMPOSE_MIGRATION.md** — Step-by-step guide for migrating from standalone Docker containers to Docker Compose
+- **rpi-setup/FIX_GRAFANA_DATASOURCE.md** — Documentation of Docker container networking fix
+
+#### Grafana Dashboard Enhancements
+- **Raspberry Pi Uptime Panel** — Now functional with system metrics data (CPU %, temperature, RAM %, disk %, uptime in seconds)
+- **System Health Monitoring** — rpi_system_metrics measurement tracks Raspberry Pi performance every 60 seconds
+
+### Changed
+
+#### Deployment Workflow
+- **OTA deployment** — Now uses canary testing instead of simultaneous flashing of all sensors
+- **Config validation** — Required before any firmware flash (validates DEVICE_ID_AUTO consistency, InfluxDB token, WiFi credentials)
+- **Firmware backups** — Automatic backup creation before OTA deployment
+
+#### Infrastructure
+- **Grafana datasources** — Updated to use Docker container IP (172.17.0.2) instead of localhost for inter-container communication
+- **System metrics collection** — Switched from Python to bash implementation (no dependencies required)
+
+### Fixed
+
+#### Critical Issues Resolved
+- **Grafana "connection refused" error** — Fixed Docker container networking (datasources now use container IP instead of localhost)
+- **Raspberry Pi Uptime panel** — Now displays data after installing system metrics collector
+- **All 7 sensors recovered** — USB reflashed after bad OTA update on 2026-06-10 bricked all sensors
+- **DEVICE_ID_AUTO conflict** — Config validator now prevents conflicting DEVICE_ID settings
+
+#### Recovery from 2026-06-10 OTA Failure
+- **Root cause** — Firmware with `DEVICE_ID_AUTO=true` but static `DEVICE_ID="sensor-7"` caused all sensors to fail boot
+- **Impact** — All 7 sensors went offline simultaneously, required individual USB recovery
+- **Resolution** — Each sensor USB flashed with `DEVICE_ID_AUTO=false` and unique device IDs (sensor-1 through sensor-7)
+- **Prevention** — Created validate-config.sh to catch this exact scenario before deployment
+
+### Deprecated
+
+#### Unsafe Practices
+- **Simultaneous OTA flashing** — flash-all-ota.sh now deprecated in favor of flash-ota-canary.sh
+- **Manual config editing without validation** — All firmware changes should now go through validate-config.sh
+
+### Security
+
+#### Improvements Needed (Documented)
+- **Grafana password** — Still using default admin/admin (change recommended)
+- **InfluxDB token storage** — Currently in config.h plaintext (environment variable recommended)
+
+---
+
+## [2.7.0] - 2026-06-03
+
+### Added
+
+#### Centralized Sensor Configuration System
+- **sensors-config.json** — Master configuration file for all sensor information (plant names, locations, IPs, MACs, colors, thresholds)
+- **generate-dashboard.py** — Python script to auto-generate Grafana dashboards from config
+- **validate-config.py** — Configuration validator with comprehensive error checking
+- **upload-dashboard-to-pi.sh** — One-command dashboard deployment to Grafana
+- **QUICK_REFERENCE.md** — Quick reference for common sensor management tasks (includes configuration guide)
+
+#### Dashboard Improvements
+- **Dynamic plant name display** — Large heading shows "🌱 [Plant Name]" when specific sensor selected
+- **7-day default time window** — Changed from 24h to 7d for better trend visibility
+- **Plant-only labels** — Removed room locations from labels (now shows just "Rubber Tree" instead of "Sensor 1 (Bed Room, Rubber Tree)")
+- **Enhanced dropdown** — Dropdown shows plant names directly ("Rubber Tree" not "sensor-1")
+- **Functional filtering** — Fixed dropdown filter to properly filter all panels when sensor selected
+
+### Changed
+
+#### Configuration Management
+- **Dashboard generation** — Now automated via Python script instead of manual JSON editing
+- **Single source of truth** — All sensor info centralized in sensors-config.json
+- **Validation workflow** — Automatic validation runs before dashboard generation
+
+#### Dashboard Layout
+- **Added text panel** — New panel at top shows selected plant name
+- **Adjusted panel positions** — All panels moved down to accommodate plant name header
+- **Time window** — Default changed from "now-24h" to "now-7d"
+
+### Fixed
+- **Dropdown filter not working** — Added proper device_id filter to all panel queries
+- **Missing plant identification** — Added dynamic plant name display for single-sensor view
+- **Manual configuration pain points** — Eliminated need for manual JSON editing
+
+---
+
 ## [2.6.0] - 2026-05-25
 
 ### Added

@@ -9,8 +9,14 @@ firmware/.piolibdeps/
 # macOS
 .DS_Store
 
+# Dashboard backups
+grafana-dashboards/*.json.backup
+
 # Build artifacts
 *.o
 *.elf
 *.bin
 *.hex
+
+# SD card recovery backup (contains WiFi password + user password hashes)
+rpi-setup/sd-card-backup/

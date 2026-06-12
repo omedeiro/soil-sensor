@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  influxdb:
+    container_name: influxdb
+    image: influxdb:2.7
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    volumes:
+      - /mnt/sensor-data/influxdb:/var/lib/influxdb2
+    networks:
+      - soil-sensor
+    environment:
+      # Optional: Pre-configure InfluxDB (useful for fresh installs)
+      # DOCKER_INFLUXDB_INIT_MODE: setup
+      # DOCKER_INFLUXDB_INIT_USERNAME: admin
+      # DOCKER_INFLUXDB_INIT_PASSWORD: soilsensor2024
+      # DOCKER_INFLUXDB_INIT_ORG: soil-monitoring
+      # DOCKER_INFLUXDB_INIT_BUCKET: sensor-readings
+      # DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: r7LONiwdc3ABOcEYSS5nCL6c6sdUZEPy81Q1D7w7nAyXZDAteUD1C6BYZJe21qX4eOwhRvG2ARYwRkaHwQf17w==
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - /mnt/sensor-data/grafana:/var/lib/grafana
+      # Optional: Auto-provision datasources and dashboards
+      # - ./grafana-provisioning:/etc/grafana/provisioning
+    networks:
+      - soil-sensor
+    environment:
+      # Security settings
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      
+      # Server settings
+      - GF_SERVER_ROOT_URL=https://grafana.owenmedeiros.com
+      - GF_SERVER_DOMAIN=grafana.owenmedeiros.com
+      
+      # Disable usage analytics
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  soil-sensor:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

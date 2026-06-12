@@ -1,6 +1,6 @@
 # Grafana Dashboards Guide
 
-6 production-ready dashboards for the Soil Moisture Monitoring System (v2.6.0).
+7 production-ready dashboards for the Soil Moisture Monitoring System (v2.7.0).
 
 All dashboards feature:
 - **High-contrast color scheme** per sensor (7 distinct colors for easy identification)
@@ -127,6 +127,38 @@ All dashboards feature:
 
 ---
 
+### 7. 🚰 Watering History (`watering-history.json`) — NEW in v2.7.0
+**Tags:** `watering`, `monitoring`
+
+**Purpose:** Automatic detection and visualization of watering events based on sharp moisture increases.
+
+**Key Panels:**
+- **Watering Events Timeline** — State timeline showing when each sensor was watered (green bars for 2-hour watered status)
+- **Moisture Trend with Watering Markers** — Time series plot with red markers at detected watering events
+- **Time Since Last Watered** — 7 stat panels showing hours/days since each sensor was watered (color-coded: green <2 days, yellow 2-5 days, orange 5-7 days, red >7 days)
+- **Watering Frequency Heatmap** — Calendar-style view showing watering patterns by day-of-week and hour
+
+**Detection Algorithm:**
+- **Threshold:** 15%+ moisture increase between consecutive readings (5-minute intervals)
+- **Watered Status Duration:** 2 hours after detection
+- **Noise Filtering:** Only detects sustained increases, filters out sensor jitter
+- **Lookback Period:** 30 days for "last watered" stats, 7 days default view for timeline
+
+**How it works:**
+1. Compares each moisture reading to the previous one (5 minutes apart)
+2. If increase ≥ 15%, marks as watering event
+3. Creates 2-hour "watered" status window for timeline visualization
+4. Tracks most recent watering event per sensor for "time since" calculations
+
+**Use case:** Track watering history, identify watering patterns, ensure plants are watered regularly, detect forgotten plants.
+
+**Example insights:**
+- "Basil typically gets watered Sunday mornings"
+- "Monstera hasn't been watered in 5 days"
+- "3 plants were watered yesterday evening"
+
+---
+
 ## Installation
 
 ### Method 1: Automated (Dashboard Provisioning) — Recommended
@@ -139,6 +171,38 @@ sudo cp /path/to/soil-sensor/grafana-dashboards/*.json \
 
 # Dashboards auto-import within 10 seconds
 # No Grafana restart needed
+```
+
+**To deploy the new Watering History dashboard:**
+```bash
+# From your local machine
+scp grafana-dashboards/watering-history.json \
+  omedeiro@192.168.99.134:/tmp/
+
+# On Raspberry Pi
+ssh omedeiro@192.168.99.134
+sudo cp /tmp/watering-history.json \
+  /mnt/sensor-data/grafana/dashboards/
+sudo chown grafana:grafana \
+  /mnt/sensor-data/grafana/dashboards/watering-history.json
+
+# Import via API (recommended - preserves folder organization)
+FOLDER_UID="afma8ap3k5csgb"
+cat /mnt/sensor-data/grafana/dashboards/watering-history.json | python3 -c "
+import sys, json
+dashboard = json.load(sys.stdin)
+wrapper = {
+  'dashboard': dashboard,
+  'folderUid': '$FOLDER_UID',
+  'overwrite': True
+}
+print(json.dumps(wrapper))
+" | curl -X POST -u admin:admin \
+  -H 'Content-Type: application/json' \
+  -d @- \
+  http://localhost:3000/api/dashboards/db
+
+# Dashboard available at: https://grafana.owenmedeiros.com
 ```
 
 **Provisioning config:** `/mnt/sensor-data/grafana/provisioning/dashboards/dashboards.yml`
@@ -157,7 +221,7 @@ sudo cp /path/to/soil-sensor/grafana-dashboards/*.json \
 5. Confirm datasource (should auto-detect `InfluxDB`)
 6. Click **Import**
 
-Repeat for all 6 dashboards.
+Repeat for all 7 dashboards.
 
 ---
 
@@ -347,6 +411,7 @@ Each dashboard has exactly 2 functional tags for easy filtering:
 | Alerts Overview | alerts | monitoring | Critical alerts and notifications |
 | Mobile Summary | mobile | overview | Mobile-optimized quick view |
 | Raspberry Pi Health | system | server | Raspberry Pi system metrics |
+| Watering History | watering | monitoring | Watering event detection and history |
 
 **Tag categories:**
 - **overview** — High-level summaries
@@ -357,6 +422,7 @@ Each dashboard has exactly 2 functional tags for easy filtering:
 - **system** — System-level metrics
 - **server** — Raspberry Pi infrastructure
 - **mobile** — Mobile-optimized views
+- **watering** — Watering event tracking and history
 
 ---
 
@@ -640,4 +706,4 @@ curl -H "Authorization: Bearer <api-key>" \
 
 ---
 
-Last updated: 2026-05-25 (v2.6.0)
+Last updated: 2026-06-03 (v2.7.0 - Added Watering History dashboard)
