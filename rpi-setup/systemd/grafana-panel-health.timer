@@ -1,0 +1,20 @@
+[Unit]
+Description=Grafana Panel Health Monitor Timer
+Documentation=https://github.com/omedeiro/soil-sensor
+Requires=grafana-panel-health.service
+
+[Timer]
+# Run 2 minutes after boot
+OnBootSec=2min
+
+# Run every 5 minutes after last activation
+OnUnitActiveSec=5min
+
+# Run even if previous run failed
+Persistent=true
+
+# Don't accumulate runs if system was offline
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target
