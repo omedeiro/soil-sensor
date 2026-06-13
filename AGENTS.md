@@ -612,10 +612,104 @@ cd tests
 - Place ESP8266 within good WiFi range (RSSI > -70 dBm)
 - Monitor Grafana alerts dashboard regularly
 
+## Troubleshooting "No Data" Panels (v2.9.0)
+
+**NEW SYSTEM:** Automated panel health monitoring with Slack alerts.
+
+**Quick Diagnosis:**
+```bash
+# On Raspberry Pi
+cd ~/soil-sensor
+./scripts/check-grafana-panels.py
+
+# Exit codes:
+# 0 = All panels healthy
+# 1 = One or more panels have "No Data"
+# 2 = Query errors detected
+# 3 = Datasource connection errors (critical)
+```
+
+**Automated Monitoring:**
+```bash
+# Install panel health monitoring (one-time setup)
+cd ~/soil-sensor/rpi-setup
+./install-panel-health-monitor.sh
+
+# This installs:
+# - Panel health checker (Python script)
+# - Query debugger (Bash script)
+# - Automated repair script (Bash script)
+# - Systemd timer (runs every 5 minutes)
+# - Slack integration for alerts
+
+# Configure Slack webhook:
+echo "https://hooks.slack.com/services/YOUR/WEBHOOK/URL" \
+  > /mnt/sensor-data/config/slack_webhook_url
+chmod 600 /mnt/sensor-data/config/slack_webhook_url
+
+# View monitoring status:
+systemctl status grafana-panel-health.timer
+journalctl -u grafana-panel-health -f
+```
+
+**Common Issues and Quick Fixes:**
+
+1. **InfluxDB Connection Errors:**
+   ```bash
+   # Test connectivity
+   curl http://192.168.99.134:8086/health
+   
+   # Verify token (from systemd service)
+   grep INFLUX_TOKEN /etc/systemd/system/grafana-panel-health.service
+   ```
+
+2. **"No Data" Panels:**
+   ```bash
+   # Check if sensors are sending data
+   cd ~/soil-sensor/rpi-setup/scripts
+   ./check-sensor-health.sh --verbose
+   
+   # Debug specific panel query
+   cd ~/soil-sensor/scripts
+   ./debug-grafana-query.sh --dashboard soil-moisture-main-v2 --panel 3
+   ```
+
+3. **Query Syntax Errors:**
+   ```bash
+   # Run automated repair (dry-run mode)
+   cd ~/soil-sensor/scripts
+   ./repair-grafana-panels.sh --auto-repair --dry-run --verbose
+   
+   # Apply fixes and send Slack alert
+   ./repair-grafana-panels.sh --auto-repair --notify
+   ```
+
+**Manual Investigation:**
+```bash
+# Generate full health report (JSON format)
+./scripts/check-grafana-panels.py --format json > /tmp/panel-report.json
+
+# List all "No Data" panels
+jq -r '.dashboards[] | .title as $dash | .panels[] | select(.status == "no_data") | "[\($dash)] \(.title)"' /tmp/panel-report.json
+
+# View recent panel issues log
+tail -50 /mnt/sensor-data/logs/grafana-panel-issues.log
+```
+
+**Diagnostic Commands:**
+- `check-grafana-panels.py` — Check all panel health across all dashboards
+- `check-sensor-health.sh --notify` — Check sensor connectivity and data quality
+- `debug-grafana-query.sh --dashboard UID --panel ID` — Extract and test specific panel query
+- `repair-grafana-panels.sh --notify` — Detect issues and send Slack alerts
+- `send-slack-alert.sh --severity info --title "..." --message "..."` — Send test notification
+
+**For complete troubleshooting guide, see:** `/docs/TROUBLESHOOTING_NO_DATA.md`
+
 ## Status Files Reference
 
 **Documentation:**
 - `docs/README.md` — Technical documentation (WiFi stability, Grafana Cloud setup, InfluxDB notes)
+- `docs/TROUBLESHOOTING_NO_DATA.md` — Panel health troubleshooting guide (v2.9.0)
 - `grafana-dashboards/README.md` — Dashboard installation, customization, and alert setup
 - `README.md` — Project overview and setup instructions
 - `AGENTS.md` — This file (agent instructions and technical reference)
