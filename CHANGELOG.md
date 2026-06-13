@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.9.0] - 2026-06-13
+
+### Added
+
+#### Grafana Panel Health Monitoring System
+- **check-grafana-panels.py** — Python-based panel health checker (tests queries via Grafana API, detects "No Data" and query errors, outputs JSON/human-readable reports)
+- **debug-grafana-query.sh** — Query extraction and debugging tool (extracts Flux queries from panels, tests against InfluxDB, provides fix suggestions)
+- **repair-grafana-panels.sh** — Automated repair orchestrator (detects issues, logs to file, sends Slack alerts, optional auto-repair mode)
+- **send-slack-alert.sh** — Generic Slack webhook integration (rate limiting, retry logic, severity levels: info/warning/error/critical)
+- **grafana-panel-health.service/timer** — Systemd automation (runs every 5 minutes, starts 2 minutes after boot)
+- **install-panel-health-monitor.sh** — One-command installer for Raspberry Pi (installs all components, configures systemd, sets up logging)
+
+#### Enhanced Sensor Health Validation
+- **check-sensor-health.sh enhancements** — Auto-detection from sensors-config.json (no manual sensor IDs), multi-timeframe checks (5min, 1h, 24h), data quality validation (stuck sensor detection via stddev)
+- **Data quality metrics** — Standard deviation checks to detect frozen sensors, reading count validation per timeframe
+
+#### Documentation
+- **docs/TROUBLESHOOTING_NO_DATA.md** — Comprehensive 495-line troubleshooting runbook (step-by-step fixes for InfluxDB connection errors, "No Data" panels, query syntax errors, manual investigation workflow, diagnostic command reference)
+- **AGENTS.md panel monitoring section** — Quick diagnosis commands, automated monitoring setup, common issue fixes, diagnostic command reference
+
+### Changed
+
+#### Monitoring & Alerting
+- **Panel health monitoring** — Automated detection and alerting via Slack (5-minute intervals, proactive issue detection before users notice)
+- **Sensor health checks** — Now auto-detects sensors from sensors-config.json instead of requiring manual IDs
+- **Logging infrastructure** — New log file: `/mnt/sensor-data/logs/grafana-panel-issues.log` (persistent history of all panel issues)
+
+#### Security
+- **Slack webhook storage** — Secure file-based storage at `/mnt/sensor-data/config/slack_webhook_url` (chmod 600, not hardcoded in scripts)
+- **InfluxDB token** — Embedded in systemd service environment (not exposed in logs or command-line arguments)
+
+### Fixed
+
+#### Monitoring Gaps
+- **Silent panel failures** — Now detected automatically every 5 minutes (previously required manual dashboard checks)
+- **Query errors** — Proactive detection with suggested fixes (InfluxDB connection errors, syntax errors, time range issues)
+- **Sensor offline detection** — Enhanced to check multiple timeframes and data quality (not just last reading)
+
+---
+
 ## [2.8.0] - 2026-06-11
 
 ### Added
