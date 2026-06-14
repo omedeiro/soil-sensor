@@ -1,7 +1,7 @@
 {
   "id": null,
   "uid": "sensor-details-v2",
-  "title": "\ud83d\udcca Sensor Details & Diagnostics",
+  "title": "📊 Sensor Details & Diagnostics",
   "description": "Deep dive into individual sensor metrics, WiFi performance, and diagnostic history",
   "tags": [
     "sensors",
@@ -64,6 +64,21 @@
             "text": "Sensor 4 (Guest Room, Basil - auk)",
             "value": "sensor-4",
             "selected": false
+          },
+          {
+            "text": "Sensor 5 (Bed Room, ZZ Plant)",
+            "value": "sensor-5",
+            "selected": false
+          },
+          {
+            "text": "Sensor 6 (Living Room, Ficus Elastica Ruby)",
+            "value": "sensor-6",
+            "selected": false
+          },
+          {
+            "text": "Sensor 7 (Guest Room, Basil - pot)",
+            "value": "sensor-7",
+            "selected": false
           }
         ],
         "skipUrlSync": false,
@@ -72,6 +87,123 @@
     ]
   },
   "panels": [
+    {
+      "id": 1002,
+      "type": "stat",
+      "title": "",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 3
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "import \"array\"\nimport \"experimental\"\n\nsensor = \"${sensor}\"\n\ndata = if sensor == \"sensor-1\" then [{_time: now(), _value: \"Rubber Tree\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-2\" then [{_time: now(), _value: \"Monstera\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-3\" then [{_time: now(), _value: \"Avocado\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-4\" then [{_time: now(), _value: \"Basil - auk\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-5\" then [{_time: now(), _value: \"ZZ Plant\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-6\" then [{_time: now(), _value: \"Ficus Elastica Ruby\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-7\" then [{_time: now(), _value: \"Basil - pot\", _field: \"plant_name\"}]\n  else [{_time: now(), _value: \"Unknown Sensor\", _field: \"plant_name\"}]\n\narray.from(rows: data)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "graphMode": "none",
+        "colorMode": "background",
+        "textMode": "value",
+        "reduceOptions": {
+          "values": true,
+          "fields": "/_value/",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "text": {
+          "titleSize": 16,
+          "valueSize": 48
+        }
+      },
+      "transparent": false,
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "Rubber Tree": {
+                  "color": "#73BF69",
+                  "index": 0
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "Monstera": {
+                  "color": "#F2CC0C",
+                  "index": 1
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "Avocado": {
+                  "color": "#5794F2",
+                  "index": 2
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "Basil - auk": {
+                  "color": "#FF6B6B",
+                  "index": 3
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "ZZ Plant": {
+                  "color": "#B877D9",
+                  "index": 4
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "Ficus Elastica Ruby": {
+                  "color": "#FF9830",
+                  "index": 5
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "Basil - pot": {
+                  "color": "#5DDBDB",
+                  "index": 6
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
     {
       "id": 999,
       "type": "stat",

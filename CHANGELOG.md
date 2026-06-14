@@ -7,6 +7,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.9.1] - 2026-06-14
+
+### Added
+
+#### Dashboard Visual Enhancements
+- **Plant name display panels** — Large colored heading panels on Main Dashboard and Sensor Details showing selected plant name (e.g., "🌱 Rubber Tree" in green)
+- **Dynamic color matching** — Panel background color matches sensor color from sensors-config.json configuration
+- **Flux-based plant name mapping** — Uses if/else logic to map sensor IDs to plant names without requiring database queries
+
+#### System Metrics Collection
+- **Raspberry Pi metrics collector** — Installed system-metrics-collector.sh to capture CPU, RAM, disk, temperature, and uptime every 60 seconds
+- **rpi_system_metrics measurement** — Posted to InfluxDB for Grafana visualization
+- **systemd user timer** — Runs metrics collection as user service (system-metrics-collector.timer)
+
+#### Documentation
+- **Grafana datasource troubleshooting** — Added AGENTS.md section on datasource UID validation, health testing, and repair workflow
+- **Panel health checker limitations** — Documented why check-grafana-panels.py may report false positives (queries InfluxDB directly, not through Grafana datasources)
+
+### Changed
+
+#### Dashboard Configuration
+- **Main Dashboard template variable** — Changed default from "sensor-1" to "All" (shows all 7 sensors on load)
+- **Main Dashboard includeAll** — Set to `true` with `allValue: ".*"` for regex-based filtering
+- **Sensor Details template variable** — Removed "All" option, added sensors 5-7, defaults to sensor-1
+- **Panel positioning** — Adjusted gridPos of all panels to accommodate plant name heading at top (y=0, h=3)
+
+#### Datasource Migration
+- **All dashboards** — Migrated from broken datasource `PB4A2C00F7BB2A2DA` (localhost:8086) to working datasource `cflk0i2e2nwu8d` (172.17.0.2:8086)
+- **Grafana dashboard files** — Downloaded and saved fixed versions locally (rpi-health.json, system-health.json, alerts-overview.json, mobile-summary.json)
+
+### Fixed
+
+#### Critical Datasource Issues (v2.9.1)
+- **Raspberry Pi Health dashboard** — All 12 panels now showing data (was: all panels "Connection Refused")
+- **System Health Dashboard** — 9/11 panels healthy (was: all panels "Connection Refused")
+- **Mobile Quick View** — 6/8 panels healthy (was: all panels "Connection Refused")
+- **Alerts & Notifications** — 4/9 panels healthy (was: all panels "Connection Refused")
+
+**Root Cause:**
+- Dashboards used datasource `PB4A2C00F7BB2A2DA` pointing to `http://localhost:8086`
+- InfluxDB runs on Docker IP `172.17.0.2:8086`, not localhost
+- Grafana couldn't connect through misconfigured datasource
+- Panel health checker reported false positives because it queries InfluxDB directly (not through Grafana datasources)
+
+**Fix:**
+- Changed all panels to use datasource `cflk0i2e2nwu8d` (points to correct Docker IP)
+- Verified fix in browser (not just health checker)
+- Downloaded fixed dashboards to local files
+
+#### Panel Health Monitoring
+- **RPI Uptime panel query** — Changed time range from -5m back to -1h (metrics written every 60s, -5m too narrow)
+- **System metrics collector** — Installed missing script at ~/soil-sensor/scripts/system-metrics-collector.sh
+
+### Technical Details
+
+#### Affected Components
+- **Datasource UID PB4A2C00F7BB2A2DA** — Broken (localhost:8086, connection refused)
+- **Datasource UID cflk0i2e2nwu8d** — Working (172.17.0.2:8086, InfluxDB on Docker)
+- **Dashboards fixed**: rpi-health-v1, system-health-v2, mobile-summary-v2, alerts-overview-v2
+- **Dashboards already correct**: soil-moisture-main-v2, sensor-details-v2, watering-history-v1
+
+#### Files Modified
+- `generate-dashboard.py` — Added create_plant_name_panel() function, adjusted panel gridPos
+- `grafana-dashboards/soil-moisture-main.json` — Regenerated with plant name panel
+- `grafana-dashboards/sensor-details.json` — Added plant name panel, updated template variable
+- `grafana-dashboards/rpi-health.json` — Fixed datasource UID
+- `grafana-dashboards/system-health.json` — Fixed datasource UID
+- `grafana-dashboards/alerts-overview.json` — Fixed datasource UID
+- `grafana-dashboards/mobile-summary.json` — Fixed datasource UID
+- `AGENTS.md` — Added Grafana datasource troubleshooting section
+- `CHANGELOG.md` — This entry
+
+---
+
 ## [2.9.0] - 2026-06-13
 
 ### Added

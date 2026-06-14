@@ -1,59 +1,19 @@
 {
-  "id": null,
-  "uid": "mobile-summary-v2",
-  "title": "📱 Mobile Quick View",
   "description": "Mobile-optimized dashboard for quick status checks - single column layout",
-  "tags": [
-    "mobile",
-    "overview"
-  ],
-  "style": "dark",
-  "timezone": "browser",
   "editable": true,
-  "graphTooltip": 0,
-  "refresh": "5m",
-  "time": {
-    "from": "now-6h",
-    "to": "now"
-  },
   "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
   "liveNow": false,
-  "schemaVersion": 38,
-  "version": 2,
   "panels": [
     {
-      "id": 999,
-      "type": "stat",
-      "title": "Last Updated",
-      "gridPos": {
-        "x": 20,
-        "y": 0,
-        "w": 4,
-        "h": 3
-      },
       "datasource": {
         "type": "influxdb",
         "uid": "cflk0i2e2nwu8d"
       },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_value: int(v: r._time) / int(v: 1000000)}))",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "none",
-        "colorMode": "value",
-        "textMode": "value",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
       "fieldConfig": {
         "defaults": {
+          "decimals": 0,
+          "displayName": "Data Last Received",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -64,46 +24,46 @@
               }
             ]
           },
-          "unit": "dateTimeFromNow",
-          "displayName": "Data Last Received",
-          "decimals": 0
+          "unit": "dateTimeFromNow"
         }
-      }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
+      "id": 999,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_value: int(v: r._time) / int(v: 1000000)}))",
+          "refId": "A"
+        }
+      ],
+      "title": "Last Updated",
+      "type": "stat"
     },
     {
-      "id": 1,
-      "type": "stat",
-      "title": "🌱 System Status",
-      "gridPos": {
-        "x": 0,
-        "y": 0,
-        "w": 24,
-        "h": 5
-      },
       "datasource": {
         "type": "influxdb",
         "uid": "cflk0i2e2nwu8d"
       },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> count()\n  |> group()\n  |> count()",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "none",
-        "colorMode": "background",
-        "textMode": "value_and_name",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
       "fieldConfig": {
         "defaults": {
+          "displayName": "Sensors Online",
           "mappings": [],
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -121,45 +81,45 @@
               }
             ]
           },
-          "unit": "short",
-          "displayName": "Sensors Online",
-          "noValue": "0"
+          "unit": "short"
         }
-      }
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> count()\n  |> group()\n  |> count()",
+          "refId": "A"
+        }
+      ],
+      "title": "🌱 System Status",
+      "type": "stat"
     },
     {
-      "id": 998,
-      "type": "stat",
-      "title": "🖥️ Server Uptime",
-      "gridPos": {
-        "x": 0,
-        "y": 5,
-        "w": 24,
-        "h": 4
-      },
       "datasource": {
         "type": "influxdb",
         "uid": "cflk0i2e2nwu8d"
       },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"uptime_seconds\")\n  |> last()",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "none",
-        "colorMode": "value",
-        "textMode": "value_and_name",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
       "fieldConfig": {
         "defaults": {
+          "decimals": 0,
+          "displayName": "Raspberry Pi",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -178,43 +138,40 @@
               }
             ]
           },
-          "unit": "s",
-          "decimals": 0,
-          "displayName": "Raspberry Pi"
+          "unit": "s"
         }
-      }
-    },
-    {
-      "id": 2,
-      "type": "table",
-      "title": "💧 Current Moisture Levels",
-      "gridPos": {
-        "x": 0,
-        "y": 9,
-        "w": 24,
-        "h": 12
       },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 998,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "textMode": "value_and_name"
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> sort(columns: [\"_value\"], desc: false)",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"uptime_seconds\")\n  |> last()",
           "refId": "A"
         }
       ],
-      "options": {
-        "showHeader": false,
-        "sortBy": [
-          {
-            "displayName": "Moisture",
-            "desc": false
-          }
-        ],
-        "footer": {
-          "show": false
-        }
+      "title": "🖥️ Server Uptime",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
       },
       "fieldConfig": {
         "defaults": {
@@ -322,77 +279,80 @@
           }
         ]
       },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 2,
+      "options": {
+        "footer": {
+          "show": false
+        },
+        "showHeader": false,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Moisture"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> sort(columns: [\"_value\"], desc: false)",
+          "refId": "A"
+        }
+      ],
+      "title": "💧 Current Moisture Levels",
       "transformations": [
         {
           "id": "organize",
           "options": {
             "excludeByName": {
+              "_field": true,
+              "_measurement": true,
               "_start": true,
               "_stop": true,
               "_time": true,
-              "_measurement": true,
-              "_field": true,
               "result": true,
               "table": true
             },
             "indexByName": {
+              "_value": 2,
               "device_id": 0,
-              "location": 1,
-              "_value": 2
+              "location": 1
             },
             "renameByName": {
+              "_value": "Moisture",
               "device_id": "Sensor",
-              "location": "Location",
-              "_value": "Moisture"
+              "location": "Location"
             }
           }
         }
-      ]
+      ],
+      "type": "table"
     },
     {
-      "id": 3,
-      "type": "stat",
-      "title": "⚠️ Alerts",
-      "gridPos": {
-        "x": 0,
-        "y": 21,
-        "w": 12,
-        "h": 5
-      },
       "datasource": {
         "type": "influxdb",
         "uid": "cflk0i2e2nwu8d"
       },
-      "targets": [
-        {
-          "query": "// Count critical diagnostic events in last hour\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r.event_type == \"crash_detected\" or r.event_type == \"wifi_reconnect_failed\" or r.event_type == \"queue_overflow\" or r.event_type == \"heap_low_warning\" or r.event_type == \"influxdb_error\" or r.event_type == \"system_restart\")\n  |> group()\n  |> count()",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "none",
-        "colorMode": "background",
-        "textMode": "value_and_name",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
       "fieldConfig": {
         "defaults": {
+          "displayName": "Issues (1h)",
           "mappings": [
             {
-              "type": "special",
               "options": {
                 "match": "null",
                 "result": {
                   "text": "0"
                 }
-              }
+              },
+              "type": "special"
             }
           ],
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -410,56 +370,56 @@
               }
             ]
           },
-          "unit": "short",
-          "displayName": "Issues (1h)",
-          "noValue": "0"
+          "unit": "short"
         }
-      }
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 0,
+        "y": 21
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "query": "// Count critical diagnostic events in last hour\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r.event_type == \"crash_detected\" or r.event_type == \"wifi_reconnect_failed\" or r.event_type == \"queue_overflow\" or r.event_type == \"heap_low_warning\" or r.event_type == \"influxdb_error\" or r.event_type == \"system_restart\")\n  |> group()\n  |> count()",
+          "refId": "A"
+        }
+      ],
+      "title": "⚠️ Alerts",
+      "type": "stat"
     },
     {
-      "id": 4,
-      "type": "stat",
-      "title": "💧 Need Water",
-      "gridPos": {
-        "x": 12,
-        "y": 21,
-        "w": 12,
-        "h": 5
-      },
       "datasource": {
         "type": "influxdb",
         "uid": "cflk0i2e2nwu8d"
       },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> filter(fn: (r) => r._value < 30.0)\n  |> count()",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "none",
-        "colorMode": "background",
-        "textMode": "value_and_name",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
       "fieldConfig": {
         "defaults": {
+          "displayName": "Dry Sensors",
           "mappings": [
             {
-              "type": "special",
               "options": {
                 "match": "null",
                 "result": {
                   "text": "0"
                 }
-              }
+              },
+              "type": "special"
             }
           ],
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -481,69 +441,66 @@
               }
             ]
           },
-          "unit": "short",
-          "displayName": "Dry Sensors",
-          "noValue": "0"
+          "unit": "short"
         }
-      }
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 12,
+        "y": 21
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> filter(fn: (r) => r._value < 30.0)\n  |> count()",
+          "refId": "A"
+        }
+      ],
+      "title": "💧 Need Water",
+      "type": "stat"
     },
     {
-      "id": 5,
-      "type": "timeseries",
-      "title": "📊 Moisture Trends",
-      "gridPos": {
-        "x": 0,
-        "y": 26,
-        "w": 24,
-        "h": 10
-      },
       "datasource": {
         "type": "influxdb",
         "uid": "cflk0i2e2nwu8d"
       },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> aggregateWindow(every: 10m, fn: mean, createEmpty: false)",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
+            "axisLabel": "Moisture %",
+            "axisPlacement": "auto",
             "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "lineWidth": 3,
             "fillOpacity": 15,
             "gradientMode": "none",
-            "spanNulls": 1800000,
-            "showPoints": "never",
+            "lineInterpolation": "smooth",
+            "lineWidth": 3,
             "pointSize": 5,
-            "stacking": {
-              "mode": "none"
-            },
-            "axisPlacement": "auto",
-            "axisLabel": "Moisture %",
             "scaleDistribution": {
               "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": 1800000,
+            "stacking": {
+              "mode": "none"
             }
           },
-          "unit": "percent",
-          "min": 0,
           "max": 100,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -553,9 +510,7 @@
               }
             ]
           },
-          "color": {
-            "mode": "palette-classic"
-          }
+          "unit": "percent"
         },
         "overrides": [
           {
@@ -571,8 +526,8 @@
               {
                 "id": "color",
                 "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#73BF69"
+                  "fixedColor": "#73BF69",
+                  "mode": "fixed"
                 }
               }
             ]
@@ -590,8 +545,8 @@
               {
                 "id": "color",
                 "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#F2CC0C"
+                  "fixedColor": "#F2CC0C",
+                  "mode": "fixed"
                 }
               }
             ]
@@ -609,8 +564,8 @@
               {
                 "id": "color",
                 "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#5794F2"
+                  "fixedColor": "#5794F2",
+                  "mode": "fixed"
                 }
               }
             ]
@@ -628,8 +583,8 @@
               {
                 "id": "color",
                 "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#FF6B6B"
+                  "fixedColor": "#FF6B6B",
+                  "mode": "fixed"
                 }
               }
             ]
@@ -647,8 +602,8 @@
               {
                 "id": "color",
                 "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#B877D9"
+                  "fixedColor": "#B877D9",
+                  "mode": "fixed"
                 }
               }
             ]
@@ -666,8 +621,8 @@
               {
                 "id": "color",
                 "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#FF9830"
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
                 }
               }
             ]
@@ -685,40 +640,48 @@
               {
                 "id": "color",
                 "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#5DDBDB"
+                  "fixedColor": "#5DDBDB",
+                  "mode": "fixed"
                 }
               }
             ]
           }
         ]
-      }
-    },
-    {
-      "id": 6,
-      "type": "table",
-      "title": "📡 Sensor Health",
-      "gridPos": {
-        "x": 0,
-        "y": 36,
-        "w": 24,
-        "h": 10
       },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"rssi\" or r._field == \"free_heap\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> pivot(rowKey:[\"device_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> aggregateWindow(every: 10m, fn: mean, createEmpty: false)",
           "refId": "A"
         }
       ],
-      "options": {
-        "showHeader": false,
-        "footer": {
-          "show": false
-        }
+      "title": "📊 Moisture Trends",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
       },
       "fieldConfig": {
         "defaults": {
@@ -834,32 +797,67 @@
           }
         ]
       },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 36
+      },
+      "id": 6,
+      "options": {
+        "footer": {
+          "show": false
+        },
+        "showHeader": false
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"rssi\" or r._field == \"free_heap\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> pivot(rowKey:[\"device_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
+          "refId": "A"
+        }
+      ],
+      "title": "📡 Sensor Health",
       "transformations": [
         {
           "id": "organize",
           "options": {
             "excludeByName": {
+              "_measurement": true,
               "_start": true,
               "_stop": true,
               "_time": true,
-              "_measurement": true,
+              "location": true,
               "result": true,
-              "table": true,
-              "location": true
+              "table": true
             },
             "indexByName": {
               "device_id": 0,
-              "rssi": 1,
-              "free_heap": 2
+              "free_heap": 2,
+              "rssi": 1
             },
             "renameByName": {
               "device_id": "Sensor",
-              "rssi": "WiFi",
-              "free_heap": "Memory"
+              "free_heap": "Memory",
+              "rssi": "WiFi"
             }
           }
         }
-      ]
+      ],
+      "type": "table"
     }
-  ]
+  ],
+  "refresh": "5m",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [
+    "mobile",
+    "overview"
+  ],
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "📱 Mobile Quick View",
+  "uid": "mobile-summary-v2"
 }

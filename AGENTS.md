@@ -542,6 +542,48 @@ cd tests
 - Log rotation prevents disk space issues
 - Install enhanced logging: `cd ~/rpi-setup && sudo ./install-logging.sh`
 
+**Grafana Datasource Configuration (CRITICAL):**
+
+If dashboard panels show "No Data" or "Connection Refused" errors, verify the datasource configuration:
+
+1. **Check which datasource UID panels are using:**
+   ```bash
+   ssh omedeiro@192.168.99.134 'curl -s -u admin:admin "http://localhost:3000/api/dashboards/uid/<dashboard-uid>" | jq "[.dashboard.panels[].datasource.uid] | unique"'
+   ```
+
+2. **Test datasource health:**
+   ```bash
+   ssh omedeiro@192.168.99.134 'curl -s -u admin:admin -X POST "http://localhost:3000/api/datasources/uid/<datasource-uid>/health"'
+   ```
+
+3. **Common datasource issues:**
+   - **Datasource `PB4A2C00F7BB2A2DA` (InfluxDB-SoilMonitoring)**: Points to `http://localhost:8086` which fails with "connection refused" because InfluxDB runs on Docker IP `172.17.0.2:8086`
+   - **Datasource `cflk0i2e2nwu8d` (influxdb)**: Correct datasource pointing to `http://172.17.0.2:8086` (working)
+
+4. **Fix panels using wrong datasource:**
+   ```bash
+   # Download dashboard
+   ssh omedeiro@192.168.99.134 'curl -s -u admin:admin "http://localhost:3000/api/dashboards/uid/<uid>" | jq ".dashboard" > /tmp/dashboard.json'
+   
+   # Fix datasource UIDs (PB4A2C00F7BB2A2DA → cflk0i2e2nwu8d)
+   ssh omedeiro@192.168.99.134 'cat /tmp/dashboard.json | jq "(.panels[] | select(.datasource.uid == \"PB4A2C00F7BB2A2DA\") | .datasource.uid) = \"cflk0i2e2nwu8d\"" > /tmp/dashboard-fixed.json'
+   
+   # Upload fixed dashboard
+   ssh omedeiro@192.168.99.134 'curl -s -u admin:admin -X POST -H "Content-Type: application/json" -d "{\"dashboard\": $(cat /tmp/dashboard-fixed.json), \"overwrite\": true}" http://localhost:3000/api/dashboards/db'
+   ```
+
+5. **Affected dashboards (fixed in v2.9.1):**
+   - 🖥️ Raspberry Pi Health (all panels)
+   - 🔧 System Health Dashboard (all panels)
+   - 📱 Mobile Quick View (all panels)
+   - ⚠️ Alerts & Notifications (all panels)
+
+**Why panel health checker may not detect datasource issues:**
+- The health checker (`scripts/check-grafana-panels.py`) queries InfluxDB **directly** at `192.168.99.134:8086`
+- It does NOT test through Grafana's configured datasources
+- Panels may show "healthy" in checker but fail in browser if datasource is misconfigured
+- Always verify dashboard panels in browser after health check reports pass
+
 ## Troubleshooting Sensor Offline Issues
 
 **Problem:** ESP8266 sensor stops posting to InfluxDB and requires power cycle to recover.

@@ -1,59 +1,19 @@
 {
-  "id": null,
-  "uid": "system-health-v2",
-  "title": "🔧 System Health Dashboard",
   "description": "Monitor ESP8266 sensors, Raspberry Pi server health, and diagnostic events",
-  "tags": [
-    "diagnostics",
-    "system"
-  ],
-  "style": "dark",
-  "timezone": "browser",
   "editable": true,
-  "graphTooltip": 1,
-  "refresh": "1m",
-  "time": {
-    "from": "now-6h",
-    "to": "now"
-  },
   "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
   "liveNow": false,
-  "schemaVersion": 38,
-  "version": 1,
   "panels": [
     {
-      "id": 999,
-      "type": "stat",
-      "title": "Last Updated",
-      "gridPos": {
-        "x": 20,
-        "y": 0,
-        "w": 4,
-        "h": 3
-      },
       "datasource": {
         "type": "influxdb",
         "uid": "cflk0i2e2nwu8d"
       },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_value: int(v: r._time) / int(v: 1000000)}))",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "none",
-        "colorMode": "value",
-        "textMode": "value",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
       "fieldConfig": {
         "defaults": {
+          "decimals": 0,
+          "displayName": "Data Last Received",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -64,46 +24,44 @@
               }
             ]
           },
-          "unit": "dateTimeFromNow",
-          "displayName": "Data Last Received",
-          "decimals": 0
+          "unit": "dateTimeFromNow"
         }
-      }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
+      "id": 999,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group()\n  |> max(column: \"_time\")\n  |> map(fn: (r) => ({_value: int(v: r._time) / int(v: 1000000)}))",
+          "refId": "A"
+        }
+      ],
+      "title": "Last Updated",
+      "type": "stat"
     },
     {
-      "id": 1,
-      "type": "stat",
-      "title": "Sensors Online",
-      "gridPos": {
-        "x": 0,
-        "y": 0,
-        "w": 6,
-        "h": 4
-      },
       "datasource": {
         "type": "influxdb",
         "uid": "cflk0i2e2nwu8d"
       },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> count()\n  |> group()\n  |> count()",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "area",
-        "colorMode": "background",
-        "textMode": "value_and_name",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "orientation": "auto"
-      },
       "fieldConfig": {
         "defaults": {
+          "displayName": "Active Sensors",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -122,44 +80,46 @@
               }
             ]
           },
-          "unit": "short",
-          "displayName": "Active Sensors"
+          "unit": "short"
         }
-      }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> count()\n  |> group()\n  |> count()",
+          "refId": "A"
+        }
+      ],
+      "title": "Sensors Online",
+      "type": "stat"
     },
     {
-      "id": 2,
-      "type": "stat",
-      "title": "Raspberry Pi CPU Usage",
-      "gridPos": {
-        "x": 6,
-        "y": 0,
-        "w": 6,
-        "h": 4
-      },
       "datasource": {
         "type": "influxdb",
         "uid": "cflk0i2e2nwu8d"
       },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"cpu_percent\")\n  |> last()",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "area",
-        "colorMode": "background",
-        "textMode": "value_and_name",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
       "fieldConfig": {
         "defaults": {
+          "decimals": 1,
+          "displayName": "CPU %",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -178,45 +138,45 @@
               }
             ]
           },
-          "unit": "percent",
-          "decimals": 1,
-          "displayName": "CPU %"
+          "unit": "percent"
         }
-      }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"cpu_percent\")\n  |> last()",
+          "refId": "A"
+        }
+      ],
+      "title": "Raspberry Pi CPU Usage",
+      "type": "stat"
     },
     {
-      "id": 3,
-      "type": "stat",
-      "title": "Raspberry Pi Temperature",
-      "gridPos": {
-        "x": 12,
-        "y": 0,
-        "w": 6,
-        "h": 4
-      },
       "datasource": {
         "type": "influxdb",
         "uid": "cflk0i2e2nwu8d"
       },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"cpu_temp\")\n  |> last()",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "area",
-        "colorMode": "background",
-        "textMode": "value_and_name",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
       "fieldConfig": {
         "defaults": {
+          "decimals": 1,
+          "displayName": "CPU Temp",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -235,45 +195,45 @@
               }
             ]
           },
-          "unit": "celsius",
-          "decimals": 1,
-          "displayName": "CPU Temp"
+          "unit": "celsius"
         }
-      }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"cpu_temp\")\n  |> last()",
+          "refId": "A"
+        }
+      ],
+      "title": "Raspberry Pi Temperature",
+      "type": "stat"
     },
     {
-      "id": 4,
-      "type": "stat",
-      "title": "Disk Space Used",
-      "gridPos": {
-        "x": 18,
-        "y": 0,
-        "w": 6,
-        "h": 4
-      },
       "datasource": {
         "type": "influxdb",
         "uid": "cflk0i2e2nwu8d"
       },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"disk_percent\")\n  |> last()",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "area",
-        "colorMode": "background",
-        "textMode": "value_and_name",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
       "fieldConfig": {
         "defaults": {
+          "decimals": 1,
+          "displayName": "Disk Used",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -292,43 +252,40 @@
               }
             ]
           },
-          "unit": "percent",
-          "decimals": 1,
-          "displayName": "Disk Used"
+          "unit": "percent"
         }
-      }
-    },
-    {
-      "id": 5,
-      "type": "table",
-      "title": "Sensor Status Summary",
-      "gridPos": {
-        "x": 0,
-        "y": 4,
-        "w": 24,
-        "h": 8
       },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "textMode": "value_and_name"
       },
       "targets": [
         {
-          "query": "import \"strings\"\n\nlastHeartbeat = from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> keep(columns: [\"_time\", \"device_id\", \"location\", \"uptime\", \"free_heap\", \"rssi\"])\n  |> rename(columns: {_time: \"last_heartbeat\"})\n\nlastReading = from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> keep(columns: [\"device_id\", \"_value\"])\n  |> rename(columns: {_value: \"moisture\"})\n\njoin(\n  tables: {hb: lastHeartbeat, reading: lastReading},\n  on: [\"device_id\"],\n  method: \"left\"\n)\n  |> yield(name: \"result\")",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"disk_percent\")\n  |> last()",
           "refId": "A"
         }
       ],
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "displayName": "device_id",
-            "desc": false
-          }
-        ],
-        "footer": {
-          "show": false
-        }
+      "title": "Disk Space Used",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
       },
       "fieldConfig": {
         "defaults": {
@@ -535,21 +492,63 @@
             ]
           }
         ]
-      }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      },
+      "id": 5,
+      "options": {
+        "footer": {
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "device_id"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "query": "import \"strings\"\n\nlastHeartbeat = from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> keep(columns: [\"_time\", \"device_id\", \"location\", \"uptime\", \"free_heap\", \"rssi\"])\n  |> rename(columns: {_time: \"last_heartbeat\"})\n\nlastReading = from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> keep(columns: [\"device_id\", \"_value\"])\n  |> rename(columns: {_value: \"moisture\"})\n\njoin(\n  tables: {hb: lastHeartbeat, reading: lastReading},\n  on: [\"device_id\"],\n  method: \"left\"\n)\n  |> yield(name: \"result\")",
+          "refId": "A"
+        }
+      ],
+      "title": "Sensor Status Summary",
+      "type": "table"
     },
     {
-      "id": 6,
-      "type": "logs",
-      "title": "🚨 Diagnostic Events",
-      "gridPos": {
-        "x": 0,
-        "y": 12,
-        "w": 24,
-        "h": 10
-      },
       "datasource": {
         "type": "influxdb",
         "uid": "cflk0i2e2nwu8d"
+      },
+      "description": "Shows diagnostic events from ESP8266 sensors. Events appear when crashes, WiFi disconnects, or queue overflows occur. Empty = no issues detected.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "id": 6,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
       },
       "targets": [
         {
@@ -557,80 +556,34 @@
           "refId": "A"
         }
       ],
-      "options": {
-        "showTime": true,
-        "showLabels": true,
-        "showCommonLabels": false,
-        "wrapLogMessage": true,
-        "prettifyLogMessage": false,
-        "enableLogDetails": true,
-        "sortOrder": "Descending",
-        "dedupStrategy": "none"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "description": "Shows diagnostic events from ESP8266 sensors. Events appear when crashes, WiFi disconnects, or queue overflows occur. Empty = no issues detected."
+      "title": "🚨 Diagnostic Events",
+      "type": "logs"
     },
     {
-      "id": 7,
-      "type": "timeseries",
-      "title": "Raspberry Pi System Metrics",
-      "gridPos": {
-        "x": 0,
-        "y": 22,
-        "w": 12,
-        "h": 8
-      },
       "datasource": {
         "type": "influxdb",
         "uid": "cflk0i2e2nwu8d"
       },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"cpu_percent\" or r._field == \"cpu_temp\" or r._field == \"memory_percent\" or r._field == \"disk_percent\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true,
-          "calcs": [
-            "lastNotNull",
-            "mean",
-            "max"
-          ]
-        }
-      },
       "fieldConfig": {
         "defaults": {
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "fillOpacity": 10,
-            "spanNulls": 300000,
-            "showPoints": "never",
-            "axisPlacement": "auto",
-            "scaleDistribution": {
-              "type": "linear"
-            }
-          },
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
           "color": {
             "mode": "palette-classic"
-          }
+          },
+          "custom": {
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": 300000
+          },
+          "max": 100,
+          "min": 0,
+          "unit": "percent"
         },
         "overrides": [
           {
@@ -646,60 +599,62 @@
             ]
           }
         ]
-      }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 22
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"cpu_percent\" or r._field == \"cpu_temp\" or r._field == \"memory_percent\" or r._field == \"disk_percent\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "title": "Raspberry Pi System Metrics",
+      "type": "timeseries"
     },
     {
-      "id": 8,
-      "type": "timeseries",
-      "title": "ESP8266 Free Heap Memory",
-      "gridPos": {
-        "x": 12,
-        "y": 22,
-        "w": 12,
-        "h": 8
-      },
       "datasource": {
         "type": "influxdb",
         "uid": "cflk0i2e2nwu8d"
       },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"free_heap\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true,
-          "calcs": [
-            "lastNotNull",
-            "mean",
-            "min"
-          ]
-        }
-      },
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
+            "axisLabel": "Free Heap (bytes)",
+            "axisPlacement": "auto",
             "drawStyle": "line",
+            "fillOpacity": 10,
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "fillOpacity": 10,
-            "spanNulls": 300000,
-            "showPoints": "never",
-            "axisPlacement": "auto",
-            "axisLabel": "Free Heap (bytes)",
             "scaleDistribution": {
               "type": "linear"
-            }
+            },
+            "showPoints": "never",
+            "spanNulls": 300000
           },
-          "unit": "bytes",
           "min": 0,
           "thresholds": {
             "mode": "absolute",
@@ -722,9 +677,7 @@
               }
             ]
           },
-          "color": {
-            "mode": "palette-classic"
-          }
+          "unit": "bytes"
         },
         "overrides": [
           {
@@ -740,8 +693,8 @@
               {
                 "id": "color",
                 "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#73BF69"
+                  "fixedColor": "#73BF69",
+                  "mode": "fixed"
                 }
               }
             ]
@@ -759,8 +712,8 @@
               {
                 "id": "color",
                 "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#F2CC0C"
+                  "fixedColor": "#F2CC0C",
+                  "mode": "fixed"
                 }
               }
             ]
@@ -778,8 +731,8 @@
               {
                 "id": "color",
                 "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#5794F2"
+                  "fixedColor": "#5794F2",
+                  "mode": "fixed"
                 }
               }
             ]
@@ -797,50 +750,53 @@
               {
                 "id": "color",
                 "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#FF6B6B"
+                  "fixedColor": "#FF6B6B",
+                  "mode": "fixed"
                 }
               }
             ]
           }
         ]
-      }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "min"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"free_heap\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "title": "ESP8266 Free Heap Memory",
+      "type": "timeseries"
     },
     {
-      "id": 9,
-      "type": "barchart",
-      "title": "Diagnostic Events by Type",
-      "gridPos": {
-        "x": 0,
-        "y": 30,
-        "w": 12,
-        "h": 8
-      },
       "datasource": {
         "type": "influxdb",
         "uid": "cflk0i2e2nwu8d"
       },
-      "targets": [
-        {
-          "query": "// Count diagnostic events by type (last 24h)\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"event_count\")\n  |> group(columns: [\"event_type\"])\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "orientation": "horizontal",
-        "xField": "_value",
-        "showValue": "always",
-        "groupWidth": 0.7,
-        "barWidth": 0.97,
-        "stacking": "none",
-        "legend": {
-          "displayMode": "hidden",
-          "showLegend": false
-        }
-      },
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
           "color": {
             "mode": "palette-classic"
           },
@@ -851,46 +807,46 @@
             "axisPlacement": "auto",
             "fillOpacity": 80,
             "gradientMode": "none"
-          }
+          },
+          "unit": "short"
         },
         "overrides": []
-      }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 30
+      },
+      "id": 9,
+      "options": {
+        "barWidth": 0.97,
+        "groupWidth": 0.7,
+        "legend": {
+          "displayMode": "hidden",
+          "showLegend": false
+        },
+        "orientation": "horizontal",
+        "showValue": "always",
+        "stacking": "none",
+        "xField": "_value"
+      },
+      "targets": [
+        {
+          "query": "// Count diagnostic events by type (last 24h)\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"event_count\")\n  |> group(columns: [\"event_type\"])\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)",
+          "refId": "A"
+        }
+      ],
+      "title": "Diagnostic Events by Type",
+      "type": "barchart"
     },
     {
-      "id": 10,
-      "type": "barchart",
-      "title": "Diagnostic Events: Critical vs Info",
-      "gridPos": {
-        "x": 12,
-        "y": 30,
-        "w": 12,
-        "h": 8
-      },
       "datasource": {
         "type": "influxdb",
         "uid": "cflk0i2e2nwu8d"
       },
-      "targets": [
-        {
-          "query": "// Categorize events as Critical or Info\nimport \"strings\"\n\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"event_count\")\n  |> map(fn: (r) => ({\n      r with\n      severity: if r.event_type == \"crash_detected\" or r.event_type == \"wifi_reconnect_failed\" or r.event_type == \"queue_overflow\" or r.event_type == \"heap_low_warning\" or r.event_type == \"influxdb_error\" or r.event_type == \"system_restart\" then \"Critical\" else \"Info\"\n  }))\n  |> group(columns: [\"severity\"])\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: false)",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "orientation": "horizontal",
-        "xField": "_value",
-        "showValue": "always",
-        "groupWidth": 0.7,
-        "barWidth": 0.97,
-        "stacking": "none",
-        "legend": {
-          "displayMode": "hidden",
-          "showLegend": false
-        }
-      },
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
           "color": {
             "mode": "thresholds"
           },
@@ -922,10 +878,52 @@
                 "value": 3
               }
             ]
-          }
+          },
+          "unit": "short"
         },
         "overrides": []
-      }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 30
+      },
+      "id": 10,
+      "options": {
+        "barWidth": 0.97,
+        "groupWidth": 0.7,
+        "legend": {
+          "displayMode": "hidden",
+          "showLegend": false
+        },
+        "orientation": "horizontal",
+        "showValue": "always",
+        "stacking": "none",
+        "xField": "_value"
+      },
+      "targets": [
+        {
+          "query": "// Categorize events as Critical or Info\nimport \"strings\"\n\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"event_count\")\n  |> map(fn: (r) => ({\n      r with\n      severity: if r.event_type == \"crash_detected\" or r.event_type == \"wifi_reconnect_failed\" or r.event_type == \"queue_overflow\" or r.event_type == \"heap_low_warning\" or r.event_type == \"influxdb_error\" or r.event_type == \"system_restart\" then \"Critical\" else \"Info\"\n  }))\n  |> group(columns: [\"severity\"])\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: false)",
+          "refId": "A"
+        }
+      ],
+      "title": "Diagnostic Events: Critical vs Info",
+      "type": "barchart"
     }
-  ]
+  ],
+  "refresh": "1m",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [
+    "diagnostics",
+    "system"
+  ],
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "🔧 System Health Dashboard",
+  "uid": "system-health-v2"
 }

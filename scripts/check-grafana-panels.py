@@ -217,6 +217,10 @@ class GrafanaPanelChecker:
             if not query_text or query_text.strip() == '':
                 continue
             
+            # Substitute template variables
+            if hasattr(self, 'template_variables'):
+                query_text = self.substitute_variables(query_text, self.template_variables)
+            
             status, data_points, error, query_time = self.test_influx_query(query_text)
             
             result['queries'].append({
@@ -249,10 +253,56 @@ class GrafanaPanelChecker:
         
         return result
     
+    def get_template_variables(self, dashboard_data: Dict) -> Dict[str, str]:
+        """Extract template variables and their current values"""
+        variables = {}
+        templating = dashboard_data.get('templating', {})
+        variable_list = templating.get('list', [])
+        
+        for var in variable_list:
+            var_name = var.get('name', '')
+            current = var.get('current', {})
+            value = current.get('value', '')
+            
+            # Handle "All" selection
+            if value == '$__all':
+                all_value = var.get('allValue', '.*')
+                variables[var_name] = all_value
+            else:
+                variables[var_name] = value
+        
+        return variables
+    
+    def substitute_variables(self, query: str, variables: Dict[str, str]) -> str:
+        """Substitute template variables in query"""
+        # First substitute Grafana built-in time range variables
+        # Use last 7 days as default for time range
+        from datetime import datetime, timedelta
+        now = datetime.utcnow()
+        start_time = now - timedelta(days=7)
+        
+        query = query.replace('v.timeRangeStart', start_time.strftime('%Y-%m-%dT%H:%M:%SZ'))
+        query = query.replace('v.timeRangeStop', now.strftime('%Y-%m-%dT%H:%M:%SZ'))
+        query = query.replace('${__from}', str(int(start_time.timestamp() * 1000)))
+        query = query.replace('${__to}', str(int(now.timestamp() * 1000)))
+        
+        # Then substitute custom template variables
+        for var_name, var_value in variables.items():
+            placeholder = f'${{{var_name}}}'
+            query = query.replace(placeholder, var_value)
+            placeholder_alt = f'${var_name}'
+            query = query.replace(placeholder_alt, var_value)
+        return query
+    
     def check_dashboard(self, dashboard_uid: str) -> Dict:
         """Check all panels in a dashboard"""
         dashboard_details = self.get_dashboard_details(dashboard_uid)
         dashboard_data = dashboard_details['dashboard']
+        
+        # Extract template variables for query substitution
+        self.template_variables = self.get_template_variables(dashboard_data)
+        if self.template_variables:
+            self.log(f"Template variables: {self.template_variables}")
         
         result = {
             'uid': dashboard_data['uid'],
