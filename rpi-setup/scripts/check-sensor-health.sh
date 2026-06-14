@@ -325,7 +325,8 @@ if [[ $? -ne 0 ]]; then
 else
     # Count data points per sensor (should be ~12 readings for 5-minute intervals)
     for sensor in "${EXPECTED_SENSORS[@]}"; do
-        count=$(echo "$hour_response" | grep -c "device_id,$sensor" || echo "0")
+        count=$(echo "$hour_response" | grep -c "device_id,$sensor" || true)
+        count=${count:-0}  # Default to 0 if empty
         expected=12
         
         if [[ $count -ge $expected ]]; then
