@@ -7,6 +7,120 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.9.1] - 2026-06-14
+
+### Added
+
+#### Dashboard Visual Enhancements
+- **Plant name display panels** — Large colored heading panels on Main Dashboard and Sensor Details showing selected plant name (e.g., "🌱 Rubber Tree" in green)
+- **Dynamic color matching** — Panel background color matches sensor color from sensors-config.json configuration
+- **Flux-based plant name mapping** — Uses if/else logic to map sensor IDs to plant names without requiring database queries
+
+#### System Metrics Collection
+- **Raspberry Pi metrics collector** — Installed system-metrics-collector.sh to capture CPU, RAM, disk, temperature, and uptime every 60 seconds
+- **rpi_system_metrics measurement** — Posted to InfluxDB for Grafana visualization
+- **systemd user timer** — Runs metrics collection as user service (system-metrics-collector.timer)
+
+#### Documentation
+- **Grafana datasource troubleshooting** — Added AGENTS.md section on datasource UID validation, health testing, and repair workflow
+- **Panel health checker limitations** — Documented why check-grafana-panels.py may report false positives (queries InfluxDB directly, not through Grafana datasources)
+
+### Changed
+
+#### Dashboard Configuration
+- **Main Dashboard template variable** — Changed default from "sensor-1" to "All" (shows all 7 sensors on load)
+- **Main Dashboard includeAll** — Set to `true` with `allValue: ".*"` for regex-based filtering
+- **Sensor Details template variable** — Removed "All" option, added sensors 5-7, defaults to sensor-1
+- **Panel positioning** — Adjusted gridPos of all panels to accommodate plant name heading at top (y=0, h=3)
+
+#### Datasource Migration
+- **All dashboards** — Migrated from broken datasource `PB4A2C00F7BB2A2DA` (localhost:8086) to working datasource `cflk0i2e2nwu8d` (172.17.0.2:8086)
+- **Grafana dashboard files** — Downloaded and saved fixed versions locally (rpi-health.json, system-health.json, alerts-overview.json, mobile-summary.json)
+
+### Fixed
+
+#### Critical Datasource Issues (v2.9.1)
+- **Raspberry Pi Health dashboard** — All 12 panels now showing data (was: all panels "Connection Refused")
+- **System Health Dashboard** — 9/11 panels healthy (was: all panels "Connection Refused")
+- **Mobile Quick View** — 6/8 panels healthy (was: all panels "Connection Refused")
+- **Alerts & Notifications** — 4/9 panels healthy (was: all panels "Connection Refused")
+
+**Root Cause:**
+- Dashboards used datasource `PB4A2C00F7BB2A2DA` pointing to `http://localhost:8086`
+- InfluxDB runs on Docker IP `172.17.0.2:8086`, not localhost
+- Grafana couldn't connect through misconfigured datasource
+- Panel health checker reported false positives because it queries InfluxDB directly (not through Grafana datasources)
+
+**Fix:**
+- Changed all panels to use datasource `cflk0i2e2nwu8d` (points to correct Docker IP)
+- Verified fix in browser (not just health checker)
+- Downloaded fixed dashboards to local files
+
+#### Panel Health Monitoring
+- **RPI Uptime panel query** — Changed time range from -5m back to -1h (metrics written every 60s, -5m too narrow)
+- **System metrics collector** — Installed missing script at ~/soil-sensor/scripts/system-metrics-collector.sh
+
+### Technical Details
+
+#### Affected Components
+- **Datasource UID PB4A2C00F7BB2A2DA** — Broken (localhost:8086, connection refused)
+- **Datasource UID cflk0i2e2nwu8d** — Working (172.17.0.2:8086, InfluxDB on Docker)
+- **Dashboards fixed**: rpi-health-v1, system-health-v2, mobile-summary-v2, alerts-overview-v2
+- **Dashboards already correct**: soil-moisture-main-v2, sensor-details-v2, watering-history-v1
+
+#### Files Modified
+- `generate-dashboard.py` — Added create_plant_name_panel() function, adjusted panel gridPos
+- `grafana-dashboards/soil-moisture-main.json` — Regenerated with plant name panel
+- `grafana-dashboards/sensor-details.json` — Added plant name panel, updated template variable
+- `grafana-dashboards/rpi-health.json` — Fixed datasource UID
+- `grafana-dashboards/system-health.json` — Fixed datasource UID
+- `grafana-dashboards/alerts-overview.json` — Fixed datasource UID
+- `grafana-dashboards/mobile-summary.json` — Fixed datasource UID
+- `AGENTS.md` — Added Grafana datasource troubleshooting section
+- `CHANGELOG.md` — This entry
+
+---
+
+## [2.9.0] - 2026-06-13
+
+### Added
+
+#### Grafana Panel Health Monitoring System
+- **check-grafana-panels.py** — Python-based panel health checker (tests queries via Grafana API, detects "No Data" and query errors, outputs JSON/human-readable reports)
+- **debug-grafana-query.sh** — Query extraction and debugging tool (extracts Flux queries from panels, tests against InfluxDB, provides fix suggestions)
+- **repair-grafana-panels.sh** — Automated repair orchestrator (detects issues, logs to file, sends Slack alerts, optional auto-repair mode)
+- **send-slack-alert.sh** — Generic Slack webhook integration (rate limiting, retry logic, severity levels: info/warning/error/critical)
+- **grafana-panel-health.service/timer** — Systemd automation (runs every 5 minutes, starts 2 minutes after boot)
+- **install-panel-health-monitor.sh** — One-command installer for Raspberry Pi (installs all components, configures systemd, sets up logging)
+
+#### Enhanced Sensor Health Validation
+- **check-sensor-health.sh enhancements** — Auto-detection from sensors-config.json (no manual sensor IDs), multi-timeframe checks (5min, 1h, 24h), data quality validation (stuck sensor detection via stddev)
+- **Data quality metrics** — Standard deviation checks to detect frozen sensors, reading count validation per timeframe
+
+#### Documentation
+- **docs/TROUBLESHOOTING_NO_DATA.md** — Comprehensive 495-line troubleshooting runbook (step-by-step fixes for InfluxDB connection errors, "No Data" panels, query syntax errors, manual investigation workflow, diagnostic command reference)
+- **AGENTS.md panel monitoring section** — Quick diagnosis commands, automated monitoring setup, common issue fixes, diagnostic command reference
+
+### Changed
+
+#### Monitoring & Alerting
+- **Panel health monitoring** — Automated detection and alerting via Slack (5-minute intervals, proactive issue detection before users notice)
+- **Sensor health checks** — Now auto-detects sensors from sensors-config.json instead of requiring manual IDs
+- **Logging infrastructure** — New log file: `/mnt/sensor-data/logs/grafana-panel-issues.log` (persistent history of all panel issues)
+
+#### Security
+- **Slack webhook storage** — Secure file-based storage at `/mnt/sensor-data/config/slack_webhook_url` (chmod 600, not hardcoded in scripts)
+- **InfluxDB token** — Embedded in systemd service environment (not exposed in logs or command-line arguments)
+
+### Fixed
+
+#### Monitoring Gaps
+- **Silent panel failures** — Now detected automatically every 5 minutes (previously required manual dashboard checks)
+- **Query errors** — Proactive detection with suggested fixes (InfluxDB connection errors, syntax errors, time range issues)
+- **Sensor offline detection** — Enhanced to check multiple timeframes and data quality (not just last reading)
+
+---
+
 ## [2.8.0] - 2026-06-11
 
 ### Added

@@ -1,0 +1,36 @@
+[Unit]
+Description=Grafana Panel Health Monitor
+Documentation=https://github.com/omedeiro/soil-sensor
+After=network-online.target influxdb.service grafana-server.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=omedeiro
+Group=omedeiro
+WorkingDirectory=/home/omedeiro/soil-sensor
+
+# Environment
+Environment="INFLUX_TOKEN=r7LONiwdc3ABOcEYSS5nCL6c6sdUZEPy81Q1D7w7nAyXZDAteUD1C6BYZJe21qX4eOwhRvG2ARYwRkaHwQf17w=="
+Environment="INFLUX_URL=http://localhost:8086"
+Environment="INFLUX_ORG=soil-monitoring"
+Environment="INFLUX_BUCKET=sensor-readings"
+Environment="GRAFANA_URL=http://localhost:3000"
+Environment="GRAFANA_USER=admin"
+Environment="GRAFANA_PASSWORD=admin"
+Environment="PYTHONUNBUFFERED=1"
+
+# Script execution
+ExecStart=/home/omedeiro/soil-sensor/scripts/repair-grafana-panels.sh --notify
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=grafana-panel-health
+
+# Security
+PrivateTmp=true
+NoNewPrivileges=true
+
+# Restart policy
+Restart=no

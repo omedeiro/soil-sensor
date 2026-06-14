@@ -278,7 +278,7 @@
     {
       "id": 998,
       "type": "stat",
-      "title": "🖥️ Raspberry Pi Uptime",
+      "title": "\ud83d\udda5\ufe0f Raspberry Pi Uptime",
       "gridPos": {
         "x": 8,
         "y": 3,
@@ -291,7 +291,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"uptime_seconds\")\n  |> last()",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"uptime_seconds\")\n  |> last()",
           "refId": "A"
         }
       ],

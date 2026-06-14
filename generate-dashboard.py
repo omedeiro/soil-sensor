@@ -145,6 +145,7 @@ def create_dashboard(config):
             ]
         },
         "panels": [
+            create_plant_name_panel(sensors, grafana_config),
             create_system_status_panel(grafana_config),
             create_rpi_uptime_panel(grafana_config),
             create_last_updated_panel(grafana_config),
@@ -157,13 +158,100 @@ def create_dashboard(config):
     return dashboard
 
 
+def create_plant_name_panel(sensors, grafana_config):
+    """Create the plant name heading panel with dynamic color matching."""
+    # Build the Flux if/else chain for sensor-to-plant mapping
+    flux_conditions = []
+    for sensor in sensors:
+        flux_conditions.append(f'  else if sensor == "{sensor["id"]}" then [{{_time: now(), _value: "{sensor["plant"]}", _field: "plant_name"}}]')
+    
+    flux_query = f'''import "array"
+import "experimental"
+
+sensor = "${{sensor}}"
+
+data = if sensor == ".*" then [{{_time: now(), _value: "All Plants", _field: "plant_name"}}]
+{chr(10).join(flux_conditions)}
+  else [{{_time: now(), _value: "All Plants", _field: "plant_name"}}]
+
+array.from(rows: data)'''
+    
+    # Build value mappings for colors
+    mappings = [
+        {
+            "type": "value",
+            "options": {
+                "All Plants": {
+                    "color": "#5794F2",
+                    "index": 0
+                }
+            }
+        }
+    ]
+    
+    for i, sensor in enumerate(sensors):
+        mappings.append({
+            "type": "value",
+            "options": {
+                sensor["plant"]: {
+                    "color": sensor["color"],
+                    "index": i + 1
+                }
+            }
+        })
+    
+    return {
+        "id": 1001,
+        "type": "stat",
+        "title": "",
+        "gridPos": {"x": 0, "y": 0, "w": 24, "h": 3},
+        "datasource": {
+            "type": "influxdb",
+            "uid": grafana_config["influxdb_datasource_uid"]
+        },
+        "targets": [
+            {
+                "query": flux_query,
+                "refId": "A"
+            }
+        ],
+        "options": {
+            "graphMode": "none",
+            "colorMode": "background",
+            "textMode": "value",
+            "reduceOptions": {
+                "values": True,
+                "fields": "/_value/",
+                "calcs": ["lastNotNull"]
+            },
+            "text": {
+                "titleSize": 16,
+                "valueSize": 48
+            }
+        },
+        "transparent": False,
+        "fieldConfig": {
+            "defaults": {
+                "mappings": mappings,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {"color": "blue", "value": None}
+                    ]
+                }
+            },
+            "overrides": []
+        }
+    }
+
+
 def create_system_status_panel(grafana_config):
     """Create the System Status stat panel."""
     return {
         "id": 1,
         "type": "stat",
         "title": "System Status",
-        "gridPos": {"x": 0, "y": 0, "w": 8, "h": 4},
+        "gridPos": {"x": 0, "y": 3, "w": 8, "h": 4},
         "datasource": {
             "type": "influxdb",
             "uid": grafana_config["influxdb_datasource_uid"]
@@ -207,14 +295,14 @@ def create_rpi_uptime_panel(grafana_config):
         "id": 998,
         "type": "stat",
         "title": "🖥️ Raspberry Pi Uptime",
-        "gridPos": {"x": 8, "y": 0, "w": 8, "h": 4},
+        "gridPos": {"x": 8, "y": 3, "w": 8, "h": 4},
         "datasource": {
             "type": "influxdb",
             "uid": grafana_config["influxdb_datasource_uid"]
         },
         "targets": [
             {
-                "query": f'from(bucket: "{grafana_config["bucket"]}")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == "rpi_system_metrics")\n  |> filter(fn: (r) => r._field == "uptime_seconds")\n  |> last()',
+                "query": f'from(bucket: "{grafana_config["bucket"]}")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == "rpi_system_metrics")\n  |> filter(fn: (r) => r._field == "uptime_seconds")\n  |> last()',
                 "refId": "A"
             }
         ],
@@ -252,7 +340,7 @@ def create_last_updated_panel(grafana_config):
         "id": 999,
         "type": "stat",
         "title": "Last Updated",
-        "gridPos": {"x": 16, "y": 0, "w": 8, "h": 4},
+        "gridPos": {"x": 16, "y": 3, "w": 8, "h": 4},
         "datasource": {
             "type": "influxdb",
             "uid": grafana_config["influxdb_datasource_uid"]
@@ -293,7 +381,7 @@ def create_current_moisture_panel(sensors, grafana_config):
         "id": 2,
         "type": "bargauge",
         "title": "Current Moisture Levels",
-        "gridPos": {"x": 0, "y": 4, "w": 24, "h": 8},
+        "gridPos": {"x": 0, "y": 7, "w": 24, "h": 8},
         "datasource": {
             "type": "influxdb",
             "uid": grafana_config["influxdb_datasource_uid"]
@@ -343,7 +431,7 @@ def create_moisture_trends_panel(sensors, grafana_config):
         "id": 3,
         "type": "timeseries",
         "title": "Moisture Trends",
-        "gridPos": {"x": 0, "y": 12, "w": 24, "h": 10},
+        "gridPos": {"x": 0, "y": 15, "w": 24, "h": 10},
         "datasource": {
             "type": "influxdb",
             "uid": grafana_config["influxdb_datasource_uid"]
@@ -405,7 +493,7 @@ def create_raw_adc_panel(sensors, grafana_config):
         "id": 5,
         "type": "timeseries",
         "title": "Raw ADC Values",
-        "gridPos": {"x": 0, "y": 22, "w": 24, "h": 10},
+        "gridPos": {"x": 0, "y": 25, "w": 24, "h": 10},
         "datasource": {
             "type": "influxdb",
             "uid": grafana_config["influxdb_datasource_uid"]
