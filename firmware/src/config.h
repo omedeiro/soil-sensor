@@ -6,6 +6,12 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+// ─── Secrets ─────────────────────────────────────────────────────────────────
+// WiFi credentials and the InfluxDB write token live in secrets.h, which is
+// gitignored. Copy secrets.h.example → secrets.h and fill in real values.
+// (Provides WIFI_SSID, WIFI_PASSWORD, INFLUX_TOKEN.)
+#include "secrets.h"
+
 // ─── Version ─────────────────────────────────────────────────────────────────
 #define FIRMWARE_VERSION    "2.3.0"
 #define BUILD_DATE          __DATE__
@@ -14,8 +20,7 @@
 // ─── WiFi ────────────────────────────────────────────────────────────────────
 // If WiFiManager captive portal times out, these are the fallback credentials.
 // Leave empty to rely solely on the captive-portal flow.
-#define WIFI_SSID           "Starry00920"
-#define WIFI_PASSWORD       "8T3UYT4334"
+// NOTE: WIFI_SSID and WIFI_PASSWORD are defined in secrets.h (gitignored).
 #define WIFI_CONNECT_TIMEOUT 90    // seconds
 
 // WiFiManager access-point name (shown when device is unconfigured)
@@ -58,8 +63,8 @@
 
 // InfluxDB Configuration
 // NOTE: Update these after setting up InfluxDB on Raspberry Pi!
+// INFLUX_TOKEN is defined in secrets.h (gitignored).
 #define DB_SERVER_URL       "http://192.168.99.134:8086/api/v2/write"
-#define INFLUX_TOKEN        "r7LONiwdc3ABOcEYSS5nCL6c6sdUZEPy81Q1D7w7nAyXZDAteUD1C6BYZJe21qX4eOwhRvG2ARYwRkaHwQf17w=="  // Write token (Docker rebuild 2026-06-10)
 #define INFLUX_ORG          "soil-monitoring"
 #define INFLUX_BUCKET       "sensor-readings"
 

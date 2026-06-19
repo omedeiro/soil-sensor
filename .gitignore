@@ -9,6 +9,10 @@ firmware/.piolibdeps/
 # macOS
 .DS_Store
 
+# Python
+__pycache__/
+*.pyc
+
 # Dashboard backups
 grafana-dashboards/*.json.backup
 
@@ -28,3 +32,11 @@ rpi-setup/sd-card-backup/
 *webhook*
 slack_webhook_url
 panel-health.env
+
+# Firmware secrets (gitignored); keep the committed template
+firmware/src/secrets.h
+!firmware/src/secrets.h.example
+
+# Local backups (may contain secrets/data — never commit)
+*.backup
+firmware/src/config.h.backup.*

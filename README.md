@@ -198,6 +198,24 @@ The script installs and configures:
 - [PlatformIO](https://platformio.org/) (VS Code extension or CLI)
 - USB-to-serial driver for your board (CP2102 or CH340)
 
+### Configure secrets (`firmware/src/secrets.h`)
+
+WiFi credentials and the InfluxDB write token are **not** stored in git. Copy the
+template and fill in your real values:
+
+```bash
+cp firmware/src/secrets.h.example firmware/src/secrets.h
+# then edit firmware/src/secrets.h
+```
+
+```cpp
+#define WIFI_SSID     "YOUR_WIFI_SSID"
+#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+#define INFLUX_TOKEN  "YOUR_INFLUXDB_WRITE_TOKEN"   // needs WRITE on sensor-readings
+```
+
+`secrets.h` is gitignored — never commit it. `config.h` includes it automatically.
+
 ### Configure `firmware/src/config.h`
 
 Change these two lines per sensor before flashing:
@@ -211,11 +229,11 @@ Full settings reference:
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `WIFI_SSID` | `""` | Your 2.4 GHz WiFi network name |
-| `WIFI_PASSWORD` | `""` | WiFi password |
+| `WIFI_SSID` | — | Your 2.4 GHz WiFi network name (**in `secrets.h`**) |
+| `WIFI_PASSWORD` | — | WiFi password (**in `secrets.h`**) |
+| `INFLUX_TOKEN` | — | InfluxDB write token (**in `secrets.h`**) |
 | `WIFI_CONNECT_TIMEOUT` | `90` | Seconds to wait for connection |
 | `DB_SERVER_URL` | — | `http://<pi-ip>:8086/api/v2/write` |
-| `INFLUX_TOKEN` | — | InfluxDB API token |
 | `INFLUX_ORG` | `soil-monitoring` | InfluxDB organisation |
 | `INFLUX_BUCKET` | `sensor-readings` | InfluxDB bucket |
 | `DEVICE_ID` | `sensor-1` | **Change per sensor** |
@@ -456,6 +474,25 @@ from(bucket: "sensor-readings")
   |> filter(fn: (r) => r._field == "moisture")
   |> filter(fn: (r) => r.device_id == "sensor-1")
 ```
+
+---
+
+## 🔐 Secrets Management
+
+No secrets are committed to this repository. They live in gitignored/local files only:
+
+| Secret | Location | Notes |
+|--------|----------|-------|
+| WiFi SSID/password | `firmware/src/secrets.h` (gitignored) | Copy from `secrets.h.example` |
+| InfluxDB write token (firmware) | `firmware/src/secrets.h` (gitignored) | Compiled into firmware |
+| InfluxDB token + Grafana creds (Pi) | `/mnt/sensor-data/config/panel-health.env` (chmod 600) | Loaded by systemd `EnvironmentFile=` |
+| Slack webhook URL | `/mnt/sensor-data/config/slack_webhook_url` (chmod 600) | Read at runtime by `send-slack-alert.sh` |
+
+`.gitignore` blocks `*.env`, `*.token`, `*secret*`, `*webhook*`, `*.backup`, and
+`firmware/src/secrets.h`. To rotate the Slack webhook, revoke it in Slack and
+overwrite the file — no redeploy needed. To rotate the InfluxDB token, generate a
+new one in InfluxDB, update `secrets.h` + `panel-health.env` + the Grafana
+datasource, reflash sensors, then revoke the old token.
 
 ---
 
