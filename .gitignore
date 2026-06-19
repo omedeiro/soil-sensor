@@ -20,3 +20,11 @@ grafana-dashboards/*.json.backup
 
 # SD card recovery backup (contains WiFi password + user password hashes)
 rpi-setup/sd-card-backup/
+
+# Secrets — never commit (stored on the Pi at /mnt/sensor-data/config, chmod 600)
+*.env
+*.token
+*secret*
+*webhook*
+slack_webhook_url
+panel-health.env

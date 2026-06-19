@@ -10,15 +10,15 @@ User=omedeiro
 Group=omedeiro
 WorkingDirectory=/home/omedeiro/soil-sensor
 
-# Environment
-Environment="INFLUX_TOKEN=r7LONiwdc3ABOcEYSS5nCL6c6sdUZEPy81Q1D7w7nAyXZDAteUD1C6BYZJe21qX4eOwhRvG2ARYwRkaHwQf17w=="
-Environment="INFLUX_URL=http://localhost:8086"
-Environment="INFLUX_ORG=soil-monitoring"
-Environment="INFLUX_BUCKET=sensor-readings"
-Environment="GRAFANA_URL=http://localhost:3000"
-Environment="GRAFANA_USER=admin"
-Environment="GRAFANA_PASSWORD=admin"
+# Non-secret environment
 Environment="PYTHONUNBUFFERED=1"
+
+# Secrets and host-specific config (NOT committed to git).
+# Created by install-panel-health-monitor.sh with chmod 600.
+# Contains: INFLUX_TOKEN, INFLUX_URL, INFLUX_ORG, INFLUX_BUCKET,
+#           GRAFANA_URL, GRAFANA_USER, GRAFANA_PASSWORD
+# The leading '-' makes the unit tolerate a missing file (logs a warning).
+EnvironmentFile=-/mnt/sensor-data/config/panel-health.env
 
 # Script execution
 ExecStart=/home/omedeiro/soil-sensor/scripts/repair-grafana-panels.sh --notify

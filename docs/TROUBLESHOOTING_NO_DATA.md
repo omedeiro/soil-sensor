@@ -346,10 +346,10 @@ systemctl list-timers grafana-panel-health.timer
 ### Configure Slack Notifications
 
 ```bash
-# Set webhook URL
-echo "https://hooks.slack.com/services/YOUR/WEBHOOK/URL" \
-  > /mnt/sensor-data/config/slack_webhook_url
-
+# Set webhook URL securely (umask 077 prevents any world-readable window).
+# NEVER commit this URL — it lives only on the Pi.
+( umask 077; printf '%s' 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL' \
+  > /mnt/sensor-data/config/slack_webhook_url )
 chmod 600 /mnt/sensor-data/config/slack_webhook_url
 
 # Test notification
@@ -358,6 +358,13 @@ chmod 600 /mnt/sensor-data/config/slack_webhook_url
   --title "Test Alert" \
   --message "Grafana panel monitoring is working"
 ```
+
+> **Rotating a leaked webhook:** revoke it in Slack first, then overwrite
+> `/mnt/sensor-data/config/slack_webhook_url` with the new URL (same command
+> above). Scripts read the file at runtime, so no service restart is required.
+> Service secrets (InfluxDB token, Grafana creds) live in
+> `/mnt/sensor-data/config/panel-health.env` (chmod 600) and are loaded by the
+> systemd unit via `EnvironmentFile=` — they are not stored in git.
 
 ### Monitor via Systemd
 
