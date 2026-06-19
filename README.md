@@ -1,8 +1,8 @@
-# 🌱 Soil Moisture Monitoring System — v2.9.0
+# 🌱 Soil Moisture Monitoring System — v2.10.0
 
 A production-grade, multi-sensor soil moisture monitoring system built with **ESP8266** microcontrollers, **InfluxDB**, and **Grafana**, hosted on a **Raspberry Pi 5**.
 
-Each sensor reads soil moisture every 5 minutes and posts data to a central time-series database. A live Grafana dashboard visualizes all sensors simultaneously.
+Each soil sensor reads moisture every 5 minutes and posts data to a central time-series database. A dedicated **DHT22 climate sensor** also reports ambient temperature and humidity. A live Grafana dashboard visualizes all sensors simultaneously.
 
 ---
 
@@ -39,8 +39,9 @@ Each sensor reads soil moisture every 5 minutes and posts data to a central time
 
 ## Features
 
-### ESP8266 Firmware (v2.1.0)
+### ESP8266 Firmware (v2.3.0)
 - **Multi-sensor support** — unlimited ESP8266 sensors, each identified by `DEVICE_ID`
+- **Soil or climate boards** — compile-time `DEVICE_TYPE` switch selects a capacitive soil probe (A0) or a **DHT22/AM2302** ambient temperature + humidity sensor (writes the `climate_reading` measurement)
 - **WiFi stability** — scan-before-connect, exponential backoff reconnect (5s→60s), max TX power
 - **Offline queue** — up to 20 readings buffered in RAM when WiFi/server is unavailable
 - **Hardware watchdog** — 8-second ESP8266 hardware watchdog prevents infinite loops
@@ -50,9 +51,9 @@ Each sensor reads soil moisture every 5 minutes and posts data to a central time
 - **NTP timestamps** — every reading is UTC-timestamped
 - **Boot diagnostics** — device ID, MAC address, crash reason printed on every boot
 
-### Raspberry Pi Server (v2.9.0)
+### Raspberry Pi Server (v2.10.0)
 - **InfluxDB 2.x backend** — time-series storage on USB drive, 365-day retention
-- **Grafana dashboards (6 total)** — soil moisture with **Pi uptime panel**, sensor details, system health, alerts, mobile view, Pi health
+- **Grafana dashboards (6 total)** — soil moisture with **Pi uptime panel** plus **ambient temperature/humidity panels**, sensor details, system health, alerts, mobile view, Pi health
 - **Cloudflare Tunnel** — public HTTPS access via `grafana.owenmedeiros.com` (anonymous read-only viewing)
 - **Enhanced logging system** — boot tracking, filesystem corruption detection, Grafana failure logging, log rotation
 - **Anonymous access** — view-only Grafana dashboards without login (Viewer role)

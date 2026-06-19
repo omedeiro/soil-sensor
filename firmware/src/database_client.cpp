@@ -74,6 +74,41 @@ String DatabaseClient::buildLineProtocol(
     return payload;
 }
 
+String DatabaseClient::buildClimateLineProtocol(
+    const String& deviceId,
+    unsigned long timestamp,
+    float temperatureC,
+    float temperatureF,
+    float humidity,
+    unsigned long uptime,
+    int rssi,
+    int freeHeap
+) {
+    // measurement,tag1=value1 field1=value1,field2=value2 timestamp
+    String payload = String(CLIMATE_MEASUREMENT) + ",device_id=" + deviceId;
+    
+    // Add location tag if configured
+    #ifdef DEVICE_LOCATION
+    payload += ",location=" + String(DEVICE_LOCATION);
+    #endif
+    
+    payload += " ";
+    
+    // Float fields (no 'i' suffix); both °C and °F stored so units can be
+    // chosen at query time. Integers (uptime/rssi/free_heap) keep 'i'.
+    payload += "temperature_c=" + String(temperatureC, 2) + ",";
+    payload += "temperature_f=" + String(temperatureF, 2) + ",";
+    payload += "humidity=" + String(humidity, 2) + ",";
+    payload += "uptime=" + String(uptime) + "i,";
+    payload += "rssi=" + String(rssi) + "i,";
+    payload += "free_heap=" + String(freeHeap) + "i";
+    
+    // Timestamp (Unix epoch in seconds)
+    payload += " " + String(timestamp);
+    
+    return payload;
+}
+
 bool DatabaseClient::postToInflux(const String& payload, int maxRetries) {
     const int RETRY_DELAY_MS = 1000;
     
@@ -166,6 +201,34 @@ bool DatabaseClient::sendReading(
     return success;
 }
 
+bool DatabaseClient::sendClimateReading(
+    const String& deviceId,
+    unsigned long timestamp,
+    float temperatureC,
+    float temperatureF,
+    float humidity,
+    unsigned long uptime,
+    int rssi,
+    int freeHeap,
+    bool queueOnFail
+) {
+    String payload = buildClimateLineProtocol(
+        deviceId, timestamp, temperatureC, temperatureF,
+        humidity, uptime, rssi, freeHeap
+    );
+    
+    bool success = postToInflux(payload, 3);
+    
+    if (success) {
+        Serial.printf("[DB] ✓ Posted to InfluxDB: %s @ %.1f°F / %.1f%% RH\n",
+                      deviceId.c_str(), temperatureF, humidity);
+    } else if (queueOnFail) {
+        Serial.println(F("[DB] ⚠️  POST failed - climate reading will be queued"));
+    }
+    
+    return success;
+}
+
 int DatabaseClient::drainQueue(ReadingQueue& queue, unsigned long maxTimeMs, int maxReadings) {
     if (queue.isEmpty()) {
         return 0;
@@ -192,17 +255,31 @@ int DatabaseClient::drainQueue(ReadingQueue& queue, unsigned long maxTimeMs, int
             break;  // Queue empty
         }
         
-        // Build line protocol
-        String payload = buildLineProtocol(
-            reading.deviceId,
-            reading.timestamp,
-            reading.raw,
-            reading.moisture,
-            reading.uptime,
-            reading.crashes,
-            reading.rssi,
-            reading.freeHeap
-        );
+        // Build line protocol (soil vs climate)
+        String payload;
+        if (reading.isClimate) {
+            payload = buildClimateLineProtocol(
+                reading.deviceId,
+                reading.timestamp,
+                reading.temperatureC,
+                reading.temperatureF,
+                reading.humidity,
+                reading.uptime,
+                reading.rssi,
+                reading.freeHeap
+            );
+        } else {
+            payload = buildLineProtocol(
+                reading.deviceId,
+                reading.timestamp,
+                reading.raw,
+                reading.moisture,
+                reading.uptime,
+                reading.crashes,
+                reading.rssi,
+                reading.freeHeap
+            );
+        }
         
         // Try to send (only 1 retry to avoid blocking too long)
         if (postToInflux(payload, 1)) {

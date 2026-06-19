@@ -24,6 +24,10 @@
 #include "data_logger.h"
 #include "web_server.h"
 
+#if DEVICE_TYPE == DEVICE_TYPE_CLIMATE
+#include "dht_sensor.h"
+#endif
+
 #if USE_REMOTE_DB
 #include "database_client.h"
 #include "reading_queue.h"
@@ -39,6 +43,9 @@
 
 // ─── Global objects ──────────────────────────────────────────────────────────
 SoilSensor          sensor;
+#if DEVICE_TYPE == DEVICE_TYPE_CLIMATE
+DHTSensor           dht;
+#endif
 WifiConnection      wifi;
 WiFiStabilityManager wifiStability;
 DataLogger          logger;
@@ -175,6 +182,9 @@ void setup() {
 
     // 1. Sensor
     sensor.begin();
+#if DEVICE_TYPE == DEVICE_TYPE_CLIMATE
+    dht.begin();
+#endif
 
     // 2. WiFi
     if (!wifi.connect()) {
@@ -255,6 +265,44 @@ void setup() {
     }
 
     // 5. Take first reading immediately
+#if DEVICE_TYPE == DEVICE_TYPE_CLIMATE
+    ClimateReading c = dht.read();
+    totalReadings++;
+
+    Serial.printf("[DHT] temp=%.1f°F (%.1f°C)  humidity=%.1f%%\n",
+                  c.temperatureF, c.temperatureC, c.humidity);
+
+#if USE_REMOTE_DB
+    // Send first climate reading to InfluxDB
+    if (wifi.isConnected() && c.valid) {
+        unsigned long uptime = (millis() - bootTime) / 1000;
+        int rssi = WiFi.RSSI();
+        int freeHeap = ESP.getFreeHeap();
+
+        bool success = dbClient.sendClimateReading(
+            deviceId,
+            c.timestamp,
+            c.temperatureC,
+            c.temperatureF,
+            c.humidity,
+            uptime,
+            rssi,
+            freeHeap,
+            QUEUE_FAILED_READINGS
+        );
+
+        if (!success && QUEUE_FAILED_READINGS) {
+            QueuedReading qr = {deviceId, c.timestamp, 0, 0.0f,
+                                uptime, (int)crashCount, rssi, freeHeap,
+                                true, c.temperatureC, c.temperatureF, c.humidity};
+            readingQueue.enqueue(qr);
+        }
+    } else if (!c.valid) {
+        Serial.println(F("[DHT] Skipping first post - invalid reading"));
+    }
+#endif
+
+#else  // DEVICE_TYPE_SOIL
     SensorReading r = sensor.read();
     logger.addReading(r);
     totalReadings++;
@@ -288,6 +336,7 @@ void setup() {
         }
     }
 #endif
+#endif  // DEVICE_TYPE
     
     lastReadTime = millis();
     
@@ -358,9 +407,14 @@ void loop() {
     if (millis() - lastReadTime >= READ_INTERVAL_MS) {
         unsigned long readStart = millis();
         
+#if DEVICE_TYPE == DEVICE_TYPE_CLIMATE
+        ClimateReading c = dht.read();
+        totalReadings++;
+#else
         SensorReading r = sensor.read();
         logger.addReading(r);
         totalReadings++;
+#endif
 
 #if USE_REMOTE_DB
         // Get additional metrics
@@ -378,6 +432,46 @@ void loop() {
             yield();
         }
         
+#if DEVICE_TYPE == DEVICE_TYPE_CLIMATE
+        // Send current climate reading to InfluxDB
+        bool sent = false;
+        if (wifi.isConnected() && c.valid) {
+            sent = dbClient.sendClimateReading(
+                deviceId,
+                c.timestamp,
+                c.temperatureC,
+                c.temperatureF,
+                c.humidity,
+                uptime,
+                rssi,
+                freeHeap,
+                false  // Don't queue yet - we'll do it manually below
+            );
+        }
+        
+        if (!c.valid) {
+            Serial.println(F("[DHT] Skipping post - invalid reading (NaN)"));
+        } else if (!sent) {
+            Serial.println(F("[DB] Failed to send reading (WiFi down or server error)"));
+            
+            if (QUEUE_FAILED_READINGS) {
+                QueuedReading qr = {
+                    deviceId, c.timestamp, 0, 0.0f,
+                    uptime, (int)crashCount, rssi, freeHeap,
+                    true, c.temperatureC, c.temperatureF, c.humidity
+                };
+                
+                if (readingQueue.enqueue(qr)) {
+                    Serial.printf("[Queue] Reading queued (%u in queue)\n", readingQueue.count());
+                } else {
+                    Serial.println(F("[Queue] ✗ Queue full - reading LOST!"));
+                    #if ENABLE_DIAGNOSTICS
+                    diagnostics.logQueueOverflow(readingQueue.count());
+                    #endif
+                }
+            }
+        }
+#else
         // Send current reading to InfluxDB
         bool sent = false;
         if (wifi.isConnected()) {
@@ -422,14 +516,21 @@ void loop() {
                 }
             }
         }
-#endif
+#endif  // DEVICE_TYPE
+#endif  // USE_REMOTE_DB
 
         // Log reading info to serial
         Serial.println(F("─────────────────────────────────────"));
         Serial.printf("[Sensor] Reading #%u\n", totalReadings);
+#if DEVICE_TYPE == DEVICE_TYPE_CLIMATE
+        Serial.printf("  Temperature: %.1f°F (%.1f°C)\n", c.temperatureF, c.temperatureC);
+        Serial.printf("  Humidity: %.1f%%\n", c.humidity);
+        Serial.printf("  Valid: %s\n", c.valid ? "yes" : "NO (NaN)");
+#else
         Serial.printf("  Moisture: %.1f%%\n", r.moisturePct);
         Serial.printf("  Raw ADC: %d\n", r.rawValue);
         Serial.printf("  Logged: %zu readings\n", logger.count());
+#endif
         Serial.printf("  Uptime: %lu s (%.1f min)\n", 
                       (millis() - bootTime) / 1000,
                       (millis() - bootTime) / 60000.0);

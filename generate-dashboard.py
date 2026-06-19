@@ -93,6 +93,7 @@ def create_dashboard(config):
     """Create the complete dashboard structure."""
     sensors = config["sensors"]
     grafana_config = config["grafana"]
+    climate_sensors = config.get("climate_sensors", [])
     
     dashboard = {
         "id": None,
@@ -151,7 +152,11 @@ def create_dashboard(config):
             create_last_updated_panel(grafana_config),
             create_current_moisture_panel(sensors, grafana_config),
             create_moisture_trends_panel(sensors, grafana_config),
-            create_raw_adc_panel(sensors, grafana_config)
+            create_raw_adc_panel(sensors, grafana_config),
+            create_temperature_stat_panel(climate_sensors, grafana_config),
+            create_humidity_stat_panel(climate_sensors, grafana_config),
+            create_temperature_trends_panel(climate_sensors, grafana_config),
+            create_humidity_trends_panel(climate_sensors, grafana_config)
         ]
     }
     
@@ -539,6 +544,232 @@ def create_raw_adc_panel(sensors, grafana_config):
                 "color": {"mode": "palette-classic"}
             },
             "overrides": [create_field_override(s) for s in sensors]
+        }
+    }
+
+
+def create_climate_field_override(sensor):
+    """Field override (display name + fixed color) for a climate sensor."""
+    return {
+        "matcher": {
+            "id": "byRegexp",
+            "options": f".*{sensor['id']}.*"
+        },
+        "properties": [
+            {"id": "displayName", "value": sensor["label"]},
+            {"id": "color", "value": {"mode": "fixed", "fixedColor": sensor["color"]}}
+        ]
+    }
+
+
+def _climate_measurement(grafana_config):
+    return grafana_config.get("climate_measurement", "climate_reading")
+
+
+def create_temperature_stat_panel(climate_sensors, grafana_config):
+    """Current ambient temperature as a single number with °F unit."""
+    measurement = _climate_measurement(grafana_config)
+    return {
+        "id": 20,
+        "type": "stat",
+        "title": "Ambient Temperature",
+        "gridPos": {"x": 0, "y": 35, "w": 12, "h": 6},
+        "datasource": {
+            "type": "influxdb",
+            "uid": grafana_config["influxdb_datasource_uid"]
+        },
+        "targets": [
+            {
+                "query": f'from(bucket: "{grafana_config["bucket"]}")\n  |> range(start: -30m)\n  |> filter(fn: (r) => r._measurement == "{measurement}")\n  |> filter(fn: (r) => r._field == "temperature_f")\n  |> group(columns: ["device_id"])\n  |> last()',
+                "refId": "A"
+            }
+        ],
+        "options": {
+            "graphMode": "none",
+            "colorMode": "value",
+            "textMode": "value",
+            "justifyMode": "auto",
+            "reduceOptions": {
+                "values": False,
+                "calcs": ["lastNotNull"]
+            }
+        },
+        "fieldConfig": {
+            "defaults": {
+                "unit": "fahrenheit",
+                "decimals": 1,
+                "mappings": [],
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {"color": "blue", "value": None},
+                        {"color": "green", "value": 60},
+                        {"color": "orange", "value": 80},
+                        {"color": "red", "value": 90}
+                    ]
+                }
+            },
+            "overrides": [create_climate_field_override(s) for s in climate_sensors]
+        }
+    }
+
+
+def create_humidity_stat_panel(climate_sensors, grafana_config):
+    """Current ambient humidity as a single number with % unit."""
+    measurement = _climate_measurement(grafana_config)
+    return {
+        "id": 21,
+        "type": "stat",
+        "title": "Ambient Humidity",
+        "gridPos": {"x": 12, "y": 35, "w": 12, "h": 6},
+        "datasource": {
+            "type": "influxdb",
+            "uid": grafana_config["influxdb_datasource_uid"]
+        },
+        "targets": [
+            {
+                "query": f'from(bucket: "{grafana_config["bucket"]}")\n  |> range(start: -30m)\n  |> filter(fn: (r) => r._measurement == "{measurement}")\n  |> filter(fn: (r) => r._field == "humidity")\n  |> group(columns: ["device_id"])\n  |> last()',
+                "refId": "A"
+            }
+        ],
+        "options": {
+            "graphMode": "none",
+            "colorMode": "value",
+            "textMode": "value",
+            "justifyMode": "auto",
+            "reduceOptions": {
+                "values": False,
+                "calcs": ["lastNotNull"]
+            }
+        },
+        "fieldConfig": {
+            "defaults": {
+                "unit": "humidity",
+                "decimals": 1,
+                "mappings": [],
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                        {"color": "red", "value": None},
+                        {"color": "orange", "value": 30},
+                        {"color": "green", "value": 40},
+                        {"color": "blue", "value": 60}
+                    ]
+                }
+            },
+            "overrides": [create_climate_field_override(s) for s in climate_sensors]
+        }
+    }
+
+
+def create_temperature_trends_panel(climate_sensors, grafana_config):
+    """Ambient temperature (°F) time series."""
+    measurement = _climate_measurement(grafana_config)
+    return {
+        "id": 22,
+        "type": "timeseries",
+        "title": "Ambient Temperature Trend (°F)",
+        "gridPos": {"x": 0, "y": 41, "w": 24, "h": 10},
+        "datasource": {
+            "type": "influxdb",
+            "uid": grafana_config["influxdb_datasource_uid"]
+        },
+        "targets": [
+            {
+                "query": f'from(bucket: "{grafana_config["bucket"]}")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == "{measurement}")\n  |> filter(fn: (r) => r._field == "temperature_f")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)',
+                "refId": "A"
+            }
+        ],
+        "options": {
+            "tooltip": {"mode": "multi", "sort": "desc"},
+            "legend": {
+                "displayMode": "table",
+                "placement": "bottom",
+                "showLegend": True,
+                "calcs": ["lastNotNull", "mean", "min", "max"]
+            }
+        },
+        "fieldConfig": {
+            "defaults": {
+                "custom": {
+                    "drawStyle": "line",
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "spanNulls": 3600000,
+                    "showPoints": "never",
+                    "pointSize": 5,
+                    "stacking": {"mode": "none", "group": "A"},
+                    "axisPlacement": "auto",
+                    "axisLabel": "Temperature °F",
+                    "scaleDistribution": {"type": "linear"}
+                },
+                "unit": "fahrenheit",
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [{"color": "transparent", "value": None}]
+                },
+                "color": {"mode": "palette-classic"}
+            },
+            "overrides": [create_climate_field_override(s) for s in climate_sensors]
+        }
+    }
+
+
+def create_humidity_trends_panel(climate_sensors, grafana_config):
+    """Ambient humidity (%) time series."""
+    measurement = _climate_measurement(grafana_config)
+    return {
+        "id": 23,
+        "type": "timeseries",
+        "title": "Ambient Humidity Trend (%)",
+        "gridPos": {"x": 0, "y": 51, "w": 24, "h": 10},
+        "datasource": {
+            "type": "influxdb",
+            "uid": grafana_config["influxdb_datasource_uid"]
+        },
+        "targets": [
+            {
+                "query": f'from(bucket: "{grafana_config["bucket"]}")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == "{measurement}")\n  |> filter(fn: (r) => r._field == "humidity")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)',
+                "refId": "A"
+            }
+        ],
+        "options": {
+            "tooltip": {"mode": "multi", "sort": "desc"},
+            "legend": {
+                "displayMode": "table",
+                "placement": "bottom",
+                "showLegend": True,
+                "calcs": ["lastNotNull", "mean", "min", "max"]
+            }
+        },
+        "fieldConfig": {
+            "defaults": {
+                "custom": {
+                    "drawStyle": "line",
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "spanNulls": 3600000,
+                    "showPoints": "never",
+                    "pointSize": 5,
+                    "stacking": {"mode": "none", "group": "A"},
+                    "axisPlacement": "auto",
+                    "axisLabel": "Humidity %",
+                    "scaleDistribution": {"type": "linear"}
+                },
+                "unit": "humidity",
+                "min": 0,
+                "max": 100,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [{"color": "transparent", "value": None}]
+                },
+                "color": {"mode": "palette-classic"}
+            },
+            "overrides": [create_climate_field_override(s) for s in climate_sensors]
         }
     }
 

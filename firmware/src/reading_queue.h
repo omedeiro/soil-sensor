@@ -19,6 +19,13 @@ struct QueuedReading {
     int crashes;
     int rssi;
     int freeHeap;
+    // Climate (DHT22) support. For soil readings these stay default (isClimate
+    // false); existing aggregate initializers that supply only the 8 fields
+    // above leave these value-initialized to 0/false.
+    bool isClimate;
+    float temperatureC;
+    float temperatureF;
+    float humidity;
 };
 
 class ReadingQueue {
