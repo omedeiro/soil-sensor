@@ -7,7 +7,7 @@
 #define CONFIG_H
 
 // ─── Version ─────────────────────────────────────────────────────────────────
-#define FIRMWARE_VERSION    "2.2.0"
+#define FIRMWARE_VERSION    "2.3.0"
 #define BUILD_DATE          __DATE__
 #define BUILD_TIME          __TIME__
 
@@ -21,6 +21,20 @@
 // WiFiManager access-point name (shown when device is unconfigured)
 #define AP_NAME             "SoilSensor-Setup"
 #define AP_PASSWORD         ""     // leave empty for open AP
+
+// ─── Device Type ─────────────────────────────────────────────────────────────
+// Selects which kind of sensor is wired to this board. Only one path is
+// compiled in, so the other sensor's code/libraries add no runtime cost.
+//   DEVICE_TYPE_SOIL    → capacitive soil-moisture probe on A0 (sensors 1-7)
+//   DEVICE_TYPE_CLIMATE → DHT22/AM2302 ambient temp + humidity (sensor-8)
+#define DEVICE_TYPE_SOIL     0
+#define DEVICE_TYPE_CLIMATE  1
+#define DEVICE_TYPE          DEVICE_TYPE_CLIMATE   // ← set per board (default 0 for soil)
+
+// DHT22 (AM2302) — only used when DEVICE_TYPE == DEVICE_TYPE_CLIMATE
+#define DHT_PIN              D2                 // GPIO4 (data line)
+#define DHT_TYPE             DHT22
+#define CLIMATE_MEASUREMENT  "climate_reading"  // InfluxDB measurement for DHT data
 
 // ─── Sensor ──────────────────────────────────────────────────────────────────
 #define SENSOR_PIN          A0     // ADC pin (ESP8266 has one: A0)
@@ -53,7 +67,7 @@
 // Option 1: Auto-generate from MAC address (e.g., "esp8266-40915141d997")
 // Option 2: Set DEVICE_ID_AUTO=false and provide custom ID below
 #define DEVICE_ID_AUTO      false
-#define DEVICE_ID           "sensor-6"          // Change for each sensor: sensor-1, sensor-2, etc.
+#define DEVICE_ID           "sensor-8"          // Change for each sensor: sensor-1, sensor-2, etc.
 #define DEVICE_LOCATION     "living-room"       // Room location for this sensor
 
 // ─── WiFi Stability & Queue ──────────────────────────────────────────────────

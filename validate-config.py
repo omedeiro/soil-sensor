@@ -65,6 +65,25 @@ def validate_sensor(sensor, index):
     return errors
 
 
+def validate_climate_sensor(sensor, index):
+    """Validate a single climate (DHT22) sensor configuration."""
+    errors = []
+    sensor_id = sensor.get('id', f'climate-{index}')
+
+    required = ['id', 'label', 'location', 'color']
+    for field in required:
+        if field not in sensor:
+            errors.append(f"{sensor_id}: Missing required field '{field}'")
+
+    if 'id' in sensor and not re.match(r'^sensor-\d+$', sensor['id']):
+        errors.append(f"{sensor_id}: ID must be in format 'sensor-N' (e.g., 'sensor-8')")
+
+    if 'color' in sensor and not validate_color(sensor['color']):
+        errors.append(f"{sensor_id}: Invalid color '{sensor['color']}' (must be #RRGGBB)")
+
+    return errors
+
+
 def validate_config(config):
     """Validate entire configuration."""
     errors = []
@@ -93,7 +112,21 @@ def validate_config(config):
     # Validate each sensor
     for i, sensor in enumerate(sensors):
         errors.extend(validate_sensor(sensor, i + 1))
-    
+
+    # Validate optional climate sensors (DHT22 temp/humidity)
+    climate_sensors = config.get('climate_sensors', [])
+    if climate_sensors:
+        if not isinstance(climate_sensors, list):
+            errors.append("'climate_sensors' must be an array")
+        else:
+            climate_ids = [s.get('id') for s in climate_sensors]
+            all_ids = sensor_ids + climate_ids
+            dup_all = [sid for sid in all_ids if all_ids.count(sid) > 1]
+            if dup_all:
+                errors.append(f"Duplicate sensor IDs across sensors/climate_sensors: {set(dup_all)}")
+            for i, sensor in enumerate(climate_sensors):
+                errors.extend(validate_climate_sensor(sensor, i + 1))
+
     # Validate Grafana config
     if 'grafana' in config:
         grafana = config['grafana']
@@ -140,6 +173,12 @@ def main():
     print("\nSensors:")
     for sensor in config['sensors']:
         print(f"  {sensor['id']:10s} → {sensor['plant']:20s} ({sensor['location']})")
+
+    climate_sensors = config.get('climate_sensors', [])
+    if climate_sensors:
+        print("\nClimate sensors (DHT22):")
+        for sensor in climate_sensors:
+            print(f"  {sensor['id']:10s} → {sensor['label']:20s} ({sensor['location']})")
     
     print(f"\nGrafana datasource: {config['grafana']['influxdb_datasource_uid']}")
     print(f"InfluxDB bucket:    {config['grafana']['bucket']}")

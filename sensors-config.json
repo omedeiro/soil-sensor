@@ -120,9 +120,20 @@
       ]
     }
   ],
+  "climate_sensors": [
+    {
+      "id": "sensor-8",
+      "label": "Ambient Climate",
+      "location": "living-room",
+      "ip": "192.168.99.182",
+      "mac": "48:55:19:e6:6c:af",
+      "color": "#FF780A"
+    }
+  ],
   "grafana": {
     "influxdb_datasource_uid": "cflk0i2e2nwu8d",
     "bucket": "sensor-readings",
-    "measurement": "sensor_reading"
+    "measurement": "sensor_reading",
+    "climate_measurement": "climate_reading"
   }
 }

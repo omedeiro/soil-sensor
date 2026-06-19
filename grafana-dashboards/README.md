@@ -1,6 +1,6 @@
 # Grafana Dashboards Guide
 
-7 production-ready dashboards for the Soil Moisture Monitoring System (v2.7.0).
+7 production-ready dashboards for the Soil Moisture Monitoring System (v2.10.0).
 
 All dashboards feature:
 - **High-contrast color scheme** per sensor (7 distinct colors for easy identification)
@@ -23,6 +23,7 @@ All dashboards feature:
 
 **Key Panels:**
 - **Raspberry Pi Uptime** — Server uptime in top status bar (v2.3.0)
+- **Ambient Temperature & Humidity** — DHT22 climate sensor stat panels (°F / %) plus trend plots (v2.10.0)
 - **Moisture gauges** (7) — Current moisture % with color gradients per sensor (v2.4.0)
 - **Moisture trend plot** — Time series for all sensors (color-coded)
 - **Last updated** — Relative time since most recent reading

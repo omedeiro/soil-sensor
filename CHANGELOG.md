@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.10.0] - 2026-06-19
+
+### Added
+
+#### Ambient Climate Sensor — DHT22/AM2302 (sensor-8)
+- **New device type** — Compile-time `DEVICE_TYPE` switch in `config.h` selects `DEVICE_TYPE_SOIL` (capacitive probe on A0, sensors 1-7) or `DEVICE_TYPE_CLIMATE` (DHT22 on `DHT_PIN`=D2/GPIO4). Only one path compiles in, so the unused sensor adds no runtime cost.
+- **DHT22 driver** — New `dht_sensor.{h,cpp}` (`DHTSensor` class) reading ambient temperature (°C and °F) and relative humidity, with NaN-retry handling for intermittent DHT reads.
+- **`climate_reading` measurement** — New InfluxDB measurement with float fields `temperature_c`, `temperature_f`, `humidity` plus `uptime`/`rssi`/`free_heap` diagnostics. Tags: `device_id`, `location`. Kept separate from `sensor_reading` so the climate device never pollutes the soil-moisture dropdown or panels.
+- **Climate send path** — `DatabaseClient::sendClimateReading()` / `buildClimateLineProtocol()` reuse the existing HTTP/retry logic (success on HTTP 204/200).
+- **Offline queue support** — `QueuedReading` extended with climate fields; `drainQueue()` rebuilds the correct line protocol per reading type. Soil queue behavior unchanged.
+- **Grafana panels** — Auto-generated **Ambient Temperature** and **Ambient Humidity** stat panels (plain number with °F / % units) plus °F and % time-series trend panels on the main dashboard.
+- **Centralized config** — `sensors-config.json` gains a `climate_sensors` array and `grafana.climate_measurement`; `validate-config.py` validates climate sensors (optional, non-breaking); `generate-dashboard.py` renders the four climate panels.
+- **sensor-8 deployed** — Living-room DHT22 at `192.168.99.182` (MAC `48:55:19:e6:6c:af`), verified end-to-end (serial → InfluxDB write confirmed).
+
+### Changed
+- **Firmware version** — Bumped to `2.3.0` (new DHT22 support).
+- **DHT libraries** — Added `adafruit/DHT sensor library` and `adafruit/Adafruit Unified Sensor` to `platformio.ini`.
+- **Documentation** — README, AGENTS.md, and dashboard guide updated for the soil/climate `DEVICE_TYPE` split and the new ambient panels.
+
+### Technical Details
+- Both firmware build paths (`DEVICE_TYPE_SOIL` and `DEVICE_TYPE_CLIMATE`) verified to compile; the default remains `DEVICE_TYPE_SOIL`, so reflashing the existing 7 soil sensors is unaffected.
+- Temperature stored in both °C and °F in InfluxDB; the dashboard displays °F.
+- DHT22 wiring: DATA→D2, VCC→3.3V, GND→GND (bare AM2302 needs a 10kΩ pull-up DATA↔VCC).
+
+---
+
 ## [2.9.1] - 2026-06-14
 
 ### Added

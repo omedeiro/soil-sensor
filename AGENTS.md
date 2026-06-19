@@ -60,13 +60,18 @@ python3 server.py          # direct invocation
 ## Configuration Gotchas
 
 **`firmware/src/config.h`** is the single source of truth for ESP8266 settings:
-- `DB_SERVER_URL` must point to InfluxDB: `http://<pi-ip>:8086/api/v2/write`
-- `INFLUX_TOKEN` must be set to write token from InfluxDB (generated in UI)
+- `DB_SERVER_URL` must point to InfluxDB: `http://<pi-ip>:8086/api/v2/write`- `INFLUX_TOKEN` must be set to write token from InfluxDB (generated in UI)
 - `INFLUX_ORG` defaults to `soil-monitoring`
 - `INFLUX_BUCKET` defaults to `sensor-readings`
 - `READ_INTERVAL_MS` is 300000 (5 min) despite some legacy docs saying 1 min — trust the code
 - `DEVICE_ID_AUTO` can be false for multi-sensor deployments; use `DEVICE_ID` to name sensors (sensor-1, sensor-2, etc.)
 - `DEVICE_LOCATION` tags sensor location for Grafana filtering (e.g., "backyard", "greenhouse")
+
+**Device type (soil vs. climate):**
+- `DEVICE_TYPE` selects the board's sensor: `DEVICE_TYPE_SOIL` (default, sensors 1-7, capacitive probe on A0) or `DEVICE_TYPE_CLIMATE` (sensor-8, DHT22/AM2302 on `DHT_PIN`=D2/GPIO4).
+- Only one path is compiled in, so the unused sensor adds no runtime cost. Keep `DEVICE_TYPE_SOIL` as the default when reflashing soil sensors.
+- Climate devices write the **`climate_reading`** measurement (not `sensor_reading`) with float fields `temperature_c`, `temperature_f`, `humidity` plus `uptime`/`rssi`/`free_heap` diagnostics. Tags: `device_id`, `location`.
+- DHT22 needs libs `adafruit/DHT sensor library` + `adafruit/Adafruit Unified Sensor` (in `platformio.ini`). Wire DATA→D2, VCC→3.3V, GND→GND (bare AM2302 needs a 10kΩ pull-up DATA↔VCC).
 
 **WiFi Stability Features:**
 - WiFi stability manager is always enabled (automatic reconnection with exponential backoff 5s → 60s)
@@ -459,6 +464,7 @@ cd tests
 - **sensor-5** (bed-room, ZZ Plant): `192.168.99.89` (MAC: 34:ab:95:16:51:d9) (ESP-1651D9, Wi-Fi 2.4GHz n) - online
 - **sensor-6** (living-room, Ficus Elastica Ruby): `192.168.99.38` (MAC: 48:3f:da:62:f9:07) (Wi-Fi 2.4GHz n) - online
 - **sensor-7** (guest-room, Basil - pot): `192.168.99.141` (MAC: 84:cc:a8:a7:96:32) (Wi-Fi 2.4GHz n) - online
+- **sensor-8** (living-room, Ambient Climate — **DHT22/AM2302**, not soil): `192.168.99.182` (MAC: 48:55:19:e6:6c:af) - online
 - Web Dashboard: `http://<sensor-ip>` (e.g., `http://192.168.99.110`)
 - Reading Interval: 5 minutes (300000ms)
 

@@ -41,6 +41,34 @@ public:
         int freeHeap,
         bool queueOnFail = true
     );
+
+    /**
+     * Send an ambient climate (DHT22) reading to InfluxDB.
+     * Writes to the CLIMATE_MEASUREMENT measurement with temperature_c,
+     * temperature_f and humidity float fields plus diagnostics.
+     *
+     * @param deviceId Unique identifier for this sensor
+     * @param timestamp Unix timestamp of the reading
+     * @param temperatureC Temperature in degrees Celsius
+     * @param temperatureF Temperature in degrees Fahrenheit
+     * @param humidity Relative humidity percentage (0-100)
+     * @param uptime Device uptime in seconds
+     * @param rssi WiFi signal strength in dBm
+     * @param freeHeap Free heap memory in bytes
+     * @param queueOnFail If true, add to queue on failure
+     * @return true if successful, false otherwise
+     */
+    bool sendClimateReading(
+        const String& deviceId,
+        unsigned long timestamp,
+        float temperatureC,
+        float temperatureF,
+        float humidity,
+        unsigned long uptime,
+        int rssi,
+        int freeHeap,
+        bool queueOnFail = true
+    );
     
     /**
      * Attempt to drain the reading queue (non-blocking with time limit)
@@ -77,6 +105,20 @@ private:
         float moisture,
         unsigned long uptime,
         int crashes,
+        int rssi,
+        int freeHeap
+    );
+
+    /**
+     * Build InfluxDB line protocol string for a climate (DHT22) reading
+     */
+    String buildClimateLineProtocol(
+        const String& deviceId,
+        unsigned long timestamp,
+        float temperatureC,
+        float temperatureF,
+        float humidity,
+        unsigned long uptime,
         int rssi,
         int freeHeap
     );
