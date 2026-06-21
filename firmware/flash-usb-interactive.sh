@@ -1,47 +1,36 @@
 #!/bin/bash
 # USB flash workflow - one sensor at a time
 # User plugs in each sensor, enters the sensor number, and we flash it
+# Sensor data sourced from sensors-config.json at project root
 
 set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/lib/config-helpers.sh"
+
+NUM_SENSORS=$(sensor_count)
 
 echo "╔════════════════════════════════════════════════════════════════╗"
 echo "║       ESP8266 USB Flashing Workflow                            ║"
 echo "╚════════════════════════════════════════════════════════════════╝"
-echo ""
-echo "📋 Sensor List:"
-echo "  1 - Rubber Tree (bed-room)"
-echo "  2 - Monstera (living-room)"
-echo "  3 - Avocado (living-room)"
-echo "  4 - Basil - auk (guest-room)"
-echo "  5 - ZZ Plant (bed-room)"
-echo "  6 - Ficus Elastica Ruby (living-room)"
-echo "  7 - Basil - pot (guest-room)"
-echo ""
+print_sensor_list
+
 echo "Instructions:"
 echo "  1. Plug in a sensor via USB"
-echo "  2. Enter the sensor number (1-7)"
+echo "  2. Enter the sensor number (1-$NUM_SENSORS)"
 echo "  3. Script will flash the correct firmware"
 echo "  4. Unplug and plug in the next sensor"
 echo "  5. Type 'q' to quit"
 echo ""
 
-# Sensor data: ID:Location:Plant
-declare -a SENSOR_DATA=(
-    ""
-    "sensor-1:bed-room:Rubber Tree"
-    "sensor-2:living-room:Monstera"
-    "sensor-3:living-room:Avocado"
-    "sensor-4:guest-room:Basil - auk"
-    "sensor-5:bed-room:ZZ Plant"
-    "sensor-6:living-room:Ficus Elastica Ruby"
-    "sensor-7:guest-room:Basil - pot"
-)
+declare -a SENSOR_DATA=("")
+load_sensors_by_number SENSOR_DATA
 
 flash_count=0
 
 while true; do
     echo ""
-    read -p "Which sensor is plugged in? (1-7, or 'q' to quit): " choice
+    read -p "Which sensor is plugged in? (1-$NUM_SENSORS, or 'q' to quit): " choice
     
     if [[ "$choice" == "q" ]] || [[ "$choice" == "Q" ]]; then
         echo ""
@@ -49,8 +38,8 @@ while true; do
         exit 0
     fi
     
-    if ! [[ "$choice" =~ ^[1-7]$ ]]; then
-        echo "❌ Invalid choice. Please enter 1-7."
+    if ! [[ "$choice" =~ ^[1-9][0-9]*$ ]] || [ "$choice" -gt "$NUM_SENSORS" ]; then
+        echo "❌ Invalid choice. Please enter 1-$NUM_SENSORS."
         continue
     fi
     

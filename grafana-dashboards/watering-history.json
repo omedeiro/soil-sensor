@@ -173,7 +173,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Basil - auk"
+                "value": "Micro Greens"
               }
             ]
           },
@@ -422,7 +422,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 4 (Basil - auk)"
+                "value": "Sensor 4 (Micro Greens)"
               },
               {
                 "id": "color",
@@ -692,7 +692,7 @@
       "id": 104,
       "type": "stat",
       "title": "Sensor 4 - Last Watered",
-      "description": "Time since Basil (auk) was last watered",
+      "description": "Time since Micro Greens was last watered",
       "gridPos": {
         "x": 18,
         "y": 23,
@@ -745,7 +745,7 @@
             ]
           },
           "unit": "dateTimeFromNow",
-          "displayName": "Basil (auk)",
+          "displayName": "Micro Greens",
           "color": {
             "mode": "fixed",
             "fixedColor": "#FF6B6B"

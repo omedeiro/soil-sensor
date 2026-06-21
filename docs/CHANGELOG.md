@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.11.2] - 2026-06-21
+
+### Changed
+
+- **Sensor rename** — Renamed sensor-4 from "Basil - auk" to "Micro Greens" in `sensors-config.json` and all downstream references (AGENTS.md, Grafana dashboards, firmware flash scripts, quick reference)
+- **Firmware flash scripts now read from config** — `flash-usb-interactive.sh`, `flash-all-sensors.sh`, `flash-all-ota.sh`, and `flash-ota-canary.sh` now load sensor data dynamically from `sensors-config.json` (via `jq`) instead of hardcoding arrays. Added shared helper at `firmware/lib/config-helpers.sh`.
+- **Grafana dashboards updated** — Updated `watering-history.json` and `sensor-details.json` to reflect "Micro Greens" plant name (4 display name/description references in watering dashboard, 3 in sensor details)
+- **Scripts/docs updated** — `scripts/update_dashboard_plant_names.py`, `docs/reference/QUICK_REFERENCE.md`, and `AGENTS.md` updated for consistency
+- **Dashboard import script fixed** — `grafana-dashboards/import-all-dashboards.sh` now resolves file paths relative to the script's own directory, so it can be run from anywhere
+
+---
+
 ## [2.11.1] - 2026-06-21
 
 ### Changed

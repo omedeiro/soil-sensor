@@ -177,7 +177,7 @@ Active sensors use these colors for easy visual distinction:
 | 1 | Rubber Tree | Green | `#73BF69` |
 | 2 | Monstera | Yellow | `#F2CC0C` |
 | 3 | Avocado | Blue | `#5794F2` |
-| 4 | Basil - auk | Red | `#FF6B6B` |
+| 4 | Micro Greens | Red | `#FF6B6B` |
 | 5 | ZZ Plant | Purple | `#B877D9` |
 | 6 | Ficus Elastica Ruby | Orange | `#FF9830` |
 | 7 | Basil - pot | Cyan | `#5DDBDB` |
