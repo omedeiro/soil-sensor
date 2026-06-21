@@ -1,6 +1,6 @@
 # Grafana Dashboards Guide
 
-7 production-ready dashboards for the Soil Moisture Monitoring System (v2.10.0).
+7 production-ready dashboards for the Soil Moisture Monitoring System (v2.11.0).
 
 All dashboards feature:
 - **High-contrast color scheme** per sensor (7 distinct colors for easy identification)
@@ -128,35 +128,40 @@ All dashboards feature:
 
 ---
 
-### 7. 🚰 Watering History (`watering-history.json`) — NEW in v2.7.0
+### 7. 🚰 Watering History (`watering-history.json`) — v2.7.0, enhanced v2.11.0
 **Tags:** `watering`, `monitoring`
 
-**Purpose:** Automatic detection and visualization of watering events based on sharp moisture increases.
+**Purpose:** Automatic detection and visualization of watering events, dry conditions, sensor noise, and offline periods.
 
 **Key Panels:**
-- **Watering Events Timeline** — State timeline showing when each sensor was watered (green bars for 2-hour watered status)
-- **Moisture Trend with Watering Markers** — Time series plot with red markers at detected watering events
+- **Watering Events Timeline** — 5-state timeline (Normal/Dry/Watering/Noise/Offline) per sensor, using color-coded state bands. Enhanced in v2.11.0 with offline detection, noise filtering, and dry alerts.
+- **Moisture Trend with Watering Markers** — Time series plot with dual-threshold markers (fast watering ≥15% in red, slow watering ≥8% in orange).
 - **Time Since Last Watered** — 7 stat panels showing hours/days since each sensor was watered (color-coded: green <2 days, yellow 2-5 days, orange 5-7 days, red >7 days)
 - **Watering Frequency Heatmap** — Calendar-style view showing watering patterns by day-of-week and hour
 
-**Detection Algorithm:**
-- **Threshold:** 15%+ moisture increase between consecutive readings (5-minute intervals)
-- **Watered Status Duration:** 2 hours after detection
-- **Noise Filtering:** Only detects sustained increases, filters out sensor jitter
+**Detection Algorithm (v2.11.0):**
+- **Fast watering:** ≥15% moisture increase in a single 5-minute interval (red markers)
+- **Slow watering:** ≥8% increase (drip irrigation, orange markers)
+- **Noise detection:** ≤-8% rapid drop (probe disturbance or sensor jitter, orange state)
+- **Dry detection:** Moisture <20% (red state)
+- **Offline detection:** Gap >15 minutes between consecutive readings (gray state)
+- **State priority:** Offline(4) > Noise(3) > Watering(2) > Dry(1) > Normal(0); resolved by `aggregateWindow(fn: max)`
 - **Lookback Period:** 30 days for "last watered" stats, 7 days default view for timeline
 
 **How it works:**
-1. Compares each moisture reading to the previous one (5 minutes apart)
-2. If increase ≥ 15%, marks as watering event
-3. Creates 2-hour "watered" status window for timeline visualization
-4. Tracks most recent watering event per sensor for "time since" calculations
+1. Reads raw moisture data and checks for gaps >15 min (offline detection)
+2. Applies `interpolate.linear()` for continuous data, then `difference()` for point-to-point changes
+3. Classifies each reading into one of 5 states based on difference and moisture level
+4. Merges all states via `union()` with 30-minute aggregation windows
+5. Tracks most recent watering event per sensor for "time since" calculations
 
-**Use case:** Track watering history, identify watering patterns, ensure plants are watered regularly, detect forgotten plants.
+**Use case:** Track watering history, identify watering patterns, ensure plants are watered regularly, detect forgotten plants, monitor sensor connectivity and noise.
 
 **Example insights:**
 - "Basil typically gets watered Sunday mornings"
 - "Monstera hasn't been watered in 5 days"
 - "3 plants were watered yesterday evening"
+- "Ficus Elastica was offline for 2 hours last night"
 
 ---
 
@@ -707,4 +712,4 @@ curl -H "Authorization: Bearer <api-key>" \
 
 ---
 
-Last updated: 2026-06-03 (v2.7.0 - Added Watering History dashboard)
+Last updated: 2026-06-21 (v2.11.0 - 5-state watering detection, Flux query fixes)

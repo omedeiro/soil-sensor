@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.11.0] - 2026-06-21
+
+### Added
+
+#### Watering Event Detection v2 — 5-State Timeline
+- **5-state timeline** — Watering Events Timeline (Panel 2) now detects and displays 5 distinct states per sensor: Normal (green), Dry (red, <20% moisture), Watering (blue, ≥8% single-interval increase), Noise (orange, ≤-8% rapid drop), and Offline (gray, >15min reading gap).
+- **Dual-threshold watering detection** — Fast watering (≥15%) and slow watering (≥8%, drip irrigation) detected separately in Moisture Trend markers (Panel 3).
+- **Offline detection** — `elapsed()` function flags gaps >15 minutes between consecutive readings (3 missed 5-min intervals).
+- **Plant name labels** — Timeline series labels now show plant names ("Rubber Tree", "Monstera") matching the main dashboard, using `byRegexp` field overrides.
+- **State priority merging** — Uses `union()` with `aggregateWindow(fn: max)` to resolve overlapping states (Offline > Noise > Watering > Dry > Normal).
+
+### Changed
+
+#### Flux Query Infrastructure
+- **Group key fixes** — All `group(columns: ["device_id"])` calls changed to `group(columns: ["device_id", "_field"])` to fix Grafana's "column _field needs to be in group key" error in multi-device panels.
+- **interpolate.linear() compatibility** — Removed premature `group()` calls before `interpolate.linear()` which requires `_measurement` and `location` in the group key. Fixed in Panels 2, 3B, 3C, and 200.
+- **Stat panel group key fix** — Removed bare `group()` (stripped all group keys) from sensor stat queries (Panels 101-107), which broke `interpolate.linear()`.
+- **yield support** — Added `yield(name: "states")` to enable InfluxDB API compatibility with multiple variable assignments.
+
+#### Grafana Dashboard Deployment
+- **All dashboards in Soil Monitoring folder** — Moved all 7 dashboards from General to the `Soil Monitoring` folder via Grafana API. Provisioning directory at `/mnt/sensor-data/grafana/dashboards/` now manages all dashboards automatically.
+- **Watering History dashboard** — Updated to version 8; all 11 panels verified healthy via automated checker.
+
+### Fixed
+- **Watering History dashboard** — All 10 data panels now return results (was: 0/10 healthy, all "No Data"). Root causes: `_field` missing from group key, `_measurement`/`location` missing for `interpolate.linear()`, bare `group()` stripping group keys.
+- **Panel 2 query** — Redesigned from simple 2-state (watering/normal) to comprehensive 5-state timeline with offline, noise, and dry detection.
+- **Panel 3 overlay markers** — Fixed interpolation queries B and C that silently failed due to incorrect group key.
+- **Sensor stat panels** — Fixed `group()` stripping that prevented watering event queries from executing.
+
+---
+
 ## [2.10.0] - 2026-06-19
 
 ### Added
