@@ -111,13 +111,81 @@ else
 fi
 
 if [[ -n "$SLACK_WEBHOOK_URL" ]]; then
-    echo "$SLACK_WEBHOOK_URL" > "$WEBHOOK_FILE"
+    # Write with restrictive umask so the secret is never world-readable, even briefly
+    ( umask 077; printf '%s' "$SLACK_WEBHOOK_URL" > "$WEBHOOK_FILE" )
     chmod 600 "$WEBHOOK_FILE"
     echo -e "${GREEN}✓ Slack webhook configured${RESET}"
-    echo "  File: $WEBHOOK_FILE"
+    echo "  File: $WEBHOOK_FILE (chmod 600)"
+
+    # Self-verify: send a test message through the new webhook
+    if [[ -x "$PROJECT_ROOT/scripts/send-slack-alert.sh" ]]; then
+        echo "  Sending Slack test message..."
+        if SLACK_WEBHOOK_FILE="$WEBHOOK_FILE" \
+           "$PROJECT_ROOT/scripts/send-slack-alert.sh" \
+             --severity success --no-rate-limit \
+             --title "Panel Health Monitor installed" \
+             --message "Slack alerts configured on $(hostname) at $(date)"; then
+            echo -e "  ${GREEN}✓ Slack test message delivered${RESET}"
+        else
+            echo -e "  ${YELLOW}⚠ Slack test message failed — verify the webhook URL is valid and not revoked${RESET}"
+        fi
+    fi
 else
     echo -e "${YELLOW}⚠ Slack webhook not configured (you can add it later)${RESET}"
-    echo "  To configure later: echo 'YOUR_WEBHOOK_URL' > $WEBHOOK_FILE"
+    echo "  To configure later (secure):"
+    echo "    ( umask 077; printf '%s' 'YOUR_WEBHOOK_URL' > $WEBHOOK_FILE ); chmod 600 $WEBHOOK_FILE"
+fi
+
+echo ""
+
+# Step 3b: Configure secrets/env file for the systemd service
+echo "Step 3b: Configuring service environment (secrets)"
+echo "────────────────────────────────────────────────────────────"
+
+ENV_FILE="$CONFIG_DIR/panel-health.env"
+
+if [[ -f "$ENV_FILE" ]]; then
+    echo -e "${YELLOW}Environment file already exists${RESET}"
+    echo "  File: $ENV_FILE"
+    read -p "Overwrite secrets (InfluxDB token / Grafana creds)? [y/N] " -n 1 -r
+    echo
+    WRITE_ENV=false
+    [[ $REPLY =~ ^[Yy]$ ]] && WRITE_ENV=true
+else
+    WRITE_ENV=true
+fi
+
+if [[ "$WRITE_ENV" == "true" ]]; then
+    read -p "InfluxDB token (write/read): " INFLUX_TOKEN_INPUT
+    read -p "InfluxDB URL [http://localhost:8086]: " INFLUX_URL_INPUT
+    INFLUX_URL_INPUT="${INFLUX_URL_INPUT:-http://localhost:8086}"
+    read -p "InfluxDB org [soil-monitoring]: " INFLUX_ORG_INPUT
+    INFLUX_ORG_INPUT="${INFLUX_ORG_INPUT:-soil-monitoring}"
+    read -p "InfluxDB bucket [sensor-readings]: " INFLUX_BUCKET_INPUT
+    INFLUX_BUCKET_INPUT="${INFLUX_BUCKET_INPUT:-sensor-readings}"
+    read -p "Grafana URL [http://localhost:3000]: " GRAFANA_URL_INPUT
+    GRAFANA_URL_INPUT="${GRAFANA_URL_INPUT:-http://localhost:3000}"
+    read -p "Grafana user [admin]: " GRAFANA_USER_INPUT
+    GRAFANA_USER_INPUT="${GRAFANA_USER_INPUT:-admin}"
+    read -p "Grafana password [admin]: " GRAFANA_PASSWORD_INPUT
+    GRAFANA_PASSWORD_INPUT="${GRAFANA_PASSWORD_INPUT:-admin}"
+
+    ( umask 077; cat > "$ENV_FILE" <<EOF
+# Secrets for grafana-panel-health.service — NOT tracked in git (chmod 600)
+INFLUX_TOKEN=$INFLUX_TOKEN_INPUT
+INFLUX_URL=$INFLUX_URL_INPUT
+INFLUX_ORG=$INFLUX_ORG_INPUT
+INFLUX_BUCKET=$INFLUX_BUCKET_INPUT
+GRAFANA_URL=$GRAFANA_URL_INPUT
+GRAFANA_USER=$GRAFANA_USER_INPUT
+GRAFANA_PASSWORD=$GRAFANA_PASSWORD_INPUT
+EOF
+    )
+    chmod 600 "$ENV_FILE"
+    echo -e "${GREEN}✓ Environment file written${RESET}"
+    echo "  File: $ENV_FILE (chmod 600)"
+else
+    echo -e "${YELLOW}⚠ Keeping existing environment file${RESET}"
 fi
 
 echo ""

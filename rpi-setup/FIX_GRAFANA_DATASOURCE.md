@@ -124,4 +124,4 @@ Then in Grafana, use `http://influxdb:8086` as the datasource URL.
 - Date: 2026-06-11
 - InfluxDB container IP: 172.17.0.2
 - Grafana container IP: 172.17.0.3
-- InfluxDB token: r7LONiwdc3ABOcEYSS5nCL6c6sdUZEPy81Q1D7w7nAyXZDAteUD1C6BYZJe21qX4eOwhRvG2ARYwRkaHwQf17w==
+- InfluxDB token: <stored on the Pi in /mnt/sensor-data/config/panel-health.env — not committed>

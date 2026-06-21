@@ -36,7 +36,7 @@ echo "✅ Test 1 passed - Can fetch moisture data"
 echo ""
 
 # Test 2: Detect sharp increases using difference
-echo "Test 2: Detecting moisture increases (15%+ threshold)..."
+echo "Test 2: Detecting fast watering events (15%+ threshold in single interval)..."
 curl -s -XPOST "${INFLUX_URL}/api/v2/query?org=${INFLUX_ORG}" \
   -H "Authorization: Token ${INFLUX_TOKEN}" \
   -H "Content-Type: application/vnd.flux" \
@@ -53,7 +53,7 @@ data = from(bucket: "sensor-readings")
 data
   |> interpolate.linear(every: 5m)
   |> difference(nonNegative: false, columns: ["_value"])
-  |> filter(fn: (r) => r._value >= 5.0)
+  |> filter(fn: (r) => r._value >= 15.0)
   |> limit(n: 10)' > /tmp/watering-events.csv
 
 echo ""
@@ -84,7 +84,7 @@ data = from(bucket: "sensor-readings")
 events = data
   |> interpolate.linear(every: 5m)
   |> difference(nonNegative: false, columns: ["_value"])
-  |> filter(fn: (r) => r._value >= 10.0)
+  |> filter(fn: (r) => r._value >= 15.0)
 
 events
   |> last()
@@ -118,7 +118,7 @@ data = from(bucket: "sensor-readings")
 data
   |> interpolate.linear(every: 5m)
   |> difference(nonNegative: false, columns: ["_value"])
-  |> filter(fn: (r) => r._value >= 10.0)
+  |> filter(fn: (r) => r._value >= 15.0)
   |> count()
   |> group()' > /tmp/all-sensors-events.csv
 
@@ -130,6 +130,38 @@ if grep -q "sensor_reading" /tmp/all-sensors-events.csv 2>/dev/null; then
   cat /tmp/all-sensors-events.csv | grep -E "(device_id|_value)" | head -20
 else
   echo "⚠️  No watering events detected across all sensors"
+fi
+echo ""
+
+# Test 5: Slow watering detection (8%+ threshold for drip irrigation)
+echo "Test 5: Detecting slow watering events (8%+ threshold, drip irrigation)..."
+curl -s -XPOST "${INFLUX_URL}/api/v2/query?org=${INFLUX_ORG}" \
+  -H "Authorization: Token ${INFLUX_TOKEN}" \
+  -H "Content-Type: application/vnd.flux" \
+  -d 'import "interpolate"
+
+data = from(bucket: "sensor-readings")
+  |> range(start: -7d)
+  |> filter(fn: (r) => r._measurement == "sensor_reading")
+  |> filter(fn: (r) => r._field == "moisture")
+  |> filter(fn: (r) => r.location != "backyard")
+  |> group(columns: ["device_id"])
+
+data
+  |> interpolate.linear(every: 5m)
+  |> difference(nonNegative: false, columns: ["_value"])
+  |> filter(fn: (r) => r._value >= 8.0 and r._value < 15.0)
+  |> count()
+  |> group()' > /tmp/slow-watering-events.csv
+
+echo ""
+if grep -q "sensor_reading" /tmp/slow-watering-events.csv 2>/dev/null; then
+  echo "✅ Test 5 passed - Slow watering detection query works"
+  echo ""
+  echo "Slow watering events by sensor (last 7 days):"
+  cat /tmp/slow-watering-events.csv | grep -E "(device_id|_value)" | head -20
+else
+  echo "⚠️  No slow watering events detected in last 7 days (this may be normal)"
 fi
 echo ""
 

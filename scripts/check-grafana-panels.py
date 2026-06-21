@@ -38,7 +38,13 @@ GRAFANA_PASSWORD = os.getenv('GRAFANA_PASSWORD', 'admin')
 INFLUX_URL = os.getenv('INFLUX_URL', 'http://192.168.99.134:8086')
 INFLUX_ORG = os.getenv('INFLUX_ORG', 'soil-monitoring')
 INFLUX_BUCKET = os.getenv('INFLUX_BUCKET', 'sensor-readings')
-INFLUX_TOKEN = os.getenv('INFLUX_TOKEN', 'r7LONiwdc3ABOcEYSS5nCL6c6sdUZEPy81Q1D7w7nAyXZDAteUD1C6BYZJe21qX4eOwhRvG2ARYwRkaHwQf17w==')
+# Secret: must be supplied via environment (panel-health.env on the Pi). Never hardcode.
+INFLUX_TOKEN = os.getenv('INFLUX_TOKEN', '')
+
+if not INFLUX_TOKEN and not any(h in sys.argv for h in ('--help', '-h')):
+    print("ERROR: INFLUX_TOKEN is not set. Export it or load /mnt/sensor-data/config/panel-health.env",
+          file=sys.stderr)
+    sys.exit(1)
 
 # Status constants
 STATUS_HEALTHY = 'healthy'

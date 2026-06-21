@@ -54,7 +54,7 @@
       },
       "targets": [
         {
-          "query": "// Get moisture readings for all sensors\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> sort(columns: [\"_time\"])\n\n// Calculate point-to-point difference to detect sharp increases\nwatering_events = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> map(fn: (r) => ({\n      r with\n      _value: if r._value >= 15.0 then 1.0 else 0.0\n    }))\n  |> aggregateWindow(every: 2h, fn: max, createEmpty: false)\n\nwatering_events",
+          "query": "import \"interpolate\"\nimport \"date\"\n\n// Raw moisture data (pre-interpolation) for offline detection\nraw = from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> sort(columns: [\"_time\"])\n\n// Detect gaps > 15 minutes (offline state)\noffline = raw\n  |> elapsed(unit: 1m, timeColumn: \"_time\")\n  |> filter(fn: (r) => r.elapsed > 15)\n  |> map(fn: (r) => ({_time: r._time, _value: 4.0, device_id: r.device_id, _field: r._field, location: r.location}))\n  |> group(columns: [\"device_id\", \"_field\", \"location\"])\n\n// Interpolated data for continuous analysis\ninterp = raw\n  |> interpolate.linear(every: 5m)\n\n// Differences for watering/noise detection\ndiffs = interp\n  |> difference(nonNegative: false, columns: [\"_value\"])\n\n// State from moisture differences (watering or noise)\nstate_diff = diffs\n  |> map(fn: (r) => ({\n    _time: r._time,\n    _value: if r._value >= 8.0 then 2.0\n      else if r._value <= -8.0 then 3.0\n      else 0.0,\n    device_id: r.device_id,\n    _field: r._field,\n    location: r.location\n  }))\n  |> group(columns: [\"device_id\", \"_field\", \"location\"])\n\n// State from moisture level (dry when < 20%)\nstate_dry = interp\n  |> map(fn: (r) => ({\n    _time: r._time,\n    _value: if r._value < 20.0 then 1.0 else 0.0,\n    device_id: r.device_id,\n    _field: r._field,\n    location: r.location\n  }))\n  |> group(columns: [\"device_id\", \"_field\", \"location\"])\n\n// Combine all states: offline(4) > noise(3) > watering(2) > dry(1) > normal(0)\nunion(tables: [state_diff, state_dry, offline])\n  |> aggregateWindow(every: 30m, fn: max, createEmpty: false)\n  |> yield(name: \"states\")",
           "refId": "A"
         }
       ],
@@ -81,11 +81,23 @@
               "options": {
                 "0": {
                   "text": "Normal",
-                  "color": "transparent"
+                  "color": "green"
                 },
                 "1": {
-                  "text": "Watered",
-                  "color": "green"
+                  "text": "Dry",
+                  "color": "red"
+                },
+                "2": {
+                  "text": "Watering",
+                  "color": "#2196F3"
+                },
+                "3": {
+                  "text": "Noise",
+                  "color": "#FF9800"
+                },
+                "4": {
+                  "text": "Offline",
+                  "color": "#9E9E9E"
                 }
               }
             }
@@ -94,12 +106,24 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "transparent",
+                "color": "green",
                 "value": null
               },
               {
-                "color": "green",
+                "color": "red",
                 "value": 1
+              },
+              {
+                "color": "#2196F3",
+                "value": 2
+              },
+              {
+                "color": "#FF9800",
+                "value": 3
+              },
+              {
+                "color": "#9E9E9E",
+                "value": 4
               }
             ]
           }
@@ -107,134 +131,85 @@
         "overrides": [
           {
             "matcher": {
-              "id": "byName",
-              "options": "sensor_reading {device_id=\"sensor-1\"}"
+              "id": "byRegexp",
+              "options": ".*sensor-1.*"
             },
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 1 (Rubber Tree)"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#73BF69"
-                }
+                "value": "Rubber Tree"
               }
             ]
           },
           {
             "matcher": {
-              "id": "byName",
-              "options": "sensor_reading {device_id=\"sensor-2\"}"
+              "id": "byRegexp",
+              "options": ".*sensor-2.*"
             },
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 2 (Monstera)"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#F2CC0C"
-                }
+                "value": "Monstera"
               }
             ]
           },
           {
             "matcher": {
-              "id": "byName",
-              "options": "sensor_reading {device_id=\"sensor-3\"}"
+              "id": "byRegexp",
+              "options": ".*sensor-3.*"
             },
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 3 (Avocado)"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#5794F2"
-                }
+                "value": "Avocado"
               }
             ]
           },
           {
             "matcher": {
-              "id": "byName",
-              "options": "sensor_reading {device_id=\"sensor-4\"}"
+              "id": "byRegexp",
+              "options": ".*sensor-4.*"
             },
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 4 (Basil - auk)"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#FF6B6B"
-                }
+                "value": "Basil - auk"
               }
             ]
           },
           {
             "matcher": {
-              "id": "byName",
-              "options": "sensor_reading {device_id=\"sensor-5\"}"
+              "id": "byRegexp",
+              "options": ".*sensor-5.*"
             },
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 5 (ZZ Plant)"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#B877D9"
-                }
+                "value": "ZZ Plant"
               }
             ]
           },
           {
             "matcher": {
-              "id": "byName",
-              "options": "sensor_reading {device_id=\"sensor-6\"}"
+              "id": "byRegexp",
+              "options": ".*sensor-6.*"
             },
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 6 (Ficus Elastica Ruby)"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#FF9830"
-                }
+                "value": "Ficus Elastica Ruby"
               }
             ]
           },
           {
             "matcher": {
-              "id": "byName",
-              "options": "sensor_reading {device_id=\"sensor-7\"}"
+              "id": "byRegexp",
+              "options": ".*sensor-7.*"
             },
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 7 (Basil - pot)"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#5DDBDB"
-                }
+                "value": "Basil - pot"
               }
             ]
           }
@@ -262,8 +237,12 @@
           "refId": "A"
         },
         {
-          "query": "// Detect watering events (15%+ increase between readings)\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> sort(columns: [\"_time\"])\n\ndata\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n  |> map(fn: (r) => ({r with _value: 100.0}))",
+          "query": "import \"interpolate\"\n\n// Detect fast watering events (15%+ increase in a single interval)\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\ndata\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n  |> map(fn: (r) => ({r with _value: 100.0}))",
           "refId": "B"
+        },
+        {
+          "query": "import \"interpolate\"\n\n// Detect slow watering events (8%+ increase, drip irrigation)\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\ndata\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 8.0 and r._value < 15.0)\n  |> map(fn: (r) => ({r with _value: 95.0}))",
+          "refId": "C"
         }
       ],
       "options": {
@@ -332,13 +311,48 @@
               },
               {
                 "id": "displayName",
-                "value": "Watering Event"
+                "value": "Fast Watering"
               },
               {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "red"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "custom.drawStyle",
+                "value": "points"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 6
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "displayName",
+                "value": "Slow Watering"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FFA500"
                 }
               }
             ]
@@ -496,7 +510,7 @@
       },
       "targets": [
         {
-          "query": "data = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-1\")\n  |> group()\n  |> sort(columns: [\"_time\"])\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
+          "query": "import \"interpolate\"\n\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-1\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
           "refId": "A"
         }
       ],
@@ -561,7 +575,7 @@
       },
       "targets": [
         {
-          "query": "data = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-2\")\n  |> group()\n  |> sort(columns: [\"_time\"])\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
+          "query": "import \"interpolate\"\n\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-2\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
           "refId": "A"
         }
       ],
@@ -626,7 +640,7 @@
       },
       "targets": [
         {
-          "query": "data = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-3\")\n  |> group()\n  |> sort(columns: [\"_time\"])\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
+          "query": "import \"interpolate\"\n\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-3\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
           "refId": "A"
         }
       ],
@@ -691,7 +705,7 @@
       },
       "targets": [
         {
-          "query": "data = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-4\")\n  |> group()\n  |> sort(columns: [\"_time\"])\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
+          "query": "import \"interpolate\"\n\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-4\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
           "refId": "A"
         }
       ],
@@ -756,7 +770,7 @@
       },
       "targets": [
         {
-          "query": "data = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-5\")\n  |> group()\n  |> sort(columns: [\"_time\"])\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
+          "query": "import \"interpolate\"\n\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-5\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
           "refId": "A"
         }
       ],
@@ -821,7 +835,7 @@
       },
       "targets": [
         {
-          "query": "data = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-6\")\n  |> group()\n  |> sort(columns: [\"_time\"])\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
+          "query": "import \"interpolate\"\n\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-6\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
           "refId": "A"
         }
       ],
@@ -886,7 +900,7 @@
       },
       "targets": [
         {
-          "query": "data = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-7\")\n  |> group()\n  |> sort(columns: [\"_time\"])\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
+          "query": "import \"interpolate\"\n\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-7\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
           "refId": "A"
         }
       ],
@@ -951,7 +965,7 @@
       },
       "targets": [
         {
-          "query": "import \"date\"\n\n// Detect all watering events\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> sort(columns: [\"_time\"])\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\n// Extract hour and day of week\nevents\n  |> map(fn: (r) => ({\n      _time: r._time,\n      _value: 1.0,\n      hour: date.hour(t: r._time),\n      weekday: date.weekDay(t: r._time)\n    }))\n  |> group(columns: [\"hour\", \"weekday\"])\n  |> sum()\n  |> group()",
+          "query": "import \"date\"\nimport \"interpolate\"\n\n// Detect all watering events\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  // Fast watering (15%+ single interval) or slow watering (8%+ single interval, catches drip irrigation)\n  |> filter(fn: (r) => r._value >= 8.0)\n\n// Extract hour and day of week\nevents\n  |> map(fn: (r) => ({\n      _time: r._time,\n      _value: 1.0,\n      hour: date.hour(t: r._time),\n      weekday: date.weekDay(t: r._time)\n    }))\n  |> group(columns: [\"hour\", \"weekday\"])\n  |> sum()\n  |> group()",
           "refId": "A"
         }
       ],

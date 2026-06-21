@@ -14,7 +14,7 @@ DASHBOARDS=(
   "rpi-health.json"
   "sensor-details.json"
   "system-health.json"
-  # soil-moisture-main.json and watering-history.json already imported
+  "watering-history.json"
 )
 
 echo "🚀 Importing Grafana dashboards..."

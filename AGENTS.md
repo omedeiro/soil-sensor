@@ -690,15 +690,35 @@ cd ~/soil-sensor/rpi-setup
 # - Systemd timer (runs every 5 minutes)
 # - Slack integration for alerts
 
-# Configure Slack webhook:
-echo "https://hooks.slack.com/services/YOUR/WEBHOOK/URL" \
-  > /mnt/sensor-data/config/slack_webhook_url
+# Configure Slack webhook (secure — never commit this URL to git):
+( umask 077; printf '%s' 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL' \
+  > /mnt/sensor-data/config/slack_webhook_url )
 chmod 600 /mnt/sensor-data/config/slack_webhook_url
+
+# Configure service secrets (InfluxDB token + Grafana creds) — also Pi-only, NOT in git:
+# The systemd unit loads these via EnvironmentFile=/mnt/sensor-data/config/panel-health.env
+( umask 077; cat > /mnt/sensor-data/config/panel-health.env <<'EOF'
+INFLUX_TOKEN=YOUR_INFLUX_TOKEN
+INFLUX_URL=http://localhost:8086
+INFLUX_ORG=soil-monitoring
+INFLUX_BUCKET=sensor-readings
+GRAFANA_URL=http://localhost:3000
+GRAFANA_USER=admin
+GRAFANA_PASSWORD=admin
+EOF
+)
+chmod 600 /mnt/sensor-data/config/panel-health.env
 
 # View monitoring status:
 systemctl status grafana-panel-health.timer
 journalctl -u grafana-panel-health -f
 ```
+
+**Secret storage rules (CRITICAL):**
+- The Slack webhook lives ONLY in `/mnt/sensor-data/config/slack_webhook_url` (chmod 600). Never hardcode it in scripts or commit it to git.
+- Service secrets (InfluxDB token, Grafana creds) live ONLY in `/mnt/sensor-data/config/panel-health.env` (chmod 600), loaded by the systemd unit via `EnvironmentFile=`. The committed `grafana-panel-health.service` contains NO secrets.
+- `.gitignore` blocks `*.env`, `*.token`, `*secret*`, `*webhook*`, `slack_webhook_url`, and `panel-health.env`.
+- **Rotating the Slack webhook:** revoke the old one in Slack, then `( umask 077; printf '%s' '<new-url>' > /mnt/sensor-data/config/slack_webhook_url ); chmod 600` — no redeploy needed (scripts read the file at runtime).
 
 **Common Issues and Quick Fixes:**
 
