@@ -13,7 +13,7 @@ PLANT_MAP = {
     "sensor-1": ("Bed Room", "Rubber Tree"),
     "sensor-2": ("Living Room", "Monstera"),
     "sensor-3": ("Living Room", "Avocado"),  # Location updated from Guest Room
-    "sensor-4": ("Guest Room", "Basil - auk"),
+    "sensor-4": ("Guest Room", "Micro Greens"),
     "sensor-5": ("Bed Room", "ZZ Plant"),
     "sensor-6": ("Living Room", "Ficus Elastica Ruby"),
     "sensor-7": ("Guest Room", "Basil - pot"),

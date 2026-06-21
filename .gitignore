@@ -28,6 +28,9 @@ rpi-setup/sd-card-backup/
 # Secrets — never commit (stored on the Pi at /mnt/sensor-data/config, chmod 600)
 *.env
 *.token
+
+# Generated dashboard output (source of truth is sensors-config.json)
+scripts/grafana-dashboards/
 *secret*
 *webhook*
 slack_webhook_url

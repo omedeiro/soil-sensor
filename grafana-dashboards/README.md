@@ -1,6 +1,6 @@
 # Grafana Dashboards Guide
 
-7 production-ready dashboards for the Soil Moisture Monitoring System (v2.11.1).
+7 production-ready dashboards for the Soil Moisture Monitoring System (v2.11.2).
 
 All dashboards feature:
 - **High-contrast color scheme** per sensor (7 distinct colors for easy identification)
@@ -712,4 +712,4 @@ curl -H "Authorization: Bearer <api-key>" \
 
 ---
 
-Last updated: 2026-06-21 (v2.11.1 - repo reorganization, file cleanup)
+Last updated: 2026-06-21 (v2.11.2 - sensor rename, firmware config refactor)

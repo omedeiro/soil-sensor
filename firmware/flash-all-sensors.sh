@@ -1,30 +1,27 @@
 #!/bin/bash
 # Multi-sensor flashing workflow
-# Flashes all 7 sensors with individual device IDs and locations
+# Flashes all sensors with individual device IDs and locations
+# Sensor data sourced from sensors-config.json at project root
 
 set -e
 
-# Sensor configuration (from sensors-config.json + AGENTS.md)
-declare -A SENSORS=(
-    ["1"]="sensor-1:bed-room:Rubber Tree:192.168.99.110:68:c6:3a:f6:b3:ae"
-    ["2"]="sensor-2:living-room:Monstera:192.168.99.149:48:3f:da:19:c0:86"
-    ["3"]="sensor-3:living-room:Avocado:192.168.99.70:40:91:51:4f:d9:97"
-    ["4"]="sensor-4:guest-room:Basil (auk):192.168.99.105:48:3f:da:aa:fe:d7"
-    ["5"]="sensor-5:bed-room:ZZ Plant:192.168.99.89:34:ab:95:16:51:d9"
-    ["6"]="sensor-6:living-room:Ficus Elastica Ruby:192.168.99.38:48:3f:da:62:f9:07"
-    ["7"]="sensor-7:guest-room:Basil (pot):192.168.99.141:84:cc:a8:a7:96:32"
-)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/lib/config-helpers.sh"
+
+declare -A SENSORS=()
+load_sensors_by_number SENSORS
+NUM_SENSORS=$(sensor_count)
 
 echo "╔════════════════════════════════════════════════════════════════╗"
 echo "║       ESP8266 Multi-Sensor Flashing Workflow                  ║"
 echo "╚════════════════════════════════════════════════════════════════╝"
 echo ""
-echo "This script will flash all 7 sensors with unique device IDs."
+echo "This script will flash all $NUM_SENSORS sensors with unique device IDs."
 echo "You'll need to plug in each sensor via USB one at a time."
 echo ""
 echo "📋 Sensor List:"
 echo "────────────────────────────────────────────────────────────────"
-for i in {1..7}; do
+for i in $(seq 1 $NUM_SENSORS); do
     IFS=':' read -r id location plant ip mac <<< "${SENSORS[$i]}"
     printf "  %s - %s (%s)\n" "$id" "$plant" "$location"
 done
@@ -34,15 +31,15 @@ echo ""
 # Ask which sensor to flash
 while true; do
     echo ""
-    read -p "Which sensor is connected? (1-7, or 'q' to quit): " choice
+    read -p "Which sensor is connected? (1-$NUM_SENSORS, or 'q' to quit): " choice
     
     if [[ "$choice" == "q" ]]; then
         echo "✅ Flashing workflow complete!"
         exit 0
     fi
     
-    if [[ ! "$choice" =~ ^[1-7]$ ]]; then
-        echo "❌ Invalid choice. Please enter 1-7."
+    if [[ ! "$choice" =~ ^[1-9][0-9]*$ ]] || [ "$choice" -gt "$NUM_SENSORS" ]; then
+        echo "❌ Invalid choice. Please enter 1-$NUM_SENSORS."
         continue
     fi
     

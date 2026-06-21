@@ -2,6 +2,7 @@
 # Import all dashboards to Grafana on Raspberry Pi
 # Updates datasource UID to match new Grafana instance
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 GRAFANA_URL="http://192.168.99.134:3000"
 GRAFANA_USER="admin"
 GRAFANA_PASS="admin"
@@ -26,7 +27,7 @@ for dashboard in "${DASHBOARDS[@]}"; do
   echo "📊 Importing $dashboard..."
   
   # Read dashboard JSON
-  dashboard_json=$(cat "$dashboard")
+  dashboard_json=$(cat "$SCRIPT_DIR/$dashboard")
   
   # Replace datasource UID (handles multiple formats)
   dashboard_json=$(echo "$dashboard_json" | \

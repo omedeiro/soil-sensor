@@ -460,7 +460,7 @@ cd tests
 - **sensor-1** (bed-room, Rubber Tree): `192.168.99.110` (MAC: 68:c6:3a:f6:b3:ae) - online
 - **sensor-2** (living-room, Monstera): `192.168.99.149` (MAC: 48:3f:da:19:c0:86) - online
 - **sensor-3** (living-room, Avocado): `192.168.99.70` (MAC: 40:91:51:4f:d9:97) - online
-- **sensor-4** (guest-room, Basil - auk): `192.168.99.105` (MAC: 48:3f:da:aa:fe:d7) - online
+- **sensor-4** (guest-room, Micro Greens): `192.168.99.105` (MAC: 48:3f:da:aa:fe:d7) - online
 - **sensor-5** (bed-room, ZZ Plant): `192.168.99.89` (MAC: 34:ab:95:16:51:d9) (ESP-1651D9, Wi-Fi 2.4GHz n) - online
 - **sensor-6** (living-room, Ficus Elastica Ruby): `192.168.99.38` (MAC: 48:3f:da:62:f9:07) (Wi-Fi 2.4GHz n) - online
 - **sensor-7** (guest-room, Basil - pot): `192.168.99.141` (MAC: 84:cc:a8:a7:96:32) (Wi-Fi 2.4GHz n) - online

@@ -1,25 +1,22 @@
 #!/bin/bash
 # OTA flash all sensors with individual device IDs
 # This script updates config.h for each sensor and flashes via OTA
+# Sensor data sourced from sensors-config.json at project root
 
 set -e
 
-# Sensor configuration (ID:Location:Plant:IP)
-SENSORS=(
-    "sensor-1:bed-room:Rubber Tree:192.168.99.110"
-    "sensor-2:living-room:Monstera:192.168.99.149"
-    "sensor-3:living-room:Avocado:192.168.99.70"
-    "sensor-4:guest-room:Basil (auk):192.168.99.105"
-    "sensor-5:bed-room:ZZ Plant:192.168.99.89"
-    "sensor-6:living-room:Ficus Elastica Ruby:192.168.99.38"
-    "sensor-7:guest-room:Basil (pot):192.168.99.141"
-)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/lib/config-helpers.sh"
+
+declare -a SENSORS=()
+load_sensors_by_number SENSORS
+NUM_SENSORS=$(sensor_count)
 
 echo "╔════════════════════════════════════════════════════════════════╗"
 echo "║       ESP8266 OTA Multi-Sensor Flashing                        ║"
 echo "╚════════════════════════════════════════════════════════════════╝"
 echo ""
-echo "This will flash all 7 sensors over WiFi with unique device IDs."
+echo "This will flash all $NUM_SENSORS sensors over WiFi with unique device IDs."
 echo "OTA password: soilmon2026"
 echo ""
 

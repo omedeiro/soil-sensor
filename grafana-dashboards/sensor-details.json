@@ -61,7 +61,7 @@
             "selected": false
           },
           {
-            "text": "Sensor 4 (Guest Room, Basil - auk)",
+            "text": "Sensor 4 (Guest Room, Micro Greens)",
             "value": "sensor-4",
             "selected": false
           },
@@ -103,7 +103,7 @@
       },
       "targets": [
         {
-          "query": "import \"array\"\nimport \"experimental\"\n\nsensor = \"${sensor}\"\n\ndata = if sensor == \"sensor-1\" then [{_time: now(), _value: \"Rubber Tree\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-2\" then [{_time: now(), _value: \"Monstera\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-3\" then [{_time: now(), _value: \"Avocado\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-4\" then [{_time: now(), _value: \"Basil - auk\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-5\" then [{_time: now(), _value: \"ZZ Plant\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-6\" then [{_time: now(), _value: \"Ficus Elastica Ruby\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-7\" then [{_time: now(), _value: \"Basil - pot\", _field: \"plant_name\"}]\n  else [{_time: now(), _value: \"Unknown Sensor\", _field: \"plant_name\"}]\n\narray.from(rows: data)",
+          "query": "import \"array\"\nimport \"experimental\"\n\nsensor = \"${sensor}\"\n\ndata = if sensor == \"sensor-1\" then [{_time: now(), _value: \"Rubber Tree\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-2\" then [{_time: now(), _value: \"Monstera\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-3\" then [{_time: now(), _value: \"Avocado\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-4\" then [{_time: now(), _value: \"Micro Greens\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-5\" then [{_time: now(), _value: \"ZZ Plant\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-6\" then [{_time: now(), _value: \"Ficus Elastica Ruby\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-7\" then [{_time: now(), _value: \"Basil - pot\", _field: \"plant_name\"}]\n  else [{_time: now(), _value: \"Unknown Sensor\", _field: \"plant_name\"}]\n\narray.from(rows: data)",
           "refId": "A"
         }
       ],
@@ -157,7 +157,7 @@
             {
               "type": "value",
               "options": {
-                "Basil - auk": {
+                "Micro Greens": {
                   "color": "#FF6B6B",
                   "index": 3
                 }

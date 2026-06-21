@@ -2,19 +2,15 @@
 # flash-ota-canary.sh
 # Safe OTA deployment with canary testing
 # Flashes one sensor first, waits for verification, then flashes remaining sensors
+# Sensor data sourced from sensors-config.json at project root
 
 set -e
 
-# Sensor configuration (from sensors-config.json)
-declare -A SENSORS=(
-    ["sensor-1"]="192.168.99.110"  # Rubber Tree (bed-room)
-    ["sensor-2"]="192.168.99.149"  # Monstera (living-room)
-    ["sensor-3"]="192.168.99.70"   # Avocado (living-room)
-    ["sensor-4"]="192.168.99.105"  # Basil auk (guest-room)
-    ["sensor-5"]="192.168.99.89"   # ZZ Plant (bed-room)
-    ["sensor-6"]="192.168.99.38"   # Ficus Elastica Ruby (living-room)
-    ["sensor-7"]="192.168.99.141"  # Basil pot (guest-room)
-)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/lib/config-helpers.sh"
+
+declare -A SENSORS=()
+load_sensor_ips_by_id SENSORS
 
 # Canary sensor (sensor-7 is designated test sensor)
 CANARY_SENSOR="sensor-7"

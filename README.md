@@ -1,4 +1,4 @@
-# 🌱 Soil Moisture Monitoring System — v2.11.1
+# 🌱 Soil Moisture Monitoring System — v2.11.2
 
 A production-grade, multi-sensor soil moisture monitoring system built with **ESP8266** microcontrollers, **InfluxDB**, and **Grafana**, hosted on a **Raspberry Pi 5**.
 
@@ -51,7 +51,7 @@ Each soil sensor reads moisture every 5 minutes and posts data to a central time
 - **NTP timestamps** — every reading is UTC-timestamped
 - **Boot diagnostics** — device ID, MAC address, crash reason printed on every boot
 
-### Raspberry Pi Server (v2.11.1)
+### Raspberry Pi Server (v2.11.2)
 - **InfluxDB 2.x backend** — time-series storage on USB drive, 365-day retention
 - **Grafana dashboards (6 total)** — soil moisture with **Pi uptime panel** plus **ambient temperature/humidity panels**, sensor details, system health, alerts, mobile view, Pi health
 - **Cloudflare Tunnel** — public HTTPS access via `grafana.owenmedeiros.com` (anonymous read-only viewing)
@@ -67,16 +67,30 @@ Each soil sensor reads moisture every 5 minutes and posts data to a central time
 
 ```
 soil-sensor/
-├── sensors-config.json           # ← Centralized sensor configuration
-├── generate-dashboard.py         # Generate Grafana dashboards from config
-├── upload-dashboard-to-pi.sh     # Deploy dashboards to Grafana
-├── QUICK_REFERENCE.md            # Quick reference for common sensor tasks
+├── sensors-config.json           # ← Centralized sensor configuration (single source of truth)
+├── AGENTS.md                     # Agent instructions & technical reference
+├── README.md                     # This file
+├── scripts/                      # Dashboard generation & deployment tools
+│   ├── generate-dashboard.py     # Auto-generate Grafana dashboard from config
+│   ├── validate-config.py        # Validate sensors-config.json before generation
+│   ├── upload-dashboard-to-pi.sh # Deploy dashboard to Grafana on Pi
+│   ├── bump-version.sh           # Version bump automation
+│   ├── check-grafana-panels.py   # Panel health checker
+│   ├── debug-grafana-query.sh    # Query debugger for "No Data" panels
+│   └── repair-grafana-panels.sh  # Automated panel repair
 ├── firmware/                     # ESP8266 PlatformIO firmware
 │   ├── platformio.ini
+│   ├── lib/
+│   │   └── config-helpers.sh     # Shared config loader for flash scripts
+│   ├── flash-usb-interactive.sh  # USB flash: one sensor at a time
+│   ├── flash-all-sensors.sh      # USB flash: all sensors sequentially
+│   ├── flash-all-ota.sh          # OTA flash: all sensors over WiFi
+│   ├── flash-ota-canary.sh       # OTA flash: canary + production rollout
 │   └── src/
 │       ├── config.h              # ← Edit this per sensor
 │       ├── main.cpp
 │       ├── sensor.h/.cpp         # ADC driver & moisture %
+│       ├── dht_sensor.h/.cpp     # DHT22 temperature/humidity driver
 │       ├── wifi_manager.h/.cpp   # WiFi connect, scan, retry
 │       ├── wifi_stability.h/.cpp # Reconnect watchdog, exponential backoff
 │       ├── database_client.h/.cpp# InfluxDB line protocol HTTP POST
@@ -86,37 +100,42 @@ soil-sensor/
 │       ├── reading_queue.h/.cpp  # Offline queue (max 20 readings)
 │       └── web_server.h/.cpp     # Local HTTP server (optional)
 ├── grafana-dashboards/
-│   ├── soil-moisture-main.json   # Main overview dashboard (auto-generated)
+│   ├── soil-moisture-main.json   # Main overview dashboard (auto-generated, don't edit)
 │   ├── sensor-details.json       # Individual sensor deep-dive
+│   ├── watering-history.json     # Watering event detection & visualization
 │   ├── system-health.json        # ESP8266 diagnostics & events
 │   ├── alerts-overview.json      # Critical alerts & notifications
 │   ├── mobile-summary.json       # Mobile-optimized view
 │   ├── rpi-health.json           # Raspberry Pi system metrics
+│   ├── import-all-dashboards.sh  # Bulk import to Grafana
+│   ├── deploy-watering-dashboard.sh
 │   └── README.md                 # Dashboard installation guide
 ├── rpi-setup/
-│   ├── install.sh                # Full Pi setup script
-│   ├── install-cloudflare-tunnel.sh  # Cloudflare Tunnel installer (v2.3.0)
-│   ├── configure-grafana-anonymous.sh # Anonymous viewing setup (v2.3.0)
-│   ├── install-logging.sh        # Enhanced logging system installer (v2.3.0)
-│   ├── LOGGING_README.md         # Logging documentation (v2.3.0)
+│   ├── install.sh                # Full Pi setup script (InfluxDB + Grafana)
+│   ├── install-cloudflare-tunnel.sh  # Cloudflare Tunnel installer
+│   ├── install-logging.sh        # Enhanced logging system installer
+│   ├── install-panel-health-monitor.sh  # Panel health monitoring
+│   ├── install-sensor-monitoring.sh     # Sensor health monitoring
+│   ├── configure-grafana-anonymous.sh   # Anonymous viewing setup
+│   ├── LOGGING_README.md         # Logging documentation
 │   ├── scripts/
 │   │   ├── sensor-backup.sh
-│   │   ├── sensor-health-monitor.sh  # Enhanced with Grafana failure logging
-│   │   ├── startup-logger.sh     # Boot tracking (v2.3.0)
-│   │   └── system-metrics-collector.py  # CPU/RAM/disk monitoring
-│   ├── systemd/
-│   │   ├── startup-logger.service    # Boot event logger (v2.3.0)
-│   │   └── [other service files]
-│   └── logrotate.d/
-│       └── soil-sensor           # Log rotation config (v2.3.0)
-├── hardware/
+│   │   ├── sensor-health-monitor.sh
+│   │   ├── startup-logger.sh
+│   │   └── system-metrics-collector.py
+│   └── systemd/                  # Service files for Pi services
+├── hardware/                     # Wiring diagrams & BOM
 │   ├── BOM.md
-│   ├── SCHEMATIC.md
-│   └── schematic.json
-└── docs/
-    ├── README.md                 # WiFi stability, Grafana Cloud setup, InfluxDB notes
-    ├── SNAPSHOTS.md              # Grafana snapshot URLs (v2.3.0)
-    └── create-snapshots.sh       # Snapshot creation script (v2.3.0)
+│   └── SCHEMATIC.md
+├── tests/                        # Integration tests
+│   ├── test_influx_write.sh
+│   └── test-watering-detection.sh
+└── docs/                         # Documentation
+    ├── CHANGELOG.md
+    ├── README.md                 # WiFi stability, Grafana Cloud, InfluxDB notes
+    ├── reference/QUICK_REFERENCE.md
+    ├── guides/TROUBLESHOOTING_NO_DATA.md
+    └── archive/                  # Historical records & reports
 ```
 
 ---
