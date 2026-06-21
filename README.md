@@ -1,4 +1,4 @@
-# 🌱 Soil Moisture Monitoring System — v2.11.0
+# 🌱 Soil Moisture Monitoring System — v2.11.1
 
 A production-grade, multi-sensor soil moisture monitoring system built with **ESP8266** microcontrollers, **InfluxDB**, and **Grafana**, hosted on a **Raspberry Pi 5**.
 
@@ -51,7 +51,7 @@ Each soil sensor reads moisture every 5 minutes and posts data to a central time
 - **NTP timestamps** — every reading is UTC-timestamped
 - **Boot diagnostics** — device ID, MAC address, crash reason printed on every boot
 
-### Raspberry Pi Server (v2.11.0)
+### Raspberry Pi Server (v2.11.1)
 - **InfluxDB 2.x backend** — time-series storage on USB drive, 365-day retention
 - **Grafana dashboards (6 total)** — soil moisture with **Pi uptime panel** plus **ambient temperature/humidity panels**, sensor details, system health, alerts, mobile view, Pi health
 - **Cloudflare Tunnel** — public HTTPS access via `grafana.owenmedeiros.com` (anonymous read-only viewing)
@@ -292,13 +292,13 @@ Setup complete. Uptime: 8 s
    ```
 2. Generate and upload the dashboard:
    ```bash
-   ./generate-dashboard.py
-   ./upload-dashboard-to-pi.sh
+   ./scripts/generate-dashboard.py
+   ./scripts/upload-dashboard-to-pi.sh
    ```
 3. Edit `firmware/src/config.h` with matching `DEVICE_ID` and `DEVICE_LOCATION`
 4. Upload firmware to the new ESP8266
 
-See **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** for detailed sensor management guide.
+See **[QUICK_REFERENCE.md](docs/reference/QUICK_REFERENCE.md)** for detailed sensor management guide.
 
 **Manual Method:**
 
@@ -345,7 +345,7 @@ The ESP8266 ADC is 10-bit (0–1023). Capacitive sensors read **high when dry** 
 
 ### Features
 - **Centralized configuration** — `sensors-config.json` manages all sensor info, colors, and labels
-- **Auto-generated dashboards** — Run `./generate-dashboard.py` to update from config
+- **Auto-generated dashboards** — Run `./scripts/generate-dashboard.py` to update from config
 - **High-contrast colors** — Each sensor has a unique color for easy identification
 - **Moisture gradients** — Dark to bright within each color family (0% dry → 100% wet)
 - **Plant name labels** — "Rubber Tree", "Monstera" (no "sensor-1" IDs in display)

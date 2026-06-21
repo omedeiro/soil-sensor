@@ -372,13 +372,13 @@ Use this recovery guide when:
 3. **Deploy main dashboard:**
    ```bash
    # Validate configuration
-   ./validate-config.py
+   ./scripts/validate-config.py
    
    # Generate dashboard
-   ./generate-dashboard.py
+   ./scripts/generate-dashboard.py
    
    # Upload to Grafana
-   ./upload-dashboard-to-pi.sh
+   ./scripts/upload-dashboard-to-pi.sh
    ```
 
 4. **Import remaining dashboards:**

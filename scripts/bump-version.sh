@@ -60,7 +60,7 @@ increment_version() {
 
 # Function to get current version from CHANGELOG
 get_current_version() {
-    grep -m 1 "^## \[" CHANGELOG.md | sed -E 's/## \[([0-9]+\.[0-9]+\.[0-9]+)\].*/\1/'
+    grep -m 1 "^## \[" docs/CHANGELOG.md | sed -E 's/## \[([0-9]+\.[0-9]+\.[0-9]+)\].*/\1/'
 }
 
 # Function to get current firmware version
@@ -137,7 +137,7 @@ print_info "Updating version references..."
 # 1. Update CHANGELOG.md (add new version entry at top)
 print_info "Updating CHANGELOG.md..."
 CHANGELOG_ENTRY="---\n\n## [$NEW_VERSION] - $CURRENT_DATE\n\n### Changed\n\n#### TODO: Add changes here\n\n---\n\n## [$CURRENT_VERSION]"
-update_file "CHANGELOG.md" "---\n\n## \[$CURRENT_VERSION\]" "$CHANGELOG_ENTRY"
+update_file "docs/CHANGELOG.md" "---\n\n## \[$CURRENT_VERSION\]" "$CHANGELOG_ENTRY"
 
 # 2. Update README.md (main version header)
 print_info "Updating README.md..."

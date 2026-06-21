@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.11.1] - 2026-06-21
+
+### Changed
+
+- **Repo reorganization** — Moved top-level scripts to `scripts/`, moved top-level docs to `docs/`, organized `docs/` into `archive/`, `guides/`, and `reference/` subdirectories; moved legacy standalone dashboard to `database/dashboard-24h.html`
+- **Path references updated** — Updated `AGENTS.md`, `README.md`, and other docs to reference new file locations
+
+---
+
 ## [2.11.0] - 2026-06-21
 
 ### Added

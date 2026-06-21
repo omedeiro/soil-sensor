@@ -93,14 +93,14 @@ Starting in v2.7.0, the main Grafana dashboard is **auto-generated** from centra
 
 **Centralized Configuration System:**
 - **`sensors-config.json`** — Single source of truth for all sensor information (plant names, IPs, MACs, colors, thresholds)
-- **`generate-dashboard.py`** — Auto-generates `grafana-dashboards/soil-moisture-main.json` from config
-- **`validate-config.py`** — Validates `sensors-config.json` before generation (checks syntax, duplicates, required fields)
-- **`upload-dashboard-to-pi.sh`** — Deploys dashboard to Grafana on Raspberry Pi (uses SSH + Grafana API)
+- **`scripts/generate-dashboard.py`** — Auto-generates `grafana-dashboards/soil-moisture-main.json` from config
+- **`scripts/validate-config.py`** — Validates `sensors-config.json` before generation (checks syntax, duplicates, required fields)
+- **`scripts/upload-dashboard-to-pi.sh`** — Deploys dashboard to Grafana on Raspberry Pi (uses SSH + Grafana API)
 
 **Critical Workflow Rules:**
 1. **NEVER manually edit `grafana-dashboards/soil-moisture-main.json`** — it's auto-generated and will be overwritten
-2. **ALWAYS validate before generating:** Run `./validate-config.py` to catch errors early
-3. **ALWAYS use `upload-dashboard-to-pi.sh`** for deployment (not manual curl or API calls)
+2. **ALWAYS validate before generating:** Run `./scripts/validate-config.py` to catch errors early
+3. **ALWAYS use `scripts/upload-dashboard-to-pi.sh`** for deployment (not manual curl or API calls)
 4. **Deployment order is strict:** Edit config → Validate → Generate → Upload
 
 **Adding a New Sensor (Dashboard Configuration):**
@@ -110,15 +110,15 @@ vim sensors-config.json
 # Add new sensor block (copy existing sensor, modify id/plant/location/ip/mac/color)
 
 # 2. Validate configuration
-./validate-config.py
+./scripts/validate-config.py
 # Output: ✓ Configuration is valid (8 sensors)
 
 # 3. Generate dashboard
-./generate-dashboard.py
+./scripts/generate-dashboard.py
 # Output: ✓ Generated grafana-dashboards/soil-moisture-main.json
 
 # 4. Deploy to Grafana
-./upload-dashboard-to-pi.sh
+./scripts/upload-dashboard-to-pi.sh
 # Output: ✓ Dashboard imported successfully
 
 # 5. Configure and flash ESP8266 (see firmware section below)
@@ -132,9 +132,9 @@ pio device monitor
 ```bash
 # Quick workflow (3 commands):
 vim sensors-config.json              # Edit plant name or color
-./validate-config.py && \
-./generate-dashboard.py && \
-./upload-dashboard-to-pi.sh          # Validate, generate, deploy
+./scripts/validate-config.py && \
+./scripts/generate-dashboard.py && \
+./scripts/upload-dashboard-to-pi.sh          # Validate, generate, deploy
 
 # Dashboard updates in ~5 seconds (hard refresh browser: Cmd+Shift+R)
 ```
@@ -186,11 +186,11 @@ vim sensors-config.json              # Edit plant name or color
 # - Missing required fields → "Missing required field 'plant' for sensor-4"
 # - threshold.low >= threshold.medium → "Invalid thresholds for sensor-1"
 
-# Always run ./validate-config.py before generating!
+# Always run ./scripts/validate-config.py before generating!
 ```
 
 **Deployment Troubleshooting:**
-- **Dashboard upload fails with "Access denied":** Update credentials in `upload-dashboard-to-pi.sh` (default: admin/admin)
+- **Dashboard upload fails with "Access denied":** Update credentials in `scripts/upload-dashboard-to-pi.sh` (default: admin/admin)
 - **Dashboard not updating in Grafana:** Hard refresh browser (Cmd+Shift+R or Ctrl+Shift+R)
 - **Sensor not appearing in dropdown:** Sensor hasn't sent data yet, or `DEVICE_ID` in config.h doesn't match sensors-config.json
 - **Colors not matching config:** Regenerate and upload dashboard, then hard refresh browser
@@ -771,13 +771,13 @@ tail -50 /mnt/sensor-data/logs/grafana-panel-issues.log
 - `repair-grafana-panels.sh --notify` — Detect issues and send Slack alerts
 - `send-slack-alert.sh --severity info --title "..." --message "..."` — Send test notification
 
-**For complete troubleshooting guide, see:** `/docs/TROUBLESHOOTING_NO_DATA.md`
+**For complete troubleshooting guide, see:** `docs/guides/TROUBLESHOOTING_NO_DATA.md`
 
 ## Status Files Reference
 
 **Documentation:**
 - `docs/README.md` — Technical documentation (WiFi stability, Grafana Cloud setup, InfluxDB notes)
-- `docs/TROUBLESHOOTING_NO_DATA.md` — Panel health troubleshooting guide (v2.9.0)
+- `docs/guides/TROUBLESHOOTING_NO_DATA.md` — Panel health troubleshooting guide (v2.9.0)
 - `grafana-dashboards/README.md` — Dashboard installation, customization, and alert setup
 - `README.md` — Project overview and setup instructions
 - `AGENTS.md` — This file (agent instructions and technical reference)

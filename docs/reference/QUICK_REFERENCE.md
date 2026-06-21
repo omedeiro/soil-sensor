@@ -22,8 +22,8 @@ vim sensors-config.json
 # Change "plant": "Rubber Tree" to "plant": "Fiddle Leaf Fig"
 
 # Regenerate and deploy
-./generate-dashboard.py
-./upload-dashboard-to-pi.sh
+./scripts/generate-dashboard.py
+./scripts/upload-dashboard-to-pi.sh
 ```
 
 **Time:** ~30 seconds
@@ -51,8 +51,8 @@ vim sensors-config.json
 }
 
 # 2. Generate and upload dashboard
-./generate-dashboard.py
-./upload-dashboard-to-pi.sh
+./scripts/generate-dashboard.py
+./scripts/upload-dashboard-to-pi.sh
 
 # 3. Configure ESP8266
 cd firmware
@@ -85,8 +85,8 @@ pio device monitor
 ]
 
 # Regenerate and deploy
-./generate-dashboard.py
-./upload-dashboard-to-pi.sh
+./scripts/generate-dashboard.py
+./scripts/upload-dashboard-to-pi.sh
 ```
 
 **Time:** ~1 minute
@@ -110,8 +110,8 @@ pio device monitor
 }
 
 # Regenerate and deploy
-./generate-dashboard.py
-./upload-dashboard-to-pi.sh
+./scripts/generate-dashboard.py
+./scripts/upload-dashboard-to-pi.sh
 ```
 
 **Time:** ~30 seconds
@@ -122,7 +122,7 @@ pio device monitor
 
 ```bash
 # Before generating dashboard, check for errors:
-./validate-config.py
+./scripts/validate-config.py
 
 # Sample output:
 # ✓ Configuration is valid (7 sensors)
@@ -145,8 +145,8 @@ vim sensors-config.json
 # Delete the entire {...} block for that sensor
 
 # 2. Regenerate and deploy
-./generate-dashboard.py
-./upload-dashboard-to-pi.sh
+./scripts/generate-dashboard.py
+./scripts/upload-dashboard-to-pi.sh
 
 # 3. Optionally: power off the ESP8266 or repurpose it
 ```
@@ -236,9 +236,9 @@ The `grafana` section in `sensors-config.json` contains InfluxDB connection sett
 
 ### "Configuration validation failed"
 
-**Problem:** `./generate-dashboard.py` fails validation
+**Problem:** `./scripts/generate-dashboard.py` fails validation
 
-**Solution:** Run `./validate-config.py` to see specific errors. Common issues:
+**Solution:** Run `./scripts/validate-config.py` to see specific errors. Common issues:
 - Missing comma after a sensor block
 - Invalid color format (must be `#RRGGBB`)
 - Duplicate sensor IDs
@@ -277,7 +277,7 @@ The `grafana` section in `sensors-config.json` contains InfluxDB connection sett
 ## Best Practices
 
 ✅ **DO:**
-- Validate config before generating: `./validate-config.py`
+- Validate config before generating: `./scripts/validate-config.py`
 - Use descriptive plant names: "Monstera Deliciosa" not "Plant 2"
 - Choose distinct colors for easy visual identification
 - Keep thresholds between 0-100
