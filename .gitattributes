@@ -1,0 +1,18 @@
+# ── Language detection for GitHub Linguist ────────────────────────────────
+# Prevents systemd unit files from counting as "Shell"
+
+*.service    linguist-detectable=false
+*.timer      linguist-detectable=false
+*.override   linguist-detectable=false
+*.template   linguist-detectable=false
+
+# Prose / documentation (not counted as code)
+*.md         linguist-documentation=true
+*.txt        linguist-documentation=true
+
+# Preprocessor headers: force C++ (Linguist defaults to C)
+*.h          linguist-language=C++
+
+# Generated artifacts
+*.backup     linguist-generated=true
+*.db         linguist-generated=true
