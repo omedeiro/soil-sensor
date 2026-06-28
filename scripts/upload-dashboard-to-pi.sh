@@ -10,10 +10,14 @@ PI_HOST="192.168.99.134"
 echo "Copying dashboard to Raspberry Pi..."
 scp "$DASHBOARD_FILE" "${PI_USER}@${PI_HOST}:/tmp/soil-moisture-main.json"
 
-echo "Importing dashboard into Grafana..."
+echo "Importing dashboard into Grafana (folder: Soil Monitoring)..."
 ssh "${PI_USER}@${PI_HOST}" 'bash -s' <<'ENDSSH'
-    # Create API payload (wrap dashboard in required format)
-    echo "{\"dashboard\": $(cat /tmp/soil-moisture-main.json), \"overwrite\": true, \"message\": \"Updated dropdown filter and labels\"}" > /tmp/payload.json
+    # Create API payload (wrap dashboard in required format, include folder)
+    PAYLOAD=$(jq -n \
+      --argjson dashboard "$(cat /tmp/soil-moisture-main.json)" \
+      --argjson folderId 2158619959259136 \
+      '{"dashboard": $dashboard, "folderId": $folderId, "overwrite": true, "message": "Auto-updated dashboard"}')
+    echo "$PAYLOAD" > /tmp/payload.json
     
     # Import to Grafana (using admin credentials)
     RESPONSE=$(curl -s -X POST \

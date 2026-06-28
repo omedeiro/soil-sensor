@@ -72,8 +72,18 @@
 // Option 1: Auto-generate from MAC address (e.g., "esp8266-40915141d997")
 // Option 2: Set DEVICE_ID_AUTO=false and provide custom ID below
 #define DEVICE_ID_AUTO      false
-#define DEVICE_ID           "sensor-8"          // Change for each sensor: sensor-1, sensor-2, etc.
-#define DEVICE_LOCATION     "living-room"       // Room location for this sensor
+#define DEVICE_ID           "sensor-9"          // Change for each sensor: sensor-1, sensor-2, etc.
+#define DEVICE_LOCATION     "guest-room"        // Room location for this sensor
+
+// ─── Static IP (use when DHCP fails) ──────────────────────────────────────────
+// Set USE_STATIC_IP to true and fill in values below if the board cannot
+// obtain an address via DHCP.  Set USE_STATIC_IP to false for normal DHCP.
+#define USE_STATIC_IP       true
+#define STATIC_IP           "192.168.99.48"
+#define STATIC_GATEWAY      "192.168.99.1"
+#define STATIC_SUBNET       "255.255.255.0"
+#define STATIC_DNS1         "192.168.99.1"
+#define STATIC_DNS2         "8.8.8.8"
 
 // ─── WiFi Stability & Queue ──────────────────────────────────────────────────
 #define ENABLE_WIFI_DIAGNOSTICS  true   // Enable detailed WiFi logging

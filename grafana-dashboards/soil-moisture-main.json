@@ -1218,13 +1218,32 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Ambient Climate"
+                "value": "Living Room Climate"
               },
               {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#FF780A"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-9.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Guest Room Climate"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
                 }
               }
             ]
@@ -1300,13 +1319,32 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Ambient Climate"
+                "value": "Living Room Climate"
               },
               {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#FF780A"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-9.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Guest Room Climate"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
                 }
               }
             ]
@@ -1395,13 +1433,32 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Ambient Climate"
+                "value": "Living Room Climate"
               },
               {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#FF780A"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-9.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Guest Room Climate"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
                 }
               }
             ]
@@ -1492,13 +1549,32 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Ambient Climate"
+                "value": "Living Room Climate"
               },
               {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#FF780A"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-9.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Guest Room Climate"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
                 }
               }
             ]

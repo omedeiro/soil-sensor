@@ -536,7 +536,7 @@ void loop() {
                       (millis() - bootTime) / 60000.0);
         Serial.printf("  Free heap: %u bytes\n", ESP.getFreeHeap());
         Serial.printf("  WiFi RSSI: %d dBm\n", WiFi.RSSI());
-        Serial.printf("  WiFi Status: %s\n", WiFi.status() == WL_CONNECTED ? "CONNECTED" : "DISCONNECTED");
+        Serial.printf("  WiFi Status: %s\n", wifi.isConnected() ? "CONNECTED" : "DISCONNECTED");
         
 #if QUEUE_FAILED_READINGS
         Serial.printf("  Queue size: %u / %u\n", readingQueue.count(), MAX_QUEUE_SIZE);

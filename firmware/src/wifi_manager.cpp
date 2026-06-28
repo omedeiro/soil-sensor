@@ -43,7 +43,21 @@ bool WifiConnection::connect() {
         }
         WiFi.scanDelete();
 
-        // Try connecting up to 3 times
+        // Try connecting up to 3 times, using WiFi.localIP() for detection
+        // (WiFi.status() can return non-standard values like 7 on some
+        // ESP8266 revisions even when the connection succeeds).
+#if USE_STATIC_IP
+        {
+            IPAddress ip, gw, sn, dns1, dns2;
+            ip.fromString(STATIC_IP);
+            gw.fromString(STATIC_GATEWAY);
+            sn.fromString(STATIC_SUBNET);
+            dns1.fromString(STATIC_DNS1);
+            dns2.fromString(STATIC_DNS2);
+            WiFi.config(ip, gw, sn, dns1, dns2);
+            Serial.printf("[WiFi] Static IP configured: %s\n", STATIC_IP);
+        }
+#endif
         bool connected = false;
         for (int attempt = 1; attempt <= 3 && !connected; attempt++) {
             Serial.print(F("[WiFi] Attempt "));
@@ -52,21 +66,26 @@ bool WifiConnection::connect() {
             Serial.println(WIFI_SSID);
             WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
             unsigned long start = millis();
-            while (WiFi.status() != WL_CONNECTED &&
-                   millis() - start < (unsigned long)WIFI_CONNECT_TIMEOUT * 1000UL / 3) {
+            while (millis() - start < (unsigned long)WIFI_CONNECT_TIMEOUT * 1000UL / 3) {
                 delay(500);
                 Serial.print('.');
                 yield();
+                if (WiFi.localIP().isSet()) {
+                    connected = true;
+                    break;
+                }
             }
-            Serial.println();
-            connected = WiFi.status() == WL_CONNECTED;
             if (!connected) {
-                Serial.print(F("[WiFi] Status: "));
-                Serial.println(WiFi.status());
+                Serial.println();
+                Serial.print(F("[WiFi] Attempt failed — status="));
+                Serial.print(WiFi.status());
+                Serial.print(F("  ip="));
+                Serial.println(WiFi.localIP());
                 WiFi.disconnect(true);
                 delay(1000);
             }
         }
+        Serial.println();
         if (connected) {
             Serial.print(F("[WiFi] ✓ Connected! IP: "));
             Serial.println(WiFi.localIP());
@@ -78,10 +97,9 @@ bool WifiConnection::connect() {
             WiFi.setAutoReconnect(true);
             WiFi.persistent(true);
             Serial.println(F("[WiFi] Power management configured for stability"));
-        } else {
-            Serial.println(F("[WiFi] ✗ Failed to connect with hardcoded credentials"));
+            return true;
         }
-        return connected;
+        Serial.println(F("[WiFi] Hardcoded credentials failed — falling through to WiFiManager..."));
     }
 
     // No hardcoded credentials — use WiFiManager captive portal flow
@@ -156,7 +174,9 @@ bool WifiConnection::connect() {
 }
 
 bool WifiConnection::isConnected() {
-    return WiFi.status() == WL_CONNECTED;
+    // Some ESP8266 revisions report status 7 even when connected.
+    // Check actual IP assignment as a fallback.
+    return WiFi.status() == WL_CONNECTED || WiFi.localIP().isSet();
 }
 
 String WifiConnection::localIP() {
