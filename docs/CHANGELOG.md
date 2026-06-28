@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.11.4] - 2026-06-28
+
+### Changed
+- **Sensor dropdown now shows plant names** — Changed Grafana variable from `query` type (raw `device_id` values) to `custom` type with static `text : value` options. Dropdown now displays "Rubber Tree", "Monstera", "Avocado" etc. instead of "sensor-1", "sensor-2". No firmware or InfluxDB changes required.
+
+---
+
+## [2.11.3] - 2026-06-21
+
+### Added
+- **Second climate sensor (sensor-9)** — DHT22 ambient temp/humidity installed in guest room with "Guest Room Climate" label in Grafana
+
+### Changed
+- **Sensor-8 renamed** — "Ambient Climate" → "Living Room Climate" for location-specific clarity
+- **Grafana climate panels updated** — Ambient Temperature and Humidity stat/trend panels now show both climate sensors with distinct labels and colors
+- **README.md** — Updated to reflect dual DHT22 climate sensors
+
+---
+
 ## [2.11.2] - 2026-06-21
 
 ### Changed

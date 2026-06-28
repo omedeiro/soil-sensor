@@ -119,18 +119,9 @@ def create_dashboard(config):
                 {
                     "name": "sensor",
                     "label": "Sensor",
-                    "type": "query",
+                    "type": "custom",
                     "description": "Select sensor to view",
-                    "datasource": {
-                        "type": "influxdb",
-                        "uid": grafana_config["influxdb_datasource_uid"]
-                    },
-                    "query": {
-                        "query": f'from(bucket: "{grafana_config["bucket"]}")\n  |> range(start: -7d)\n  |> filter(fn: (r) => r._measurement == "{grafana_config["measurement"]}")\n  |> keep(columns: ["device_id"])\n  |> distinct(column: "device_id")\n  |> sort()',
-                        "language": "flux"
-                    },
-                    "refresh": 0,
-                    "regex": "",
+                    "query": ", ".join(f'{s["plant"]} : {s["id"]}' for s in sensors),
                     "includeAll": True,
                     "multi": False,
                     "allValue": ".*",
