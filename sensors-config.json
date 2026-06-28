@@ -123,11 +123,19 @@
   "climate_sensors": [
     {
       "id": "sensor-8",
-      "label": "Ambient Climate",
+      "label": "Living Room Climate",
       "location": "living-room",
       "ip": "192.168.99.182",
       "mac": "48:55:19:e6:6c:af",
       "color": "#FF780A"
+    },
+    {
+      "id": "sensor-9",
+      "label": "Guest Room Climate",
+      "location": "guest-room",
+      "ip": "192.168.99.48",
+      "mac": "7c:87:ce:80:4d:36",
+      "color": "#73BF69"
     }
   ],
   "grafana": {

@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.12.0] - 2026-06-28
+
+### Added
+
+#### Static IP Configuration
+- **`config.h`** — Added `USE_STATIC_IP`, `STATIC_IP`, `STATIC_GATEWAY`, `STATIC_SUBNET`, `STATIC_DNS1`, `STATIC_DNS2` defines for boards that cannot obtain an address via DHCP (e.g., router MAC filtering, DHCP pool exhaustion)
+- **`wifi_manager.cpp`** — Applies `WiFi.config()` with static IP before `WiFi.begin()` when `USE_STATIC_IP` is `true`; bypasses DHCP for reliable deployment on restricted networks
+
+### Changed
+
+#### WiFi Connection Reliability
+- **`wifi_manager.cpp`** — Connection detection now uses `WiFi.localIP().isSet()` as fallback alongside `WiFi.status() == WL_CONNECTED` (handles ESP8266 revisions that return non-standard status codes like 7)
+- **`wifi_stability.cpp`** — All 6 `WiFi.status()` checks (reconnect loop, `isHealthy()`, `getConnectedTime()`, `getDisconnectedTime()`, `printDiagnostics()` SSID/RSSI blocks) updated to use `WiFi.localIP().isSet()` fallback, preventing infinite reboot loops on affected hardware
+- **`main.cpp`** — Serial WiFi status display uses `wifi.isConnected()` instead of raw `WiFi.status()` for consistency
+
+#### Grafana Dashboard
+- **Dashboard import script** — `upload-dashboard-to-pi.sh` now uses `jq` for proper JSON payload construction with Grafana folder ID targeting
+
+### Fixed
+- **WiFi status inconsistency** — `wifi_stability.cpp` used raw `WiFi.status()` while `wifi_manager.cpp` checked IP assignment; now consistent across all connection checks, eliminating a bug where the stability manager could trigger `ESP.restart()` on hardware with non-standard status codes
+
+---
+
 ## [2.11.4] - 2026-06-28
 
 ### Changed
@@ -27,14 +50,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## [2.11.2] - 2026-06-21
-
-### Changed
-
-- **Sensor rename** — Renamed sensor-4 from "Basil - auk" to "Micro Greens" in `sensors-config.json` and all downstream references (AGENTS.md, Grafana dashboards, firmware flash scripts, quick reference)
-- **Firmware flash scripts now read from config** — `flash-usb-interactive.sh`, `flash-all-sensors.sh`, `flash-all-ota.sh`, and `flash-ota-canary.sh` now load sensor data dynamically from `sensors-config.json` (via `jq`) instead of hardcoding arrays. Added shared helper at `firmware/lib/config-helpers.sh`.
-- **Grafana dashboards updated** — Updated `watering-history.json` and `sensor-details.json` to reflect "Micro Greens" plant name (4 display name/description references in watering dashboard, 3 in sensor details)
-- **Scripts/docs updated** — `scripts/update_dashboard_plant_names.py`, `docs/reference/QUICK_REFERENCE.md`, and `AGENTS.md` updated for consistency
-- **Dashboard import script fixed** — `grafana-dashboards/import-all-dashboards.sh` now resolves file paths relative to the script's own directory, so it can be run from anywhere
 
 ---
 

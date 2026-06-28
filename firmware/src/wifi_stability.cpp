@@ -154,7 +154,8 @@ void WiFiStabilityManager::onWiFiDisconnect(const WiFiEventStationModeDisconnect
 
 void WiFiStabilityManager::loop() {
     // Only run reconnection logic if disconnected
-    if (WiFi.status() != WL_CONNECTED) {
+    // Use IP fallback for ESP8266 revisions that return non-standard status codes
+    if (!(WiFi.status() == WL_CONNECTED || WiFi.localIP().isSet())) {
         if (!isReconnecting && millis() >= nextReconnectTime) {
             attemptReconnect();
         }
@@ -204,19 +205,19 @@ bool WiFiStabilityManager::isHealthy() {
     // Consider healthy if:
     // 1. Connected, OR
     // 2. Attempting to reconnect and haven't exceeded max attempts
-    return (WiFi.status() == WL_CONNECTED) || 
+    return (WiFi.status() == WL_CONNECTED || WiFi.localIP().isSet()) || 
            (isReconnecting && reconnectAttempts < MAX_RECONNECT_ATTEMPTS);
 }
 
 unsigned long WiFiStabilityManager::getConnectedTime() {
-    if (WiFi.status() == WL_CONNECTED && lastConnectTime > 0) {
+    if ((WiFi.status() == WL_CONNECTED || WiFi.localIP().isSet()) && lastConnectTime > 0) {
         return millis() - lastConnectTime;
     }
     return 0;
 }
 
 unsigned long WiFiStabilityManager::getDisconnectedTime() {
-    if (WiFi.status() != WL_CONNECTED && lastDisconnectTime > 0) {
+    if (!(WiFi.status() == WL_CONNECTED || WiFi.localIP().isSet()) && lastDisconnectTime > 0) {
         return millis() - lastDisconnectTime;
     }
     return 0;
@@ -240,7 +241,7 @@ void WiFiStabilityManager::printDiagnostics() {
     Serial.println(F("═══════════════════════════════════════"));
     
     Serial.print(F("Status: "));
-    if (WiFi.status() == WL_CONNECTED) {
+    if (WiFi.status() == WL_CONNECTED || WiFi.localIP().isSet()) {
         Serial.println(F("CONNECTED"));
         Serial.print(F("  Connected for: "));
         Serial.print(getConnectedTime() / 1000);
@@ -260,7 +261,7 @@ void WiFiStabilityManager::printDiagnostics() {
     Serial.print(F("Last disconnect reason: "));
     Serial.println(lastDisconnectReason);
     
-    if (WiFi.status() == WL_CONNECTED) {
+    if (WiFi.status() == WL_CONNECTED || WiFi.localIP().isSet()) {
         Serial.print(F("SSID: "));
         Serial.println(WiFi.SSID());
         
