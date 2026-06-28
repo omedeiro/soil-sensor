@@ -11,12 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-#### Guest Room Climate Sensor — DHT22/AM2302 (sensor-9)
-- **New climate sensor** — sensor-9 deployed in guest-room with DHT22 monitoring ambient temperature and humidity; posts to `climate_reading` measurement alongside sensor-8
-- **sensors-config.json** — Added `sensor-9` to `climate_sensors[]` with label "Guest Room Climate", MAC `7c:87:ce:80:4d:36` (ESP8266EX), color `#73BF69`, static IP `192.168.99.48`
-- **Main dashboard** — Auto-generated climate panels now display guest room temp/humidity alongside living room data
-- **Dashboard labels** — sensor-8 relabeled from "Ambient Climate" → "Living Room Climate" for clarity
-
 #### Static IP Configuration
 - **`config.h`** — Added `USE_STATIC_IP`, `STATIC_IP`, `STATIC_GATEWAY`, `STATIC_SUBNET`, `STATIC_DNS1`, `STATIC_DNS2` defines for boards that cannot obtain an address via DHCP (e.g., router MAC filtering, DHCP pool exhaustion)
 - **`wifi_manager.cpp`** — Applies `WiFi.config()` with static IP before `WiFi.begin()` when `USE_STATIC_IP` is `true`; bypasses DHCP for reliable deployment on restricted networks
@@ -33,6 +27,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **WiFi status inconsistency** — `wifi_stability.cpp` used raw `WiFi.status()` while `wifi_manager.cpp` checked IP assignment; now consistent across all connection checks, eliminating a bug where the stability manager could trigger `ESP.restart()` on hardware with non-standard status codes
+
+---
+
+## [2.11.4] - 2026-06-28
+
+### Changed
+- **Sensor dropdown now shows plant names** — Changed Grafana variable from `query` type (raw `device_id` values) to `custom` type with static `text : value` options. Dropdown now displays "Rubber Tree", "Monstera", "Avocado" etc. instead of "sensor-1", "sensor-2". No firmware or InfluxDB changes required.
+
+---
+
+## [2.11.3] - 2026-06-21
+
+### Added
+- **Second climate sensor (sensor-9)** — DHT22 ambient temp/humidity installed in guest room with "Guest Room Climate" label in Grafana
+
+### Changed
+- **Sensor-8 renamed** — "Ambient Climate" → "Living Room Climate" for location-specific clarity
+- **Grafana climate panels updated** — Ambient Temperature and Humidity stat/trend panels now show both climate sensors with distinct labels and colors
+- **README.md** — Updated to reflect dual DHT22 climate sensors
 
 ---
 
