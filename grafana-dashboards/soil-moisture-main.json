@@ -25,18 +25,9 @@
       {
         "name": "sensor",
         "label": "Sensor",
-        "type": "query",
+        "type": "custom",
         "description": "Select sensor to view",
-        "datasource": {
-          "type": "influxdb",
-          "uid": "cflk0i2e2nwu8d"
-        },
-        "query": {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -7d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> keep(columns: [\"device_id\"])\n  |> distinct(column: \"device_id\")\n  |> sort()",
-          "language": "flux"
-        },
-        "refresh": 0,
-        "regex": "",
+        "query": "Rubber Tree : sensor-1, Monstera : sensor-2, Avocado : sensor-3, Micro Greens : sensor-4, ZZ Plant : sensor-5, Ficus Elastica Ruby : sensor-6, Basil - pot : sensor-7",
         "includeAll": true,
         "multi": false,
         "allValue": ".*",
