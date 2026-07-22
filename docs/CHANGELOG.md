@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.12.1] - 2026-07-22
+
+### Added
+
+#### Per-Plant Moisture Panels
+- **`scripts/generate-dashboard.py`** — New `create_single_plant_moisture_panel()` generates one single-trace moisture time series per plant, appended below the temperature/humidity block on the main dashboard. Each panel always shows exactly one plant (independent of the sensor dropdown), full width, with the plant's name used as the panel title and series display name for easy differentiation. Panels render in fixed sensor order (sensor-1 → sensor-7) and are config-driven from `sensors-config.json`.
+
+### Changed
+
+#### Agent Instructions
+- **`AGENTS.md`** — Refactored into a lean index; detailed task-specific workflows moved into opencode skills under `.opencode/skills/` (`soil-sensor-firmware`, `grafana-dashboard-config`, `grafana-troubleshooting`, `sensor-offline-troubleshooting`, `rpi-server-ops`) that load automatically when a task matches.
+
+### Fixed
+
+#### Dashboard Generator Output Path
+- **`scripts/generate-dashboard.py`** — Now writes to the repo-root `grafana-dashboards/soil-moisture-main.json` (the file `upload-dashboard-to-pi.sh` actually deploys) instead of `scripts/grafana-dashboards/`, fixing a mismatch where generated output was not the file being uploaded.
+
+---
+
 ## [2.12.0] - 2026-06-28
 
 ### Added

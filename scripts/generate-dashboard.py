@@ -150,7 +150,22 @@ def create_dashboard(config):
             create_humidity_trends_panel(climate_sensors, grafana_config)
         ]
     }
-    
+
+    # Append one single-trace moisture panel per plant, in fixed sensor order.
+    # These live below the temperature/humidity block (which ends at y=61).
+    per_plant_start_y = 61
+    per_plant_height = 8
+    for index, sensor in enumerate(sensors):
+        dashboard["panels"].append(
+            create_single_plant_moisture_panel(
+                sensor,
+                panel_id=101 + index,
+                y_pos=per_plant_start_y + index * per_plant_height,
+                height=per_plant_height,
+                grafana_config=grafana_config
+            )
+        )
+
     return dashboard
 
 
@@ -483,6 +498,70 @@ def create_moisture_trends_panel(sensors, grafana_config):
     }
 
 
+def create_single_plant_moisture_panel(sensor, panel_id, y_pos, height, grafana_config):
+    """Create a single-trace moisture time series panel for one plant.
+
+    Unlike the overlay "Moisture Trends" panel, this always shows exactly one
+    plant (independent of the dropdown selection), full width, so a single
+    trace is easy to read. The plant's fancy name is used for the panel title
+    and the series display name / legend / tooltip.
+    """
+    plant_name = sensor["plant"]
+    return {
+        "id": panel_id,
+        "type": "timeseries",
+        "title": plant_name,
+        "gridPos": {"x": 0, "y": y_pos, "w": 24, "h": height},
+        "datasource": {
+            "type": "influxdb",
+            "uid": grafana_config["influxdb_datasource_uid"]
+        },
+        "targets": [
+            {
+                "query": f'from(bucket: "{grafana_config["bucket"]}")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == "{grafana_config["measurement"]}")\n  |> filter(fn: (r) => r._field == "moisture")\n  |> filter(fn: (r) => r.device_id == "{sensor["id"]}")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)',
+                "refId": "A"
+            }
+        ],
+        "options": {
+            "tooltip": {"mode": "single", "sort": "none"},
+            "legend": {
+                "displayMode": "table",
+                "placement": "bottom",
+                "showLegend": True,
+                "calcs": ["lastNotNull", "mean", "min", "max"]
+            }
+        },
+        "fieldConfig": {
+            "defaults": {
+                "displayName": plant_name,
+                "custom": {
+                    "drawStyle": "line",
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "spanNulls": 3600000,
+                    "showPoints": "never",
+                    "pointSize": 5,
+                    "stacking": {"mode": "none", "group": "A"},
+                    "axisPlacement": "auto",
+                    "axisLabel": "Moisture %",
+                    "scaleDistribution": {"type": "linear"}
+                },
+                "unit": "percent",
+                "min": 0,
+                "max": 100,
+                "thresholds": {
+                    "mode": "absolute",
+                    "steps": [{"color": "transparent", "value": None}]
+                },
+                "color": {"mode": "fixed", "fixedColor": sensor["color"]}
+            },
+            "overrides": []
+        }
+    }
+
+
 def create_raw_adc_panel(sensors, grafana_config):
     """Create the Raw ADC Values time series panel."""
     return {
@@ -788,7 +867,8 @@ def main():
     print(f"Generating dashboard for {len(config['sensors'])} sensors...")
     dashboard = create_dashboard(config)
     
-    output_file = Path(__file__).parent / "grafana-dashboards" / "soil-moisture-main.json"
+    # Write to the repo-root grafana-dashboards/ (the file upload-dashboard-to-pi.sh deploys)
+    output_file = Path(__file__).parent.parent / "grafana-dashboards" / "soil-moisture-main.json"
     print(f"Writing dashboard to {output_file}...")
     
     with open(output_file, 'w') as f:
