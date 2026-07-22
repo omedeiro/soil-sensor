@@ -1,4 +1,4 @@
-# 🌱 Soil Moisture Monitoring System — v2.12.0
+# 🌱 Soil Moisture Monitoring System — v2.12.1
 
 A production-grade, multi-sensor soil moisture monitoring system built with **ESP8266** microcontrollers, **InfluxDB**, and **Grafana**, hosted on a **Raspberry Pi 5**.
 
@@ -51,7 +51,7 @@ Each soil sensor reads moisture every 5 minutes and posts data to a central time
 - **NTP timestamps** — every reading is UTC-timestamped
 - **Boot diagnostics** — device ID, MAC address, crash reason printed on every boot
 
-### Raspberry Pi Server (v2.12.0)
+### Raspberry Pi Server (v2.12.1)
 - **InfluxDB 2.x backend** — time-series storage on USB drive, 365-day retention
 - **Grafana dashboards (6 total)** — soil moisture with **Pi uptime panel** plus **ambient temperature/humidity panels**, sensor details, system health, alerts, mobile view, Pi health
 - **Cloudflare Tunnel** — public HTTPS access via `grafana.owenmedeiros.com` (anonymous read-only viewing)
