@@ -54,7 +54,7 @@
       },
       "targets": [
         {
-          "query": "import \"interpolate\"\nimport \"date\"\n\n// Raw moisture data (pre-interpolation) for offline detection\nraw = from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> sort(columns: [\"_time\"])\n\n// Detect gaps > 15 minutes (offline state)\noffline = raw\n  |> elapsed(unit: 1m, timeColumn: \"_time\")\n  |> filter(fn: (r) => r.elapsed > 15)\n  |> map(fn: (r) => ({_time: r._time, _value: 4.0, device_id: r.device_id, _field: r._field, location: r.location}))\n  |> group(columns: [\"device_id\", \"_field\", \"location\"])\n\n// Interpolated data for continuous analysis\ninterp = raw\n  |> interpolate.linear(every: 5m)\n\n// Differences for watering/noise detection\ndiffs = interp\n  |> difference(nonNegative: false, columns: [\"_value\"])\n\n// State from moisture differences (watering or noise)\nstate_diff = diffs\n  |> map(fn: (r) => ({\n    _time: r._time,\n    _value: if r._value >= 8.0 then 2.0\n      else if r._value <= -8.0 then 3.0\n      else 0.0,\n    device_id: r.device_id,\n    _field: r._field,\n    location: r.location\n  }))\n  |> group(columns: [\"device_id\", \"_field\", \"location\"])\n\n// State from moisture level (dry when < 20%)\nstate_dry = interp\n  |> map(fn: (r) => ({\n    _time: r._time,\n    _value: if r._value < 20.0 then 1.0 else 0.0,\n    device_id: r.device_id,\n    _field: r._field,\n    location: r.location\n  }))\n  |> group(columns: [\"device_id\", \"_field\", \"location\"])\n\n// Combine all states: offline(4) > noise(3) > watering(2) > dry(1) > normal(0)\nunion(tables: [state_diff, state_dry, offline])\n  |> aggregateWindow(every: 30m, fn: max, createEmpty: false)\n  |> yield(name: \"states\")",
+          "query": "import \"interpolate\"\nimport \"date\"\n\n// Raw moisture data (pre-interpolation) for offline detection\nraw = from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> sort(columns: [\"_time\"])\n\n// Detect gaps > 15 minutes (offline state)\noffline = raw\n  |> elapsed(unit: 1m, timeColumn: \"_time\")\n  |> filter(fn: (r) => r.elapsed > 15)\n  |> map(fn: (r) => ({_time: r._time, _value: 4.0, device_id: r.device_id, _field: r._field, location: r.location}))\n  |> group(columns: [\"device_id\", \"_field\", \"location\"])\n\n// Interpolated data for continuous analysis\ninterp = raw\n  |> interpolate.linear(every: 5m)\n\n// Differences for watering/noise detection\ndiffs = interp\n  |> difference(nonNegative: false, columns: [\"_value\"])\n\n// State from moisture differences (watering or noise)\nstate_diff = diffs\n  |> map(fn: (r) => ({\n    _time: r._time,\n    _value: if r._value >= 8.0 then 2.0\n      else if r._value <= -8.0 then 3.0\n      else 0.0,\n    device_id: r.device_id,\n    _field: r._field,\n    location: r.location\n  }))\n  |> group(columns: [\"device_id\", \"_field\", \"location\"])\n\n// State from moisture level (dry when < 20%)\nstate_dry = interp\n  |> map(fn: (r) => ({\n    _time: r._time,\n    _value: if r._value < 20.0 then 1.0 else 0.0,\n    device_id: r.device_id,\n    _field: r._field,\n    location: r.location\n  }))\n  |> group(columns: [\"device_id\", \"_field\", \"location\"])\n\n// State from saturation (sensor railed at 100%)\n// Saturated(5) after 30+ min at >=99.5%, Not Working(6) after 24h+ at >=99.5%\nstate_sat = interp\n  |> stateDuration(fn: (r) => r._value >= 99.5, column: \"satMinutes\", unit: 1m)\n  |> map(fn: (r) => ({\n    _time: r._time,\n    _value: if r.satMinutes >= 1440 then 6.0\n      else if r.satMinutes >= 30 then 5.0\n      else 0.0,\n    device_id: r.device_id,\n    _field: r._field,\n    location: r.location\n  }))\n  |> group(columns: [\"device_id\", \"_field\", \"location\"])\n\n// Combine all states: not-working(6) > saturated(5) > offline(4) > noise(3) > watering(2) > dry(1) > normal(0)\nunion(tables: [state_diff, state_dry, offline, state_sat])\n  |> aggregateWindow(every: 30m, fn: max, createEmpty: false)\n  |> yield(name: \"states\")",
           "refId": "A"
         }
       ],
@@ -98,6 +98,14 @@
                 "4": {
                   "text": "Offline",
                   "color": "#9E9E9E"
+                },
+                "5": {
+                  "text": "Saturated",
+                  "color": "#9C27B0"
+                },
+                "6": {
+                  "text": "Not Working",
+                  "color": "#B71C1C"
                 }
               }
             }
@@ -124,6 +132,14 @@
               {
                 "color": "#9E9E9E",
                 "value": 4
+              },
+              {
+                "color": "#9C27B0",
+                "value": 5
+              },
+              {
+                "color": "#B71C1C",
+                "value": 6
               }
             ]
           }
