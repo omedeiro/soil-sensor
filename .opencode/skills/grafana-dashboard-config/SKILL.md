@@ -123,7 +123,7 @@ Always run `./scripts/validate-config.py` before generating.
 ## Grafana Dashboards (`/grafana-dashboards/`)
 
 - `soil-moisture-main.json` — Main overview dashboard (auto-generated, don't edit manually)
-- `watering-history.json` — Watering event detection and tracking (v2.12.2)
+- `watering-history.json` — Watering event detection and tracking (v2.12.3)
 - `sensor-details.json` — Individual sensor deep-dive
 - `system-health.json` — ESP8266 diagnostics & events
 - `alerts-overview.json` — Critical alerts & notifications
@@ -150,8 +150,8 @@ Automatic watering event detection and visualization.
 
 **Dashboard Panels:**
 1. **Watering Events Timeline** — Color-coded state timeline (Normal/Dry/Watering/Noise/Offline/Saturated/Not Working)
-2. **Moisture Trend with Markers** — Time series with markers at watering events
-3. **Time Since Last Watered** — 7 stat panels (green <2d, yellow 2-5d, orange 5-7d, red >7d)
+2. **Moisture Trend with Markers** — Time series with markers at watering events; plant names as trace labels via `byRegexp`
+3. **Time Since Last Watered** — Unified stat panel for all sensors (`dtdurations` unit, "No event in 30d" fallback)
 4. **Watering Frequency Heatmap** — Calendar view of patterns by day/hour
 
 **Deployment (one-time):**
