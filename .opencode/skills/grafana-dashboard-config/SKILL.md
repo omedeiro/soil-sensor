@@ -123,7 +123,7 @@ Always run `./scripts/validate-config.py` before generating.
 ## Grafana Dashboards (`/grafana-dashboards/`)
 
 - `soil-moisture-main.json` — Main overview dashboard (auto-generated, don't edit manually)
-- `watering-history.json` — Watering event detection and tracking (v2.7.0)
+- `watering-history.json` — Watering event detection and tracking (v2.12.2)
 - `sensor-details.json` — Individual sensor deep-dive
 - `system-health.json` — ESP8266 diagnostics & events
 - `alerts-overview.json` — Critical alerts & notifications
@@ -132,7 +132,7 @@ Always run `./scripts/validate-config.py` before generating.
 - `deploy-watering-dashboard.sh` — Deploy watering dashboard to Grafana
 - `README.md` — Dashboard installation and customization guide
 
-## Watering History Dashboard (v2.7.0)
+## Watering History Dashboard (v2.12.2)
 
 Automatic watering event detection and visualization.
 **Location:** `grafana-dashboards/watering-history.json`
@@ -141,11 +141,16 @@ Automatic watering event detection and visualization.
 - **Threshold:** 15%+ moisture increase between consecutive readings (5-minute intervals)
 - **Watered Status:** 2-hour window after detection
 - **Noise Filtering:** Filters out sensor jitter, only detects sustained increases
+- **Offline Detection:** Gaps > 15 minutes between readings (via `elapsed()`)
+- **Saturated Detection:** Sensor at >= 99.5% for 30+ minutes (via `stateDuration()`)
+- **Not Working Detection:** Sensor pinned at >= 99.5% for 24+ hours (hardware fault)
 - **Lookback:** 30 days for "last watered" stats, 7 days default timeline view
 
+**State Priority:** not-working(6) > saturated(5) > offline(4) > noise(3) > watering(2) > dry(1) > normal(0)
+
 **Dashboard Panels:**
-1. **Watering Events Timeline** — Green bars show 2-hour "watered" status after detection
-2. **Moisture Trend with Markers** — Time series with red markers at watering events
+1. **Watering Events Timeline** — Color-coded state timeline (Normal/Dry/Watering/Noise/Offline/Saturated/Not Working)
+2. **Moisture Trend with Markers** — Time series with markers at watering events
 3. **Time Since Last Watered** — 7 stat panels (green <2d, yellow 2-5d, orange 5-7d, red >7d)
 4. **Watering Frequency Heatmap** — Calendar view of patterns by day/hour
 
