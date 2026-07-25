@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.12.2] - 2026-07-25
+
+### Added
+
+#### Watering History — Saturated & Not Working States
+- **`grafana-dashboards/watering-history.json`** — Added two new states to the Watering Events Timeline (Panel 2) for sensors stuck at 100% moisture:
+  - **Saturated (purple `#9C27B0`)** — Detected when sensor reports >= 99.5% moisture continuously for 30+ minutes (via Flux `stateDuration()`)
+  - **Not Working (dark red `#B71C1C`)** — Detected when sensor is pinned at >= 99.5% for 24+ hours, indicating a likely hardware fault
+- New state priority chain: not-working(6) > saturated(5) > offline(4) > noise(3) > watering(2) > dry(1) > normal(0)
+- Value mappings and threshold steps added for states 5 and 6 in the state-timeline panel
+
+---
+
 ## [2.12.1] - 2026-07-22
 
 ### Added
