@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.12.3] - 2026-07-25
+
+### Fixed
+
+#### Watering History — Dashboard Cleanup
+- **`grafana-dashboards/watering-history.json`** — Three fixes to the watering history dashboard:
+  - **Moisture Trend trace labels** — Changed `byName` matchers to `byRegexp` for robustness; removed "Sensor N" prefix so legend shows just plant names ("Rubber Tree", "Monstera", etc.) instead of "Sensor 1 (Rubber Tree)"
+  - **Time Since Last Watered** — Replaced 7 individual stat panels (one per sensor) with a single unified "Time Since Last Watered" panel; uses one Flux query for all sensors, `dtdurations` unit for readable output, and `"No event in 30d"` fallback. Panel count reduced from 11 to 5
+  - **Watering Frequency heatmap** — Increased `cellGap` from 2 to 4, enabled `calculate: true` for proper data binning, removed `scaleDistribution: linear` that caused thin/misrendered cells
+
+### Changed
+
+#### Sensor Rename
+- **`sensors-config.json`** — Renamed sensor-7 plant from "Basil - pot" to "Parsley"
+- **`AGENTS.md`** — Updated sensor-7 reference to "Parsley"
+
+---
+
 ## [2.12.2] - 2026-07-25
 
 ### Added

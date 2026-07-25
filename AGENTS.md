@@ -71,7 +71,7 @@ matching skill before doing the work rather than guessing.
 - **sensor-4** (guest-room, Micro Greens): `192.168.99.105` (MAC: 48:3f:da:aa:fe:d7) - online
 - **sensor-5** (bed-room, ZZ Plant): `192.168.99.89` (MAC: 34:ab:95:16:51:d9) (ESP-1651D9, Wi-Fi 2.4GHz n) - online
 - **sensor-6** (living-room, Ficus Elastica Ruby): `192.168.99.38` (MAC: 48:3f:da:62:f9:07) (Wi-Fi 2.4GHz n) - online
-- **sensor-7** (guest-room, Basil - pot): `192.168.99.141` (MAC: 84:cc:a8:a7:96:32) (Wi-Fi 2.4GHz n) - online
+- **sensor-7** (guest-room, Parsley): `192.168.99.141` (MAC: 84:cc:a8:a7:96:32) (Wi-Fi 2.4GHz n) - online
 - **sensor-8** (living-room, Ambient Climate — **DHT22/AM2302**, not soil): `192.168.99.182` (MAC: 48:55:19:e6:6c:af) - online
 - Web Dashboard: `http://<sensor-ip>` (e.g., `http://192.168.99.110`)
 - Reading Interval: 5 minutes (300000ms)

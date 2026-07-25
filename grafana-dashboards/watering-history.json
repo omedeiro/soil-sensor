@@ -225,7 +225,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Basil - pot"
+                "value": "Parsley"
               }
             ]
           }
@@ -375,13 +375,13 @@
           },
           {
             "matcher": {
-              "id": "byName",
-              "options": "sensor_reading moisture {device_id=\"sensor-1\", location=\"bed-room\"}"
+              "id": "byRegexp",
+              "options": ".*sensor-1.*"
             },
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 1 (Rubber Tree)"
+                "value": "Rubber Tree"
               },
               {
                 "id": "color",
@@ -394,13 +394,13 @@
           },
           {
             "matcher": {
-              "id": "byName",
-              "options": "sensor_reading moisture {device_id=\"sensor-2\", location=\"living-room\"}"
+              "id": "byRegexp",
+              "options": ".*sensor-2.*"
             },
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 2 (Monstera)"
+                "value": "Monstera"
               },
               {
                 "id": "color",
@@ -413,13 +413,13 @@
           },
           {
             "matcher": {
-              "id": "byName",
-              "options": "sensor_reading moisture {device_id=\"sensor-3\", location=\"living-room\"}"
+              "id": "byRegexp",
+              "options": ".*sensor-3.*"
             },
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 3 (Avocado)"
+                "value": "Avocado"
               },
               {
                 "id": "color",
@@ -432,13 +432,13 @@
           },
           {
             "matcher": {
-              "id": "byName",
-              "options": "sensor_reading moisture {device_id=\"sensor-4\", location=\"guest-room\"}"
+              "id": "byRegexp",
+              "options": ".*sensor-4.*"
             },
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 4 (Micro Greens)"
+                "value": "Micro Greens"
               },
               {
                 "id": "color",
@@ -451,13 +451,13 @@
           },
           {
             "matcher": {
-              "id": "byName",
-              "options": "sensor_reading moisture {device_id=\"sensor-5\", location=\"bed-room\"}"
+              "id": "byRegexp",
+              "options": ".*sensor-5.*"
             },
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 5 (ZZ Plant)"
+                "value": "ZZ Plant"
               },
               {
                 "id": "color",
@@ -470,13 +470,13 @@
           },
           {
             "matcher": {
-              "id": "byName",
-              "options": "sensor_reading moisture {device_id=\"sensor-6\", location=\"living-room\"}"
+              "id": "byRegexp",
+              "options": ".*sensor-6.*"
             },
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 6 (Ficus Elastica Ruby)"
+                "value": "Ficus Elastica Ruby"
               },
               {
                 "id": "color",
@@ -489,13 +489,13 @@
           },
           {
             "matcher": {
-              "id": "byName",
-              "options": "sensor_reading moisture {device_id=\"sensor-7\", location=\"guest-room\"}"
+              "id": "byRegexp",
+              "options": ".*sensor-7.*"
             },
             "properties": [
               {
                 "id": "displayName",
-                "value": "Sensor 7 (Basil - pot)"
+                "value": "Parsley"
               },
               {
                 "id": "color",
@@ -512,13 +512,13 @@
     {
       "id": 101,
       "type": "stat",
-      "title": "Sensor 1 - Last Watered",
-      "description": "Time since Rubber Tree was last watered",
+      "title": "Time Since Last Watered",
+      "description": "Time since each plant was last watered (30-day lookback)",
       "gridPos": {
         "x": 0,
         "y": 23,
-        "w": 6,
-        "h": 5
+        "w": 24,
+        "h": 6
       },
       "datasource": {
         "type": "influxdb",
@@ -526,442 +526,173 @@
       },
       "targets": [
         {
-          "query": "import \"interpolate\"\n\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-1\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
+          "query": "import \"interpolate\"\n\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\ndata\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n  |> last()\n  |> map(fn: (r) => ({r with _value: float(v: int(v: now()) - int(v: r._time)) / 1000000000.0}))\n  |> keep(columns: [\"_time\", \"_value\", \"device_id\"])",
           "refId": "A"
         }
       ],
       "options": {
         "graphMode": "none",
         "colorMode": "background",
-        "textMode": "value",
+        "textMode": "auto",
         "reduceOptions": {
           "values": false,
           "calcs": [
             "lastNotNull"
           ]
-        }
+        },
+        "orientation": "auto"
       },
       "fieldConfig": {
         "defaults": {
+          "unit": "dtdurations",
+          "decimals": 1,
           "mappings": [],
+          "noValue": "No event in 30d",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-1.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Rubber Tree"
               },
               {
-                "color": "yellow",
-                "value": 172800000
-              },
-              {
-                "color": "orange",
-                "value": 432000000
-              },
-              {
-                "color": "red",
-                "value": 604800000
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
               }
             ]
           },
-          "unit": "dateTimeFromNow",
-          "displayName": "Rubber Tree",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#73BF69"
-          }
-        }
-      }
-    },
-    {
-      "id": 102,
-      "type": "stat",
-      "title": "Sensor 2 - Last Watered",
-      "description": "Time since Monstera was last watered",
-      "gridPos": {
-        "x": 6,
-        "y": 23,
-        "w": 6,
-        "h": 5
-      },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
-      },
-      "targets": [
-        {
-          "query": "import \"interpolate\"\n\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-2\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "none",
-        "colorMode": "background",
-        "textMode": "value",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-2.*"
+            },
+            "properties": [
               {
-                "color": "green",
-                "value": null
+                "id": "displayName",
+                "value": "Monstera"
               },
               {
-                "color": "yellow",
-                "value": 172800000
-              },
-              {
-                "color": "orange",
-                "value": 432000000
-              },
-              {
-                "color": "red",
-                "value": 604800000
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2CC0C"
+                }
               }
             ]
           },
-          "unit": "dateTimeFromNow",
-          "displayName": "Monstera",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#F2CC0C"
-          }
-        }
-      }
-    },
-    {
-      "id": 103,
-      "type": "stat",
-      "title": "Sensor 3 - Last Watered",
-      "description": "Time since Avocado was last watered",
-      "gridPos": {
-        "x": 12,
-        "y": 23,
-        "w": 6,
-        "h": 5
-      },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
-      },
-      "targets": [
-        {
-          "query": "import \"interpolate\"\n\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-3\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "none",
-        "colorMode": "background",
-        "textMode": "value",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-3.*"
+            },
+            "properties": [
               {
-                "color": "green",
-                "value": null
+                "id": "displayName",
+                "value": "Avocado"
               },
               {
-                "color": "yellow",
-                "value": 172800000
-              },
-              {
-                "color": "orange",
-                "value": 432000000
-              },
-              {
-                "color": "red",
-                "value": 604800000
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
               }
             ]
           },
-          "unit": "dateTimeFromNow",
-          "displayName": "Avocado",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#5794F2"
-          }
-        }
-      }
-    },
-    {
-      "id": 104,
-      "type": "stat",
-      "title": "Sensor 4 - Last Watered",
-      "description": "Time since Micro Greens was last watered",
-      "gridPos": {
-        "x": 18,
-        "y": 23,
-        "w": 6,
-        "h": 5
-      },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
-      },
-      "targets": [
-        {
-          "query": "import \"interpolate\"\n\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-4\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "none",
-        "colorMode": "background",
-        "textMode": "value",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-4.*"
+            },
+            "properties": [
               {
-                "color": "green",
-                "value": null
+                "id": "displayName",
+                "value": "Micro Greens"
               },
               {
-                "color": "yellow",
-                "value": 172800000
-              },
-              {
-                "color": "orange",
-                "value": 432000000
-              },
-              {
-                "color": "red",
-                "value": 604800000
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF6B6B"
+                }
               }
             ]
           },
-          "unit": "dateTimeFromNow",
-          "displayName": "Micro Greens",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#FF6B6B"
-          }
-        }
-      }
-    },
-    {
-      "id": 105,
-      "type": "stat",
-      "title": "Sensor 5 - Last Watered",
-      "description": "Time since ZZ Plant was last watered",
-      "gridPos": {
-        "x": 0,
-        "y": 28,
-        "w": 8,
-        "h": 5
-      },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
-      },
-      "targets": [
-        {
-          "query": "import \"interpolate\"\n\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-5\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "none",
-        "colorMode": "background",
-        "textMode": "value",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-5.*"
+            },
+            "properties": [
               {
-                "color": "green",
-                "value": null
+                "id": "displayName",
+                "value": "ZZ Plant"
               },
               {
-                "color": "yellow",
-                "value": 172800000
-              },
-              {
-                "color": "orange",
-                "value": 432000000
-              },
-              {
-                "color": "red",
-                "value": 604800000
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
               }
             ]
           },
-          "unit": "dateTimeFromNow",
-          "displayName": "ZZ Plant",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#B877D9"
-          }
-        }
-      }
-    },
-    {
-      "id": 106,
-      "type": "stat",
-      "title": "Sensor 6 - Last Watered",
-      "description": "Time since Ficus Elastica Ruby was last watered",
-      "gridPos": {
-        "x": 8,
-        "y": 28,
-        "w": 8,
-        "h": 5
-      },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
-      },
-      "targets": [
-        {
-          "query": "import \"interpolate\"\n\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-6\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "none",
-        "colorMode": "background",
-        "textMode": "value",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-6.*"
+            },
+            "properties": [
               {
-                "color": "green",
-                "value": null
+                "id": "displayName",
+                "value": "Ficus Elastica Ruby"
               },
               {
-                "color": "yellow",
-                "value": 172800000
-              },
-              {
-                "color": "orange",
-                "value": 432000000
-              },
-              {
-                "color": "red",
-                "value": 604800000
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
               }
             ]
           },
-          "unit": "dateTimeFromNow",
-          "displayName": "Ficus Elastica Ruby",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#FF9830"
-          }
-        }
-      }
-    },
-    {
-      "id": 107,
-      "type": "stat",
-      "title": "Sensor 7 - Last Watered",
-      "description": "Time since Basil (pot) was last watered",
-      "gridPos": {
-        "x": 16,
-        "y": 28,
-        "w": 8,
-        "h": 5
-      },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
-      },
-      "targets": [
-        {
-          "query": "import \"interpolate\"\n\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-7\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\nevents = data\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n\nevents\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, _value: int(v: r._time) / int(v: 1000000)}))",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "none",
-        "colorMode": "background",
-        "textMode": "value",
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-7.*"
+            },
+            "properties": [
               {
-                "color": "green",
-                "value": null
+                "id": "displayName",
+                "value": "Parsley"
               },
               {
-                "color": "yellow",
-                "value": 172800000
-              },
-              {
-                "color": "orange",
-                "value": 432000000
-              },
-              {
-                "color": "red",
-                "value": 604800000
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5DDBDB"
+                }
               }
             ]
-          },
-          "unit": "dateTimeFromNow",
-          "displayName": "Basil (pot)",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#5DDBDB"
           }
-        }
+        ]
       }
     },
     {
@@ -971,7 +702,7 @@
       "description": "Heatmap showing when watering events typically occur",
       "gridPos": {
         "x": 0,
-        "y": 33,
+        "y": 30,
         "w": 24,
         "h": 10
       },
@@ -986,8 +717,7 @@
         }
       ],
       "options": {
-        "calculate": false,
-        "cellGap": 2,
+        "cellGap": 4,
         "color": {
           "mode": "scheme",
           "scheme": "Spectral",
@@ -1004,9 +734,7 @@
         "legend": {
           "show": true
         },
-        "exemplars": {
-          "color": "rgba(255,0,255,0.7)"
-        }
+        "calculate": true
       },
       "fieldConfig": {
         "defaults": {
@@ -1015,9 +743,6 @@
               "tooltip": false,
               "viz": false,
               "legend": false
-            },
-            "scaleDistribution": {
-              "type": "linear"
             }
           }
         }
