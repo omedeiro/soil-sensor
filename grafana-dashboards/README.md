@@ -208,7 +208,7 @@ print(json.dumps(wrapper))
   -d @- \
   http://localhost:3000/api/dashboards/db
 
-# Dashboard available at: https://grafana.owenmedeiros.com
+# Dashboard available at: https://soil.owenmedeiros.com
 ```
 
 **Provisioning config:** `/mnt/sensor-data/grafana/provisioning/dashboards/dashboards.yml`
@@ -357,7 +357,7 @@ print(json.dumps(wrapper))
 **Current folder UID:** `afma8ap3k5csgb` (Soil Monitoring)
 
 **Step 5: Verify in browser**
-- Open https://grafana.owenmedeiros.com
+- Open https://soil.owenmedeiros.com
 - Hard refresh (Ctrl+Shift+R / Cmd+Shift+R)
 - Check that changes appear
 

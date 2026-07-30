@@ -41,7 +41,7 @@ journalctl -u sensor-health-check -f
 ```
 
 **3. Grafana Alerts Dashboard:**
-- Open `http://grafana.owenmedeiros.com` or `http://192.168.99.134:3000`
+- Open `http://soil.owenmedeiros.com` or `http://192.168.99.134:3000`
 - Navigate to "⚠️ Alerts & Notifications" dashboard
 - Check "Sensor Status" panel for offline sensors
 - Configure alert notifications in Grafana settings

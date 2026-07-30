@@ -74,7 +74,7 @@ The system now supports **public HTTPS access** via **Cloudflare Tunnel**, elimi
                                         [Cloudflare Tunnel]
                                                  │
                                                  ▼
-                                  https://grafana.owenmedeiros.com
+                                  https://soil.owenmedeiros.com
 ```
 
 **Features:**
@@ -91,7 +91,7 @@ cd rpi-setup
 ./configure-grafana-anonymous.sh    # Enable anonymous viewing
 ```
 
-**Public URL:** https://grafana.owenmedeiros.com
+**Public URL:** https://soil.owenmedeiros.com
 
 ---
 

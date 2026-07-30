@@ -1,19 +1,19 @@
 ---
 name: grafana-troubleshooting
-description: Diagnose and fix Grafana problems for the soil sensor project — dashboard unreachable, "No Data" / "Connection Refused" panels, wrong datasource UID, Cloudflare Tunnel down, service restarts, and automated panel-health monitoring. Use when grafana.owenmedeiros.com is down, panels show no data, cloudflared is failing, or setting up/debugging the panel-health monitor and Slack alerts. Involves scripts/check-grafana-panels.py, debug-grafana-query.sh, repair-grafana-panels.sh.
+description: Diagnose and fix Grafana problems for the soil sensor project — dashboard unreachable, "No Data" / "Connection Refused" panels, wrong datasource UID, Cloudflare Tunnel down, service restarts, and automated panel-health monitoring. Use when soil.owenmedeiros.com is down, panels show no data, cloudflared is failing, or setting up/debugging the panel-health monitor and Slack alerts. Involves scripts/check-grafana-panels.py, debug-grafana-query.sh, repair-grafana-panels.sh.
 ---
 
 # Grafana Troubleshooting
 
 Raspberry Pi: `omedeiro@192.168.99.134`. Grafana local `:3000`, public
-`https://grafana.owenmedeiros.com`. InfluxDB runs in Docker at `172.17.0.2:8086`
+`https://soil.owenmedeiros.com`. InfluxDB runs in Docker at `172.17.0.2:8086`
 (not localhost from Grafana's perspective).
 
 ## Grafana Dashboard Unreachable
 
 1. **Check public URL:**
    ```bash
-   curl -I https://grafana.owenmedeiros.com
+   curl -I https://soil.owenmedeiros.com
    ```
 2. **Check Cloudflare Tunnel status:**
    ```bash

@@ -321,13 +321,13 @@ Use this recovery guide when:
    credentials-file: /home/omedeiro/.cloudflared/<TUNNEL_ID>.json
    
    ingress:
-     - hostname: grafana.owenmedeiros.com
+     - hostname: soil.owenmedeiros.com
        service: http://localhost:3000
      - service: http_status:404
    EOF
    
    # Route DNS
-   cloudflared tunnel route dns soil-sensor-grafana grafana.owenmedeiros.com
+   cloudflared tunnel route dns soil-sensor-grafana soil.owenmedeiros.com
    ```
 
 3. **Option B: Restore existing tunnel (recovery):**
@@ -346,7 +346,7 @@ Use this recovery guide when:
 
 4. **Verify public access:**
    ```bash
-   curl -I https://grafana.owenmedeiros.com
+   curl -I https://soil.owenmedeiros.com
    # Expected: HTTP/2 200
    ```
 
@@ -476,7 +476,7 @@ docker restart grafana
 
 ### Cloudflare Tunnel Shows 503 Error
 
-**Problem:** `https://grafana.owenmedeiros.com` returns 503 Service Unavailable.
+**Problem:** `https://soil.owenmedeiros.com` returns 503 Service Unavailable.
 
 **Solution:**
 ```bash
@@ -628,7 +628,7 @@ sudo systemctl status cloudflared
 # Expected: active (running)
 
 # Check public access
-curl -I https://grafana.owenmedeiros.com
+curl -I https://soil.owenmedeiros.com
 # Expected: HTTP/2 200
 ```
 
@@ -658,7 +658,7 @@ curl -s -XPOST "http://localhost:8086/api/v2/query?org=soil-monitoring" \
 
 ### Test Grafana Dashboards
 
-1. Open: `https://grafana.owenmedeiros.com`
+1. Open: `https://soil.owenmedeiros.com`
 2. Verify:
    - [ ] Main dashboard loads without errors
    - [ ] All sensor panels show data (or "No data" if sensors not updated yet)

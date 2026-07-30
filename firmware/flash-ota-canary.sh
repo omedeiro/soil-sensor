@@ -268,7 +268,7 @@ else
     echo -e "${GREEN}All sensors flashed successfully!${NC}"
     echo ""
     echo "Next steps:"
-    echo "  1. Monitor sensor data in Grafana: https://grafana.owenmedeiros.com"
+    echo "  1. Monitor sensor data in Grafana: https://soil.owenmedeiros.com"
     echo "  2. Check InfluxDB for new readings (should appear within 5 minutes)"
     echo "  3. Verify all 7 sensors are posting data"
 fi

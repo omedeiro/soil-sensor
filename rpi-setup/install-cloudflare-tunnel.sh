@@ -1,6 +1,6 @@
 #!/bin/bash
 # Cloudflare Tunnel Setup Script for Soil Sensor Grafana Dashboard
-# Makes grafana.owenmedeiros.com publicly accessible
+# Makes soil.owenmedeiros.com publicly accessible
 
 set -e
 
@@ -84,7 +84,7 @@ tunnel: $TUNNEL_ID
 credentials-file: $CREDENTIALS_FILE
 
 ingress:
-  - hostname: grafana.owenmedeiros.com
+  - hostname: soil.owenmedeiros.com
     service: http://localhost:3000
   - service: http_status:404
 EOF
@@ -94,11 +94,11 @@ echo ""
 
 # Step 5: Create DNS record
 echo "Step 5: Creating DNS record..."
-if cloudflared tunnel route dns "$TUNNEL_NAME" grafana.owenmedeiros.com 2>&1 | grep -q "already exists"; then
-    echo "⚠️  DNS record already exists for grafana.owenmedeiros.com"
+if cloudflared tunnel route dns "$TUNNEL_NAME" soil.owenmedeiros.com 2>&1 | grep -q "already exists"; then
+    echo "⚠️  DNS record already exists for soil.owenmedeiros.com"
 else
-    cloudflared tunnel route dns "$TUNNEL_NAME" grafana.owenmedeiros.com
-    echo "✓ DNS record created: grafana.owenmedeiros.com"
+    cloudflared tunnel route dns "$TUNNEL_NAME" soil.owenmedeiros.com
+    echo "✓ DNS record created: soil.owenmedeiros.com"
 fi
 echo ""
 
@@ -126,7 +126,7 @@ echo "✅ Cloudflare Tunnel Setup Complete!"
 echo "========================================"
 echo ""
 echo "Your Grafana dashboard should be accessible at:"
-echo "🌐 https://grafana.owenmedeiros.com"
+echo "🌐 https://soil.owenmedeiros.com"
 echo ""
 echo "Note: DNS propagation may take 1-5 minutes."
 echo ""

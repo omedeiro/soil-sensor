@@ -60,7 +60,7 @@ matching skill before doing the work rather than guessing.
 - IP Address: `192.168.99.134`
 - InfluxDB: `http://192.168.99.134:8086`
 - Grafana (local): `http://192.168.99.134:3000`
-- Grafana (public): `https://grafana.owenmedeiros.com`
+- Grafana (public): `https://soil.owenmedeiros.com`
 - Data Storage: `/mnt/sensor-data` (256GB USB drive)
 - Cloudflare Tunnel: `soil-sensor-grafana` (ID: ec9b412a-098a-45d2-8060-f2fa7b23b477)
 
