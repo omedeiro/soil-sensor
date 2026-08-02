@@ -18,6 +18,17 @@ matching skill before doing the work rather than guessing.
 | **`sensor-offline-troubleshooting`** | ESP8266 stopped posting, power-cycle recovery, sensor health monitoring, InfluxDB last-reading queries |
 | **`rpi-server-ops`** | Raspberry Pi install, InfluxDB/Grafana setup, tokens/buckets, `test_influx_write.sh`, end-to-end testing, legacy Flask/SQLite server |
 
+## Standard PR Workflow
+
+`main` is protected — never push to it directly. Full details in
+`docs/guides/BRANCH_PROTECTION.md`. Summary:
+
+1. `git checkout -b feature/<name>` (or `fix/`, `docs/`, `hotfix/`)
+2. Make changes; for dashboards: edit `sensors-config.json` → `./scripts/validate-config.py` → `./scripts/generate-dashboard.py` → deploy
+3. Optional version bump: `./scripts/bump-version.sh <major|minor|patch> [firmware|system|docs]`
+4. `git push -u origin <branch>` then `gh pr create` with summary/changes/testing checklist
+5. Merge with `gh pr merge --squash` after review
+
 ## Architecture
 
 **NEW SYSTEM (InfluxDB + Grafana on Raspberry Pi 5):**

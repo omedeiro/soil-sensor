@@ -1,7 +1,7 @@
 {
   "id": null,
   "uid": "watering-history-v1",
-  "title": "\ud83d\udeb0 Watering History",
+  "title": "🚰 Watering History",
   "description": "Detects and visualizes watering events based on sharp moisture increases",
   "tags": [
     "watering",
@@ -33,7 +33,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"text-align: center; padding: 15px;\">\n  <h1 style=\"font-size: 36px; margin: 0;\">\ud83d\udeb0 Watering History</h1>\n  <p style=\"font-size: 14px; color: #888; margin-top: 5px;\">Automatic detection of watering events (15%+ moisture increase in 30 minutes)</p>\n</div>"
+        "content": "<div style=\"text-align: center; padding: 15px;\">\n  <h1 style=\"font-size: 36px; margin: 0;\">🚰 Watering History</h1>\n  <p style=\"font-size: 14px; color: #888; margin-top: 5px;\">Automatic detection of watering events (15%+ moisture increase in 30 minutes)</p>\n</div>"
       },
       "transparent": true
     },
@@ -512,8 +512,8 @@
     {
       "id": 101,
       "type": "stat",
-      "title": "Time Since Last Watered",
-      "description": "Time since each plant was last watered (30-day lookback)",
+      "title": "⏱ Time Since Last Watered",
+      "description": "How long ago each plant was last watered (15%+ moisture increase, 30-day lookback). Sorted left-to-right by plant; text color matches each plant's series color.",
       "gridPos": {
         "x": 0,
         "y": 23,
@@ -526,21 +526,26 @@
       },
       "targets": [
         {
-          "query": "import \"interpolate\"\n\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\ndata\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n  |> last()\n  |> map(fn: (r) => ({r with _value: float(v: int(v: now()) - int(v: r._time)) / 1000000000.0}))\n  |> keep(columns: [\"_time\", \"_value\", \"device_id\"])",
+          "query": "import \"interpolate\"\n\n// Time since last watering event per plant (age in seconds)\ndata = from(bucket: \"sensor-readings\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> sort(columns: [\"_time\"])\n  |> interpolate.linear(every: 5m)\n\ndata\n  |> difference(nonNegative: false, columns: [\"_value\"])\n  |> filter(fn: (r) => r._value >= 15.0)\n  |> last()\n  |> map(fn: (r) => ({r with _value: float(v: int(v: now()) - int(v: r._time)) / 1000000000.0}))\n  |> keep(columns: [\"_time\", \"_value\", \"device_id\"])",
           "refId": "A"
         }
       ],
       "options": {
         "graphMode": "none",
-        "colorMode": "background",
-        "textMode": "auto",
+        "colorMode": "value",
+        "textMode": "value_and_name",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "wideLayout": true,
         "reduceOptions": {
           "values": false,
           "calcs": [
             "lastNotNull"
           ]
         },
-        "orientation": "auto"
+        "text": {
+          "titleSize": 16
+        }
       },
       "fieldConfig": {
         "defaults": {
@@ -702,7 +707,7 @@
       "description": "Heatmap showing when watering events typically occur",
       "gridPos": {
         "x": 0,
-        "y": 30,
+        "y": 29,
         "w": 24,
         "h": 10
       },
