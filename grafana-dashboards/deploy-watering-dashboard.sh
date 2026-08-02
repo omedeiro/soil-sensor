@@ -51,7 +51,7 @@ echo ""
 if grep -q '"status":"success"' /tmp/grafana-response.json; then
   echo "✅ Dashboard successfully deployed!"
   echo ""
-  echo "🌐 View at: https://grafana.owenmedeiros.com"
+  echo "🌐 View at: https://soil.owenmedeiros.com"
   echo "📊 Dashboard: 🚰 Watering History"
   echo ""
   echo "The dashboard will:"

@@ -50,8 +50,8 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
       
       # Server settings
-      - GF_SERVER_ROOT_URL=https://grafana.owenmedeiros.com
-      - GF_SERVER_DOMAIN=grafana.owenmedeiros.com
+      - GF_SERVER_ROOT_URL=https://soil.owenmedeiros.com
+      - GF_SERVER_DOMAIN=soil.owenmedeiros.com
       
       # Disable usage analytics
       - GF_ANALYTICS_REPORTING_ENABLED=false

@@ -158,7 +158,7 @@ Automatic watering event detection and visualization.
 ```bash
 cd grafana-dashboards
 ./deploy-watering-dashboard.sh
-# Dashboard imports automatically, available at https://grafana.owenmedeiros.com
+# Dashboard imports automatically, available at https://soil.owenmedeiros.com
 ```
 
 **Testing:**

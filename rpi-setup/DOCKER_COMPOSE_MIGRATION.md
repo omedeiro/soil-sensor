@@ -108,7 +108,7 @@ curl -s -XPOST "http://localhost:8086/api/v2/query?org=soil-monitoring" \
 
 ### 6. Test Grafana Dashboards
 
-1. Open Grafana at `https://grafana.owenmedeiros.com`
+1. Open Grafana at `https://soil.owenmedeiros.com`
 2. Navigate to main soil moisture dashboard
 3. Verify panels are loading data
 4. Check uptime panel (should show Raspberry Pi uptime)
@@ -271,7 +271,7 @@ docker-compose logs --tail=50 influxdb
 - [ ] Dashboards loading data correctly
 - [ ] Uptime panel showing Raspberry Pi metrics
 - [ ] ESP8266 sensors still posting data
-- [ ] Cloudflare Tunnel still working: `https://grafana.owenmedeiros.com`
+- [ ] Cloudflare Tunnel still working: `https://soil.owenmedeiros.com`
 - [ ] System metrics collector still running every 60s
 
 ---

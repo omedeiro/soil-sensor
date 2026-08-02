@@ -10,7 +10,7 @@ Each soil sensor reads moisture every 5 minutes and posts data to a central time
 
 **Public Dashboard** (no login required):
 
-🌐 **https://grafana.owenmedeiros.com** — View all dashboards live from anywhere
+🌐 **https://soil.owenmedeiros.com** — View all dashboards live from anywhere
 
 **Local Network Access:**
 - http://192.168.99.134:3000 — Full dashboard access on local network
@@ -32,7 +32,7 @@ Each soil sensor reads moisture every 5 minutes and posts data to a central time
                     └── Cloudflare Tunnel
                               │
                               ▼
-                    https://grafana.owenmedeiros.com
+                    https://soil.owenmedeiros.com
 ```
 
 ---
@@ -54,7 +54,7 @@ Each soil sensor reads moisture every 5 minutes and posts data to a central time
 ### Raspberry Pi Server (v2.12.1)
 - **InfluxDB 2.x backend** — time-series storage on USB drive, 365-day retention
 - **Grafana dashboards (6 total)** — soil moisture with **Pi uptime panel** plus **ambient temperature/humidity panels**, sensor details, system health, alerts, mobile view, Pi health
-- **Cloudflare Tunnel** — public HTTPS access via `grafana.owenmedeiros.com` (anonymous read-only viewing)
+- **Cloudflare Tunnel** — public HTTPS access via `soil.owenmedeiros.com` (anonymous read-only viewing)
 - **Enhanced logging system** — boot tracking, filesystem corruption detection, Grafana failure logging, log rotation
 - **Anonymous access** — view-only Grafana dashboards without login (Viewer role)
 - **System metrics** — CPU, RAM, disk, temperature monitoring via Python collector (60s interval)
@@ -206,7 +206,7 @@ The script installs and configures:
    ./install-cloudflare-tunnel.sh      # Set up public HTTPS access
    ./configure-grafana-anonymous.sh    # Enable anonymous viewing
    ```
-   Dashboards will be viewable at `https://grafana.owenmedeiros.com` (replace with your domain)
+   Dashboards will be viewable at `https://soil.owenmedeiros.com` (replace with your domain)
 
 ---
 
@@ -399,7 +399,7 @@ cd rpi-setup
 ./install-cloudflare-tunnel.sh
 ./configure-grafana-anonymous.sh
 ```
-Dashboards publicly accessible at `https://grafana.owenmedeiros.com` (anonymous read-only, no login required).
+Dashboards publicly accessible at `https://soil.owenmedeiros.com` (anonymous read-only, no login required).
 
 **Local Anonymous Access**
 ```bash

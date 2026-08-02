@@ -31,7 +31,7 @@ This installs:
 ./configure-grafana-anonymous.sh    # Enable anonymous viewing
 ```
 
-After setup, your Grafana dashboards will be publicly accessible at `https://grafana.owenmedeiros.com` (or your configured domain).
+After setup, your Grafana dashboards will be publicly accessible at `https://soil.owenmedeiros.com` (or your configured domain).
 
 ### Enhanced Logging (Optional)
 
@@ -113,7 +113,7 @@ journalctl -u sensor-health-check -f
 - Downloads and installs `cloudflared` (ARM64 binary)
 - Authenticates with Cloudflare account
 - Creates tunnel named `soil-sensor-grafana`
-- Configures DNS routing (`grafana.owenmedeiros.com`)
+- Configures DNS routing (`soil.owenmedeiros.com`)
 - Installs as systemd service (auto-starts on boot)
 
 **Prerequisites:**
@@ -161,7 +161,7 @@ cloudflared tunnel list
 
 **Admin access:**
 - Local: `http://192.168.99.134:3000` → Sign in
-- Public: `https://grafana.owenmedeiros.com` → Sign in
+- Public: `https://soil.owenmedeiros.com` → Sign in
 
 ---
 
@@ -288,7 +288,7 @@ cloudflared tunnel list
 
 **DNS not resolving:**
 - Wait 1-5 minutes for DNS propagation after initial setup
-- Verify DNS record: `dig grafana.owenmedeiros.com`
+- Verify DNS record: `dig soil.owenmedeiros.com`
 - Check Cloudflare dashboard for DNS settings
 
 ### Grafana Anonymous Access Issues
