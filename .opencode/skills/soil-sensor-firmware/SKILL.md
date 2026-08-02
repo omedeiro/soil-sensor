@@ -11,12 +11,26 @@ InfluxDB every 5 minutes.
 ## Build / Deploy Commands (from `/firmware`)
 
 ```bash
-pio run                    # build only
-pio run --target upload    # flash to ESP8266
-pio device monitor         # serial output at 115200 baud
+pio run                        # build only (default USB env)
+pio run --target upload        # flash via USB
+pio device monitor             # serial output at 115200 baud
+
+# OTA (preferred for deployed sensors — no USB needed):
+pio run -e esp8266-ota --target upload --upload-port <sensor-ip>
+# OTA password: soilmon2026 (set in platformio.ini upload_flags + main.cpp)
 ```
 
-Always run `pio device monitor` after upload to verify WiFi/DB connection.
+Two PlatformIO environments exist: `esp8266` (USB/esptool) and `esp8266-ota`
+(espota). Never edit platformio.ini to switch — just pick the env.
+`flash-all-ota.sh` loops over all soil sensors in `sensors-config.json`
+(per-sensor `DEVICE_ID`/`DEVICE_LOCATION`/`DEVICE_TYPE` rewrite + OTA flash);
+climate boards (sensor-8/9) are not in that config and must be flashed
+individually with `DEVICE_TYPE_CLIMATE`.
+
+After USB upload run `pio device monitor` to verify WiFi/DB connection. After
+OTA upload verify via InfluxDB (fresh low `uptime`, heartbeats) — note that
+opening the USB serial port resets the board, so don't probe serial while
+diagnosing WiFi issues remotely.
 
 ## config.h — single source of truth
 
@@ -35,17 +49,31 @@ Always run `pio device monitor` after upload to verify WiFi/DB connection.
 
 ### Device type (soil vs. climate)
 
-- `DEVICE_TYPE` selects the board's sensor: `DEVICE_TYPE_SOIL` (default, sensors 1-7, capacitive probe on A0) or `DEVICE_TYPE_CLIMATE` (sensor-8, DHT22/AM2302 on `DHT_PIN`=D2/GPIO4).
+- `DEVICE_TYPE` selects the board's sensor: `DEVICE_TYPE_SOIL` (default, sensors 1-7, capacitive probe on A0) or `DEVICE_TYPE_CLIMATE` (sensor-8 living-room, sensor-9 guest-room; DHT22/AM2302 on `DHT_PIN`=D2/GPIO4).
 - Only one path is compiled in, so the unused sensor adds no runtime cost. Keep `DEVICE_TYPE_SOIL` as the default when reflashing soil sensors.
 - Climate devices write the **`climate_reading`** measurement (not `sensor_reading`) with float fields `temperature_c`, `temperature_f`, `humidity` plus `uptime`/`rssi`/`free_heap` diagnostics. Tags: `device_id`, `location`.
 - DHT22 needs libs `adafruit/DHT sensor library` + `adafruit/Adafruit Unified Sensor` (in `platformio.ini`). Wire DATA→D2, VCC→3.3V, GND→GND (bare AM2302 needs a 10kΩ pull-up DATA↔VCC).
 
-### WiFi stability features
+### WiFi stability features (v2.4.0+)
 
-- WiFi stability manager is always enabled (automatic reconnection with exponential backoff 5s → 60s)
+- WiFi stability manager is always enabled and always initialized at boot, even
+  if WiFi wasn't available (automatic reconnection with exponential backoff 5s → 60s,
+  full `ESP.restart()` after 10 failed attempts)
+- **DHCP only** (`USE_STATIC_IP false`). Do not re-enable static IP: with a
+  static IP, `WiFi.localIP().isSet()` reads true without a real association,
+  so the device can "think it's connected forever" after a power cycle and
+  never recover. Use router DHCP reservations for stable IPs instead.
+- Credentials persist in SDK flash (`WiFi.persistent(true)` + `WiFi.disconnect(false)`),
+  and runtime reconnects use explicit `WiFi.begin(WIFI_SSID, ...)`.
+- With hardcoded credentials the WiFiManager captive portal is **never**
+  entered — failed boots return to the stability manager instead of blocking
+  180 s in the `SoilSensor-Setup` portal. The portal only appears when
+  `WIFI_SSID` is empty.
 - `ENABLE_WIFI_DIAGNOSTICS` enables detailed WiFi logging (disconnect reasons, RSSI)
 - `QUEUE_FAILED_READINGS` queues up to 20 readings during database outages
 - `MAX_QUEUE_SIZE` sets maximum queued readings (default: 20)
+- Net effect: sensors survive power cycles and can be unplugged/moved to any
+  outlet; they rejoin WiFi automatically.
 
 ### IP addresses
 
@@ -66,15 +94,17 @@ Calibrate via:
 
 ## WiFi Provisioning Flow
 
-On first boot or if credentials invalid:
+Credentials are normally hardcoded in `firmware/src/secrets.h` (`WIFI_SSID`,
+`WIFI_PASSWORD`); as of v2.4.0 the captive portal is only used when
+`WIFI_SSID` is empty:
 1. ESP8266 creates AP named `SoilSensor-Setup`
 2. User connects, captive portal appears
 3. User selects network + password
 4. Device reboots, connects to WiFi
 
-**Important:** After flashing new firmware, WiFi may need reconfiguration. Connect to
-serial monitor first to see status. If a sensor is offline, check for the
-`SoilSensor-Setup` AP and reconfigure WiFi.
+With hardcoded credentials the device never opens the portal — if WiFi is
+down at boot it retries in the background (backoff 5s→60s) and restarts after
+10 failures, repeating until the network returns.
 
 ## Serial Monitor Key Messages
 

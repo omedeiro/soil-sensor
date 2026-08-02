@@ -13,7 +13,7 @@
 #include "secrets.h"
 
 // ─── Version ─────────────────────────────────────────────────────────────────
-#define FIRMWARE_VERSION    "2.3.0"
+#define FIRMWARE_VERSION    "2.4.0"
 #define BUILD_DATE          __DATE__
 #define BUILD_TIME          __TIME__
 
@@ -78,7 +78,10 @@
 // ─── Static IP (use when DHCP fails) ──────────────────────────────────────────
 // Set USE_STATIC_IP to true and fill in values below if the board cannot
 // obtain an address via DHCP.  Set USE_STATIC_IP to false for normal DHCP.
-#define USE_STATIC_IP       true
+// WARNING: with a static IP, WiFi.localIP().isSet() is true even when the
+// device never associated with the router — DHCP is strongly recommended.
+// Use DHCP reservations on the router if stable IPs are needed.
+#define USE_STATIC_IP       false
 #define STATIC_IP           "192.168.99.48"
 #define STATIC_GATEWAY      "192.168.99.1"
 #define STATIC_SUBNET       "255.255.255.0"

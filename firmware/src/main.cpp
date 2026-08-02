@@ -188,11 +188,12 @@ void setup() {
 
     // 2. WiFi
     if (!wifi.connect()) {
-        Serial.println(F("[!] Running in offline mode (no WiFi)"));
-    } else {
-        // Initialize WiFi stability manager with event handlers
-        wifiStability.begin();
+        Serial.println(F("[!] WiFi not available yet — stability manager will keep retrying"));
     }
+    // Always initialize the WiFi stability manager so reconnection logic and
+    // disconnect diagnostics work even when the router wasn't up at boot
+    // (e.g. after a power outage).
+    wifiStability.begin();
 
     // 3. NTP
     if (wifi.isConnected()) {

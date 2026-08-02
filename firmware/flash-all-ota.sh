@@ -50,14 +50,19 @@ for sensor_config in "${SENSORS[@]}"; do
     echo "📝 Updating config.h..."
     sed -i.bak "s/#define DEVICE_ID .*\".*\".*/#define DEVICE_ID           \"$id\"          \/\/ Change for each sensor: sensor-1, sensor-2, etc./" src/config.h
     sed -i.bak "s/#define DEVICE_LOCATION .*\".*\".*/#define DEVICE_LOCATION     \"$location\"        \/\/ Room location for this sensor/" src/config.h
+    # All sensors in sensors-config.json are soil sensors. Climate boards
+    # (e.g. sensor-8 DHT22) are not listed there and must be flashed manually
+    # with DEVICE_TYPE_CLIMATE.
+    sed -i.bak "s/#define DEVICE_TYPE .*DEVICE_TYPE_.*/#define DEVICE_TYPE          DEVICE_TYPE_SOIL   \/\/ ← set per board (default 0 for soil)/" src/config.h
     
     echo "  DEVICE_ID: $id"
     echo "  DEVICE_LOCATION: $location"
+    echo "  DEVICE_TYPE: soil"
     echo ""
     
     # Build firmware
     echo "🔨 Building firmware..."
-    if ! pio run > /tmp/pio-build.log 2>&1; then
+    if ! pio run -e esp8266-ota > /tmp/pio-build.log 2>&1; then
         echo "❌ Build failed! Check /tmp/pio-build.log"
         ((FAILED++))
         continue
@@ -67,7 +72,7 @@ for sensor_config in "${SENSORS[@]}"; do
     
     # Flash via OTA
     echo "📤 Flashing via OTA to $ip..."
-    if pio run --target upload --upload-port "$ip" 2>&1 | tee /tmp/pio-ota.log; then
+    if pio run -e esp8266-ota --target upload --upload-port "$ip" 2>&1 | tee /tmp/pio-ota.log; then
         echo ""
         echo "✅ OTA flash successful for $id ($plant)!"
         ((SUCCESS++))

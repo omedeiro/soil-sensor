@@ -19,9 +19,11 @@ bool WifiConnection::connect() {
     // If hardcoded credentials are provided, bypass WiFiManager entirely.
     if (strlen(WIFI_SSID) > 0) {
         Serial.println(F("[WiFi] Using hardcoded credentials"));
-        WiFi.persistent(false);
+        // Persist credentials in SDK flash so WiFi.reconnect() works after
+        // disconnects, and don't erase them (disconnect(false)).
+        WiFi.persistent(true);
         WiFi.mode(WIFI_STA);
-        WiFi.disconnect(true);
+        WiFi.disconnect(false);
         delay(500);
 
         // Scan to confirm the target network is visible
@@ -70,7 +72,16 @@ bool WifiConnection::connect() {
                 delay(500);
                 Serial.print('.');
                 yield();
+#if USE_STATIC_IP
+                // With a static IP, localIP().isSet() is true even without a
+                // real association — require WL_CONNECTED.
+                if (WiFi.status() == WL_CONNECTED) {
+#else
+                // With DHCP, an assigned IP proves a real association (and
+                // tolerates ESP8266 revisions that report status 7 while
+                // actually connected).
                 if (WiFi.localIP().isSet()) {
+#endif
                     connected = true;
                     break;
                 }
@@ -81,7 +92,7 @@ bool WifiConnection::connect() {
                 Serial.print(WiFi.status());
                 Serial.print(F("  ip="));
                 Serial.println(WiFi.localIP());
-                WiFi.disconnect(true);
+                WiFi.disconnect(false);
                 delay(1000);
             }
         }
@@ -99,7 +110,14 @@ bool WifiConnection::connect() {
             Serial.println(F("[WiFi] Power management configured for stability"));
             return true;
         }
-        Serial.println(F("[WiFi] Hardcoded credentials failed — falling through to WiFiManager..."));
+        Serial.println(F("[WiFi] Hardcoded credentials failed — will keep retrying in background"));
+        // Do NOT fall through to the WiFiManager captive portal: it blocks for
+        // up to 180 s and is useless when credentials are known (e.g. the
+        // router is still rebooting after a power outage). Return false and
+        // let the WiFi stability manager retry with backoff / restart.
+        WiFi.mode(WIFI_STA);
+        WiFi.begin(WIFI_SSID, WIFI_PASSWORD);  // keep SDK trying in background
+        return false;
     }
 
     // No hardcoded credentials — use WiFiManager captive portal flow
@@ -174,9 +192,15 @@ bool WifiConnection::connect() {
 }
 
 bool WifiConnection::isConnected() {
+#if USE_STATIC_IP
+    // With a static IP, localIP().isSet() is true even when the device never
+    // associated with the router — require WL_CONNECTED.
+    return WiFi.status() == WL_CONNECTED;
+#else
     // Some ESP8266 revisions report status 7 even when connected.
-    // Check actual IP assignment as a fallback.
+    // With DHCP, an assigned IP proves a real association.
     return WiFi.status() == WL_CONNECTED || WiFi.localIP().isSet();
+#endif
 }
 
 String WifiConnection::localIP() {
