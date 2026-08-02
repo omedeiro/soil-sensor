@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.13.0] - 2026-08-02
+
+### Fixed
+
+#### Firmware — Power-Cycle Reliability (firmware v2.4.0, PR #20)
+- **Static-IP false positive** — With `USE_STATIC_IP true`, `WiFi.localIP().isSet()` read true without a real WiFi association, so a sensor that booted before the router was ready "thought it was connected forever" and never reconnected (root cause of sensor-4/sensor-7 going permanently offline after a power reset). Fleet switched to **DHCP only**; all connectivity checks are now mode-aware via a `WIFI_IS_CONNECTED()` macro (`wifi_stability.h`)
+- **Credential persistence** — `WiFi.persistent(false)` + `WiFi.disconnect(true)` could wipe SDK-stored credentials, making runtime `WiFi.reconnect()` a no-op. Now `persistent(true)`/`disconnect(false)`, and reconnects use explicit `WiFi.begin(WIFI_SSID, ...)`
+- **Captive-portal dead-end** — With hardcoded credentials the blocking 180s `SoilSensor-Setup` portal is skipped entirely; failed boots hand off to the WiFi stability manager (5s→60s backoff, `ESP.restart()` after 10 failures)
+- **`wifiStability.begin()`** now always runs, even when WiFi is down at boot
+
+### Added
+
+#### OTA Deployment (PR #20)
+- **`firmware/platformio.ini`** — Split into `esp8266` (USB/esptool) and `esp8266-ota` (espota + auth) environments; OTA flashing no longer requires editing the file: `pio run -e esp8266-ota --target upload --upload-port <sensor-ip>`
+- **`firmware/flash-all-ota.sh`** — Uses the `esp8266-ota` env and pins `DEVICE_TYPE_SOIL` per flash
+- Entire 9-sensor fleet updated over the air (sensor-7 canary first) and verified healthy in InfluxDB
+
+### Changed
+
+#### Dashboards & Infrastructure
+- **Grafana public hostname** renamed `grafana.owenmedeiros.com` → `soil.owenmedeiros.com` (PR #19)
+- **System Status panel** — "Sensors Online" now counts only devices defined in `sensors-config.json` (device_id regex filter), uses a 10-minute heartbeat window, and shows the expected total in the display name (PR #20)
+- **Sensor-details dashboard** default time range changed to 7d (PR #18)
+- **Watering history dashboard** — Time Since Last Watered redesign (PR #17)
+
+### Documentation
+- **`AGENTS.md`** — Sensor table updated: adds previously undocumented **sensor-9** (guest-room DHT22 climate sensor, MAC `7c:87:ce:80:4d:36`), documents DHCP-only fleet and OTA update command
+- **Skills** — `soil-sensor-firmware` (OTA workflow, v2.4.0 WiFi stability behavior) and `sensor-offline-troubleshooting` (static-IP root cause, MAC-based board identification, OTA reflash recovery) updated
+
+---
+
 ## [2.12.3] - 2026-07-25
 
 ### Fixed
