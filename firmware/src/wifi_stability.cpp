@@ -155,7 +155,7 @@ void WiFiStabilityManager::onWiFiDisconnect(const WiFiEventStationModeDisconnect
 void WiFiStabilityManager::loop() {
     // Only run reconnection logic if disconnected
     // Use IP fallback for ESP8266 revisions that return non-standard status codes
-    if (!(WiFi.status() == WL_CONNECTED || WiFi.localIP().isSet())) {
+    if (!(WIFI_IS_CONNECTED())) {
         if (!isReconnecting && millis() >= nextReconnectTime) {
             attemptReconnect();
         }
@@ -190,8 +190,14 @@ void WiFiStabilityManager::attemptReconnect() {
         ESP.restart();  // Nuclear option: full restart
     }
     
-    // Attempt reconnection
-    WiFi.reconnect();
+    // Attempt reconnection. WiFi.reconnect() relies on SDK-stored credentials,
+    // which may be absent; prefer an explicit begin() when credentials are
+    // hardcoded so reconnection always has something to connect to.
+    if (strlen(WIFI_SSID) > 0) {
+        WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    } else {
+        WiFi.reconnect();
+    }
     
     // Calculate next reconnect time with exponential backoff
     reconnectDelay = min(reconnectDelay * 2, MAX_RECONNECT_DELAY);
@@ -205,19 +211,19 @@ bool WiFiStabilityManager::isHealthy() {
     // Consider healthy if:
     // 1. Connected, OR
     // 2. Attempting to reconnect and haven't exceeded max attempts
-    return (WiFi.status() == WL_CONNECTED || WiFi.localIP().isSet()) || 
+    return (WIFI_IS_CONNECTED()) || 
            (isReconnecting && reconnectAttempts < MAX_RECONNECT_ATTEMPTS);
 }
 
 unsigned long WiFiStabilityManager::getConnectedTime() {
-    if ((WiFi.status() == WL_CONNECTED || WiFi.localIP().isSet()) && lastConnectTime > 0) {
+    if ((WIFI_IS_CONNECTED()) && lastConnectTime > 0) {
         return millis() - lastConnectTime;
     }
     return 0;
 }
 
 unsigned long WiFiStabilityManager::getDisconnectedTime() {
-    if (!(WiFi.status() == WL_CONNECTED || WiFi.localIP().isSet()) && lastDisconnectTime > 0) {
+    if (!(WIFI_IS_CONNECTED()) && lastDisconnectTime > 0) {
         return millis() - lastDisconnectTime;
     }
     return 0;
@@ -241,7 +247,7 @@ void WiFiStabilityManager::printDiagnostics() {
     Serial.println(F("═══════════════════════════════════════"));
     
     Serial.print(F("Status: "));
-    if (WiFi.status() == WL_CONNECTED || WiFi.localIP().isSet()) {
+    if (WIFI_IS_CONNECTED()) {
         Serial.println(F("CONNECTED"));
         Serial.print(F("  Connected for: "));
         Serial.print(getConnectedTime() / 1000);
@@ -261,7 +267,7 @@ void WiFiStabilityManager::printDiagnostics() {
     Serial.print(F("Last disconnect reason: "));
     Serial.println(lastDisconnectReason);
     
-    if (WiFi.status() == WL_CONNECTED || WiFi.localIP().isSet()) {
+    if (WIFI_IS_CONNECTED()) {
         Serial.print(F("SSID: "));
         Serial.println(WiFi.SSID());
         

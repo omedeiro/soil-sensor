@@ -226,7 +226,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> count()\n  |> group()\n  |> count()",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.device_id =~ /^(sensor-1|sensor-2|sensor-3|sensor-4|sensor-5|sensor-6|sensor-7|sensor-8|sensor-9)$/)\n  |> group(columns: [\"device_id\"])\n  |> count()\n  |> group()\n  |> count()",
           "refId": "A"
         }
       ],
@@ -257,12 +257,12 @@
               },
               {
                 "color": "green",
-                "value": 3
+                "value": 9
               }
             ]
           },
           "unit": "short",
-          "displayName": "Sensors Online"
+          "displayName": "Sensors Online (of 9)"
         }
       }
     },

@@ -8,6 +8,16 @@
 
 #include <ESP8266WiFi.h>
 #include <Arduino.h>
+#include "config.h"
+
+// Connectivity check that is safe under both DHCP and static IP.
+// With a static IP, localIP().isSet() is true even without a real
+// association, so require WL_CONNECTED in that case.
+#if USE_STATIC_IP
+#define WIFI_IS_CONNECTED() (WiFi.status() == WL_CONNECTED)
+#else
+#define WIFI_IS_CONNECTED() (WiFi.status() == WL_CONNECTED || WiFi.localIP().isSet())
+#endif
 
 class WiFiStabilityManager {
 public:
