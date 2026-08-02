@@ -27,7 +27,7 @@
         "label": "Sensor",
         "type": "custom",
         "description": "Select sensor to view",
-        "query": "Rubber Tree : sensor-1, Monstera : sensor-2, Avocado : sensor-3, Micro Greens : sensor-4, ZZ Plant : sensor-5, Ficus Elastica Ruby : sensor-6, Basil - pot : sensor-7",
+        "query": "Rubber Tree : sensor-1, Monstera : sensor-2, Avocado : sensor-3, Micro Greens : sensor-4, ZZ Plant : sensor-5, Ficus Elastica Ruby : sensor-6, Parsley : sensor-7",
         "includeAll": true,
         "multi": false,
         "allValue": ".*",
@@ -73,7 +73,7 @@
             "selected": false
           },
           {
-            "text": "Basil - pot",
+            "text": "Parsley",
             "value": "sensor-7",
             "selected": false
           }
@@ -100,7 +100,7 @@
       },
       "targets": [
         {
-          "query": "import \"array\"\nimport \"experimental\"\n\nsensor = \"${sensor}\"\n\ndata = if sensor == \".*\" then [{_time: now(), _value: \"All Plants\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-1\" then [{_time: now(), _value: \"Rubber Tree\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-2\" then [{_time: now(), _value: \"Monstera\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-3\" then [{_time: now(), _value: \"Avocado\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-4\" then [{_time: now(), _value: \"Micro Greens\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-5\" then [{_time: now(), _value: \"ZZ Plant\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-6\" then [{_time: now(), _value: \"Ficus Elastica Ruby\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-7\" then [{_time: now(), _value: \"Basil - pot\", _field: \"plant_name\"}]\n  else [{_time: now(), _value: \"All Plants\", _field: \"plant_name\"}]\n\narray.from(rows: data)",
+          "query": "import \"array\"\nimport \"experimental\"\n\nsensor = \"${sensor}\"\n\ndata = if sensor == \".*\" then [{_time: now(), _value: \"All Plants\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-1\" then [{_time: now(), _value: \"Rubber Tree\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-2\" then [{_time: now(), _value: \"Monstera\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-3\" then [{_time: now(), _value: \"Avocado\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-4\" then [{_time: now(), _value: \"Micro Greens\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-5\" then [{_time: now(), _value: \"ZZ Plant\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-6\" then [{_time: now(), _value: \"Ficus Elastica Ruby\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-7\" then [{_time: now(), _value: \"Parsley\", _field: \"plant_name\"}]\n  else [{_time: now(), _value: \"All Plants\", _field: \"plant_name\"}]\n\narray.from(rows: data)",
           "refId": "A"
         }
       ],
@@ -190,7 +190,7 @@
             {
               "type": "value",
               "options": {
-                "Basil - pot": {
+                "Parsley": {
                   "color": "#5DDBDB",
                   "index": 7
                 }
@@ -226,7 +226,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> count()\n  |> group()\n  |> count()",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.device_id =~ /^(sensor-1|sensor-2|sensor-3|sensor-4|sensor-5|sensor-6|sensor-7|sensor-8|sensor-9)$/)\n  |> group(columns: [\"device_id\"])\n  |> count()\n  |> group()\n  |> count()",
           "refId": "A"
         }
       ],
@@ -257,12 +257,12 @@
               },
               {
                 "color": "green",
-                "value": 3
+                "value": 9
               }
             ]
           },
           "unit": "short",
-          "displayName": "Sensors Online"
+          "displayName": "Sensors Online (of 9)"
         }
       }
     },
@@ -670,7 +670,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Basil - pot"
+                "value": "Parsley"
               },
               {
                 "id": "thresholds",
@@ -916,7 +916,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Basil - pot"
+                "value": "Parsley"
               },
               {
                 "id": "color",
@@ -1127,7 +1127,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Basil - pot"
+                "value": "Parsley"
               },
               {
                 "id": "color",
@@ -2050,7 +2050,7 @@
     {
       "id": 107,
       "type": "timeseries",
-      "title": "Basil - pot",
+      "title": "Parsley",
       "gridPos": {
         "x": 0,
         "y": 109,
@@ -2086,7 +2086,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "displayName": "Basil - pot",
+          "displayName": "Parsley",
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",

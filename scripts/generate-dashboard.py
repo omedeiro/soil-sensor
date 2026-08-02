@@ -138,7 +138,7 @@ def create_dashboard(config):
         },
         "panels": [
             create_plant_name_panel(sensors, grafana_config),
-            create_system_status_panel(grafana_config),
+            create_system_status_panel(sensors, climate_sensors, grafana_config),
             create_rpi_uptime_panel(grafana_config),
             create_last_updated_panel(grafana_config),
             create_current_moisture_panel(sensors, grafana_config),
@@ -256,8 +256,15 @@ array.from(rows: data)'''
     }
 
 
-def create_system_status_panel(grafana_config):
-    """Create the System Status stat panel."""
+def create_system_status_panel(sensors, climate_sensors, grafana_config):
+    """Create the System Status stat panel.
+
+    Counts all sensors defined in sensors-config.json (soil + climate) by
+    device_id, so unknown devices don't inflate the count.
+    """
+    all_ids = [s["id"] for s in sensors] + [s["id"] for s in climate_sensors]
+    total = len(all_ids)
+    id_regex = "^(" + "|".join(all_ids) + ")$"
     return {
         "id": 1,
         "type": "stat",
@@ -269,7 +276,7 @@ def create_system_status_panel(grafana_config):
         },
         "targets": [
             {
-                "query": f'from(bucket: "{grafana_config["bucket"]}")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == "sensor_heartbeat")\n  |> filter(fn: (r) => r.location != "backyard")\n  |> group(columns: ["device_id"])\n  |> count()\n  |> group()\n  |> count()',
+                "query": f'from(bucket: "{grafana_config["bucket"]}")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == "sensor_heartbeat")\n  |> filter(fn: (r) => r.device_id =~ /{id_regex}/)\n  |> group(columns: ["device_id"])\n  |> count()\n  |> group()\n  |> count()',
                 "refId": "A"
             }
         ],
@@ -290,11 +297,11 @@ def create_system_status_panel(grafana_config):
                     "steps": [
                         {"color": "red", "value": None},
                         {"color": "yellow", "value": 1},
-                        {"color": "green", "value": 3}
+                        {"color": "green", "value": total}
                     ]
                 },
                 "unit": "short",
-                "displayName": "Sensors Online"
+                "displayName": f"Sensors Online (of {total})"
             }
         }
     }
