@@ -145,9 +145,37 @@ systemctl status grafana-panel-health.timer
 journalctl -u grafana-panel-health -f
 ```
 
+### Slack Alerting (moisture / sensor down / system down)
+
+Separate from the panel-health monitor. Full guide:
+`docs/guides/SLACK_NOTIFICATIONS.md`.
+
+```bash
+cd ~/soil-sensor && ./rpi-setup/install-slack-notifications.sh
+```
+
+Three alerts, all delivered through `scripts/send-slack-alert.sh`:
+
+| Alert | Script | Timer | Frequency |
+| ----- | ------ | ----- | --------- |
+| Soil moisture below 50% | `rpi-setup/scripts/check-soil-moisture.sh` | `soil-moisture-check.timer` (30 min) | once per dry-out, 24h reminder |
+| Sensor stopped logging | `rpi-setup/scripts/check-sensor-health.sh` | `sensor-health-check.timer` (10 min) | max 1/day per offline set |
+| Whole system down | same script | same timer | max 1/day |
+
+Preview without sending: add `--dry-run` to either check script.
+
+Rate-limit markers: `/mnt/sensor-data/slack-rate-limit/<topic>.last`. Delete one
+to re-arm that topic immediately. Alert state (which plants are dry, which
+sensors were down) is in `/mnt/sensor-data/monitor-state/`.
+
+**The Pi cannot alert on its own outage** — every check above runs on the Pi.
+Set `HEARTBEAT_URL` in `/mnt/sensor-data/config/soil-alerts.env` to a
+healthchecks.io ping URL so an external service notices when pings stop.
+
 ### Secret storage rules (CRITICAL)
 - Slack webhook lives ONLY in `/mnt/sensor-data/config/slack_webhook_url` (chmod 600). Never hardcode in scripts or commit to git.
 - Service secrets live ONLY in `/mnt/sensor-data/config/panel-health.env` (chmod 600), loaded via `EnvironmentFile=`. The committed `grafana-panel-health.service` contains NO secrets.
+- Alerting secrets live ONLY in `/mnt/sensor-data/config/soil-alerts.env` (chmod 600), loaded via `EnvironmentFile=` by `sensor-health-check.service` and `soil-moisture-check.service`.
 - `.gitignore` blocks `*.env`, `*.token`, `*secret*`, `*webhook*`, `slack_webhook_url`, and `panel-health.env`.
 - **Rotating the Slack webhook:** revoke old one in Slack, then `( umask 077; printf '%s' '<new-url>' > /mnt/sensor-data/config/slack_webhook_url ); chmod 600` — no redeploy needed (scripts read the file at runtime).
 
