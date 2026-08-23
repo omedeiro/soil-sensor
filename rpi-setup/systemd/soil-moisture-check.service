@@ -1,5 +1,5 @@
 [Unit]
-Description=Sensor Health Monitoring Check (offline sensors + total outage)
+Description=Soil Moisture Low-Water Alert
 Documentation=https://github.com/omedeiro/soil-sensor
 After=network-online.target influxdb.service
 Wants=network-online.target
@@ -13,28 +13,25 @@ WorkingDirectory=/home/omedeiro/soil-sensor
 # Secrets and host-specific config (NOT committed to git).
 # Created by install-slack-notifications.sh with chmod 600.
 # Contains: INFLUX_TOKEN, INFLUX_URL, INFLUX_ORG, INFLUX_BUCKET, SENSORS_CONFIG
-# and optionally HEARTBEAT_URL for an external dead-man switch.
 # The leading '-' makes the unit tolerate a missing file (logs a warning).
 EnvironmentFile=-/mnt/sensor-data/config/soil-alerts.env
 
-# Alerts at most once per day per condition (86400s).
-ExecStart=/home/omedeiro/soil-sensor/rpi-setup/scripts/check-sensor-health.sh \
-    --alert-minutes 15 \
-    --rate-limit-seconds 86400 \
+ExecStart=/home/omedeiro/soil-sensor/rpi-setup/scripts/check-soil-moisture.sh \
+    --threshold 50 \
     --notify
 
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=sensor-health-check
+SyslogIdentifier=soil-moisture-check
 
-# Exit 1 = a sensor is offline, exit 2 = system down. Both are successful
-# checks that already alerted; they must not mark the unit as failed.
-SuccessExitStatus=0 1 2
+# Exit code 1 just means "a plant is dry" - that is a successful check,
+# not a unit failure.
+SuccessExitStatus=0 1
 
 PrivateTmp=false
 NoNewPrivileges=true
 MemoryMax=128M
-CPUQuota=10%
+CPUQuota=15%
 Restart=no
 
 [Install]

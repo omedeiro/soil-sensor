@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.14.0] - 2026-08-23
+
+### Added
+
+#### Slack Notifications
+- **`rpi-setup/scripts/check-soil-moisture.sh`** — New: alerts when a plant's soil moisture drops below 50%. Edge-triggered with hysteresis so a dry plant is not re-reported every 30 minutes: alerts once on crossing below the threshold, reminds at most once per 24h while still dry, and re-arms only after moisture climbs back above threshold + 5%. Readings older than 30 min are ignored (a silent sensor is a health problem, not a dry plant). Per-plant overrides via `thresholds.alert` in `sensors-config.json`
+- **`rpi-setup/scripts/lib/influx-lib.sh`** — New: shared InfluxDB query + annotated-CSV parsing helpers
+- **`rpi-setup/install-slack-notifications.sh`** — New: one-time setup. Prompts for the webhook and read token, stores both at mode 600, verifies InfluxDB access, sends a test message, installs and enables both timers
+- **`rpi-setup/systemd/soil-moisture-check.{service,timer}`** — New: 30-minute moisture check
+- **Whole-system outage detection** — `check-sensor-health.sh` now raises a single critical alert when InfluxDB is unreachable, the read token is rejected, or every sensor has gone silent; the per-sensor list is suppressed in that case since the shared cause is what matters
+- **Dead-man switch support** — `--heartbeat-url` / `HEARTBEAT_URL` pings an external watchdog (e.g. healthchecks.io) after each successful check, covering the case the Pi cannot report itself: its own power or network loss
+- **`docs/guides/SLACK_NOTIFICATIONS.md`** — New: setup, per-alert behaviour, tuning, and troubleshooting
+
+### Fixed
+
+#### Alerting Correctness
+- **Offline detection was unreliable** — `check-sensor-health.sh` matched InfluxDB CSV with `grep "device_id,<id>"`, which depends on column ordering and never matches InfluxDB's standard output (where `device_id` follows `_value`). Every sensor could be reported offline. Replaced with header-driven, order-independent parsing in `influx-lib.sh`
+- **Rate-limit window consumed by failed sends** — `send-slack-alert.sh` stamped its marker *before* attempting delivery, so a Slack outage silently suppressed the alert for the whole window. The marker is now written only after a confirmed 200
+- **Rate-limit state lost on reboot** — markers moved from `/tmp` to `/mnt/sensor-data/slack-rate-limit`, so a boot loop cannot reset a 24h window and produce an alert storm
+- **Malformed JSON payloads** — titles and messages are now JSON-escaped; a quote or backslash in a plant name previously broke the webhook payload
+- **`--from-json` path was broken** — used `local` outside a function, which aborts under `set -e`
+- **Climate sensors were never health-checked** — `sensor-8` and `sensor-9` (DHT22) are now included in offline detection via `climate_reading`
+- **Sensor-ID prefix collisions** — substring matching meant `sensor-1` could match `sensor-10`; matching is now exact
+
+### Changed
+- **`rpi-setup/systemd/sensor-health-check.service`** — Now loads secrets from `EnvironmentFile=/mnt/sensor-data/config/soil-alerts.env` instead of a hardcoded `Environment="INFLUX_TOKEN=..."` line, runs from the git checkout rather than a copied `~/rpi-setup/scripts` directory, and declares `SuccessExitStatus=0 1 2` so a real alert is not logged as a unit failure
+- **Down-alert rate limiting** — the suppression topic is derived from the *set* of offline sensors, so a persistent failure alerts once a day while an additional sensor failing alerts immediately instead of being masked
+- **`scripts/send-slack-alert.sh`** — Added `--rate-limit-seconds` and `--dry-run`; replaced bash 4 associative arrays with `case` so the script runs under bash 3.2 as well
+
+### Security
+- **A live InfluxDB token was committed** in `rpi-setup/systemd/sensor-health-check.service` (and remains in `system-metrics-collector.service`) since commit `a136298`, in a public repository. Removed from `sensor-health-check.service` as part of this change. **The token must be rotated in InfluxDB** — removing it from the working tree does not remove it from git history
+
+---
+
 ## [2.13.0] - 2026-08-02
 
 ### Fixed

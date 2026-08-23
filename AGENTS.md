@@ -62,7 +62,8 @@ matching skill before doing the work rather than guessing.
 9. **WiFi diagnostics disabled:** Set `ENABLE_WIFI_DIAGNOSTICS = true` in config.h for detailed logging
 10. **Queue disabled:** Set `QUEUE_FAILED_READINGS = true` in config.h to survive network outages
 11. **Editing auto-generated dashboard:** Never hand-edit `grafana-dashboards/soil-moisture-main.json` — regenerate from `sensors-config.json`
-12. **Committing secrets:** Slack webhook / InfluxDB tokens live only on the Pi under `/mnt/sensor-data/config/` (chmod 600), never in git
+12. **Committing secrets:** Slack webhook / InfluxDB tokens live only on the Pi under `/mnt/sensor-data/config/` (chmod 600), never in git. Systemd units must read them via `EnvironmentFile=`, never `Environment="INFLUX_TOKEN=..."`
+13. **Alert state in /tmp:** rate-limit and alert-state files belong on `/mnt/sensor-data` — a reboot must not reset a 24h suppression window
 
 ## System Information
 
@@ -95,6 +96,7 @@ matching skill before doing the work rather than guessing.
 **Documentation:**
 - `docs/README.md` — Technical documentation (WiFi stability, Grafana Cloud setup, InfluxDB notes)
 - `docs/guides/TROUBLESHOOTING_NO_DATA.md` — Panel health troubleshooting guide (v2.9.0)
+- `docs/guides/SLACK_NOTIFICATIONS.md` — Slack alerting: low moisture, sensor down, system down
 - `grafana-dashboards/README.md` — Dashboard installation, customization, and alert setup
 - `README.md` — Project overview and setup instructions
 - `AGENTS.md` — This file (agent instructions index + core reference)
