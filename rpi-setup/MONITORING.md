@@ -275,7 +275,24 @@ alert() {
 }
 ```
 
-### Webhook Alerts (Slack, Discord, etc.)
+### Slack Alerts (soil moisture, sensor down, system down)
+
+Already implemented — see `docs/guides/SLACK_NOTIFICATIONS.md`:
+
+```bash
+cd ~/soil-sensor && ./rpi-setup/install-slack-notifications.sh
+```
+
+Use `scripts/send-slack-alert.sh` from any other monitor script rather than
+hand-rolling a curl call; it handles severity colours, rate limiting and retries:
+
+```bash
+/home/omedeiro/soil-sensor/scripts/send-slack-alert.sh \
+    --severity critical --title "Power Alert" \
+    --message "Undervoltage detected" --topic power
+```
+
+### Webhook Alerts (Discord, other services)
 ```bash
 # Edit power-monitor.sh
 vim /home/omedeiro/soil-sensor/rpi-setup/scripts/power-monitor.sh

@@ -1,0 +1,13 @@
+[Unit]
+Description=Soil Moisture Check Timer - every 30 minutes
+Documentation=https://github.com/omedeiro/soil-sensor
+Requires=soil-moisture-check.service
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=30min
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

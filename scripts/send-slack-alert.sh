@@ -19,8 +19,16 @@ set -euo pipefail
 
 # Configuration
 WEBHOOK_FILE="${SLACK_WEBHOOK_FILE:-/mnt/sensor-data/config/slack_webhook_url}"
-RATE_LIMIT_DIR="${RATE_LIMIT_DIR:-/tmp/slack-rate-limit}"
-RATE_LIMIT_SECONDS=300  # 5 minutes
+# Rate-limit markers live on persistent storage when available, so a reboot
+# cannot reset a long (e.g. daily) suppression window and cause an alert storm.
+if [[ -z "${RATE_LIMIT_DIR:-}" ]]; then
+    if [[ -d /mnt/sensor-data ]]; then
+        RATE_LIMIT_DIR="/mnt/sensor-data/slack-rate-limit"
+    else
+        RATE_LIMIT_DIR="/tmp/slack-rate-limit"
+    fi
+fi
+RATE_LIMIT_SECONDS="${SLACK_RATE_LIMIT_SECONDS:-300}"  # default: 5 minutes
 MAX_RETRIES=3
 RETRY_DELAY=5  # seconds
 
@@ -32,21 +40,28 @@ WEBHOOK_URL=""
 FROM_JSON=""
 TOPIC="general"
 
-# Colors for Slack attachments
-declare -A SEVERITY_COLORS=(
-    ["info"]="#36a64f"      # Green
-    ["warning"]="#ff9900"   # Orange
-    ["critical"]="#ff0000"  # Red
-    ["success"]="#00ff00"   # Bright green
-)
+# Severity -> color / emoji.
+# Implemented with `case` rather than associative arrays so the script runs on
+# bash 3.2 (macOS) as well as bash 5 (Raspberry Pi).
+severity_color() {
+    case "$1" in
+        info)     echo "#36a64f" ;;  # Green
+        warning)  echo "#ff9900" ;;  # Orange
+        critical) echo "#ff0000" ;;  # Red
+        success)  echo "#00ff00" ;;  # Bright green
+        *)        return 1 ;;
+    esac
+}
 
-# Emojis for severity levels
-declare -A SEVERITY_EMOJIS=(
-    ["info"]=":information_source:"
-    ["warning"]=":warning:"
-    ["critical"]=":rotating_light:"
-    ["success"]=":white_check_mark:"
-)
+severity_emoji() {
+    case "$1" in
+        info)     echo ":information_source:" ;;
+        warning)  echo ":warning:" ;;
+        critical) echo ":rotating_light:" ;;
+        success)  echo ":white_check_mark:" ;;
+        *)        return 1 ;;
+    esac
+}
 
 # Usage help
 usage() {
@@ -60,9 +75,13 @@ OPTIONS:
     --title TITLE       Alert title (appears as attachment title)
     --message TEXT      Alert message (detailed description)
     --topic TOPIC       Rate limit topic (default: general)
+    --rate-limit-seconds N
+                        Suppression window for this topic in seconds
+                        (default: 300; use 86400 for max one alert per day)
     --webhook URL       Override webhook URL
     --from-json FILE    Load message from JSON report
     --no-rate-limit     Bypass rate limiting (use with caution)
+    --dry-run           Print the payload instead of sending to Slack
     --help              Show this help message
 
 POSITIONAL:
@@ -89,7 +108,13 @@ CONFIGURATION:
 
 RATE LIMITING:
     By default, maximum 1 alert per topic per 5 minutes.
-    Use --topic to separate different alert types.
+    Use --topic to separate different alert types, and
+    --rate-limit-seconds to widen the window (86400 = once per day).
+
+    The marker is stamped only after a SUCCESSFUL delivery, so a failed
+    send does not consume the suppression window. Markers are stored in
+    $RATE_LIMIT_DIR (persistent when /mnt/sensor-data exists, so a reboot
+    cannot reset a daily window).
 
 EXIT CODES:
     0   Success
@@ -149,9 +174,40 @@ check_rate_limit() {
         fi
     fi
     
-    # Update marker
-    date +%s > "$marker_file"
     return 0
+}
+
+# Stamp the rate-limit marker. Called ONLY after a successful delivery so that
+# a failed send does not silently consume the suppression window.
+stamp_rate_limit() {
+    local topic=$1
+    local bypass=${2:-false}
+    
+    if [[ "$bypass" == "true" ]]; then
+        return 0
+    fi
+    
+    mkdir -p "$RATE_LIMIT_DIR"
+    date +%s > "$RATE_LIMIT_DIR/${topic}.last"
+}
+
+# Escape a string for embedding in a JSON string literal.
+#
+# Callers use a literal two-character "\n" sequence to request a line break
+# (the long-standing convention in this repo), so those are converted to real
+# newlines first and then re-encoded by the JSON encoder. Quotes, backslashes
+# and control characters are escaped so plant names or messages containing
+# them cannot produce malformed JSON.
+json_escape() {
+    if command -v python3 > /dev/null 2>&1; then
+        printf '%s' "$1" | python3 -c \
+            'import json,sys; sys.stdout.write(json.dumps(sys.stdin.read().replace("\\n", "\n"))[1:-1])'
+    else
+        # Fallback: escape backslashes and quotes, then restore "\n" markers.
+        printf '%s' "$1" \
+            | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' \
+            | sed -e 's/\\\\n/\\n/g'
+    fi
 }
 
 # Build JSON payload
@@ -160,9 +216,15 @@ build_payload() {
     local title=$2
     local message=$3
     
-    local color="${SEVERITY_COLORS[$severity]}"
-    local emoji="${SEVERITY_EMOJIS[$severity]}"
-    local timestamp=$(date +%s)
+    local color emoji timestamp
+    color=$(severity_color "$severity")
+    emoji=$(severity_emoji "$severity")
+    timestamp=$(date +%s)
+    
+    # Escape so plant names / messages containing quotes or backslashes
+    # cannot produce malformed JSON.
+    title=$(json_escape "$title")
+    message=$(json_escape "$message")
     
     cat <<EOF
 {
@@ -220,6 +282,7 @@ send_to_slack() {
 
 # Parse command line arguments
 BYPASS_RATE_LIMIT=false
+DRY_RUN=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -247,8 +310,16 @@ while [[ $# -gt 0 ]]; do
             FROM_JSON="$2"
             shift 2
             ;;
+        --rate-limit-seconds)
+            RATE_LIMIT_SECONDS="$2"
+            shift 2
+            ;;
         --no-rate-limit)
             BYPASS_RATE_LIMIT=true
+            shift
+            ;;
+        --dry-run)
+            DRY_RUN=true
             shift
             ;;
         --help)
@@ -267,7 +338,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Validate severity
-if [[ ! "${SEVERITY_COLORS[$SEVERITY]+isset}" ]]; then
+if ! severity_color "$SEVERITY" > /dev/null; then
     log_error "Invalid severity: $SEVERITY (use: info, warning, critical, success)"
     exit 1
 fi
@@ -292,10 +363,10 @@ if [[ -n "$FROM_JSON" ]]; then
     # Extract summary from JSON report
     TITLE=$(jq -r '.summary.title // "Grafana Panel Health Report"' "$FROM_JSON")
     
-    local total=$(jq -r '.summary.total_panels // 0' "$FROM_JSON")
-    local healthy=$(jq -r '.summary.healthy // 0' "$FROM_JSON")
-    local no_data=$(jq -r '.summary.no_data // 0' "$FROM_JSON")
-    local errors=$(jq -r '.summary.query_error // 0' "$FROM_JSON")
+    total=$(jq -r '.summary.total_panels // 0' "$FROM_JSON")
+    healthy=$(jq -r '.summary.healthy // 0' "$FROM_JSON")
+    no_data=$(jq -r '.summary.no_data // 0' "$FROM_JSON")
+    errors=$(jq -r '.summary.query_error // 0' "$FROM_JSON")
     
     MESSAGE="Total Panels: $total\n"
     MESSAGE+="✓ Healthy: $healthy\n"
@@ -339,8 +410,16 @@ fi
 # Build payload
 PAYLOAD=$(build_payload "$SEVERITY" "$TITLE" "$MESSAGE")
 
+# Dry run: show what would be sent and stop (no marker stamped)
+if [[ "$DRY_RUN" == "true" ]]; then
+    log_info "DRY RUN - not sending. Payload:"
+    printf '%s\n' "$PAYLOAD"
+    exit 0
+fi
+
 # Send notification
 if send_to_slack "$PAYLOAD"; then
+    stamp_rate_limit "$TOPIC" "$BYPASS_RATE_LIMIT"
     exit 0
 else
     exit 3
