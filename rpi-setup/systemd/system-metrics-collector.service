@@ -1,6 +1,6 @@
 [Unit]
 Description=System Metrics Collector for Soil Sensor
-Documentation=https://github.com/soil-sensor
+Documentation=https://github.com/omedeiro/soil-sensor
 After=network.target influxdb.service
 
 [Service]
@@ -11,11 +11,24 @@ ExecStart=/usr/bin/python3 /usr/local/bin/system-metrics-collector.py
 StandardOutput=append:/mnt/sensor-data/logs/metrics-collector.log
 StandardError=append:/mnt/sensor-data/logs/metrics-collector.log
 
-# Environment variables
+# Non-secret environment
 Environment="INFLUX_URL=http://localhost:8086"
 Environment="INFLUX_ORG=soil-monitoring"
 Environment="INFLUX_BUCKET=sensor-readings"
-Environment="INFLUX_TOKEN=fNL1d7Eg__QMxP_vGqR2Ekw16ADxYO8gDdDxXqEFGs-t3j03sRpHKDY8R7pz0kRIaQ35yWlU3NXhXX9ra0YWNA=="
+
+# Secrets and host-specific config (NOT committed to git).
+# Create on the Pi with chmod 600, owned by root:
+#   sudo install -d -m 755 /mnt/sensor-data/config
+#   ( umask 077; sudo tee /mnt/sensor-data/config/system-metrics.env >/dev/null <<'EOF'
+#   INFLUX_TOKEN=<influxdb write token>
+#   INFLUX_URL=http://localhost:8086
+#   INFLUX_ORG=soil-monitoring
+#   INFLUX_BUCKET=sensor-readings
+#   EOF
+#   )
+# Only INFLUX_TOKEN is required; the other three override the defaults above.
+# The leading '-' makes the unit tolerate a missing file (logs a warning).
+EnvironmentFile=-/mnt/sensor-data/config/system-metrics.env
 
 [Install]
 WantedBy=multi-user.target
