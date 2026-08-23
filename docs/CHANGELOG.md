@@ -37,7 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`scripts/send-slack-alert.sh`** — Added `--rate-limit-seconds` and `--dry-run`; replaced bash 4 associative arrays with `case` so the script runs under bash 3.2 as well
 
 ### Security
-- **A live InfluxDB token was committed** in `rpi-setup/systemd/sensor-health-check.service` (and remains in `system-metrics-collector.service`) since commit `a136298`, in a public repository. Removed from `sensor-health-check.service` as part of this change. **The token must be rotated in InfluxDB** — removing it from the working tree does not remove it from git history
+- **A live InfluxDB token was committed** in `rpi-setup/systemd/sensor-health-check.service` and `rpi-setup/systemd/system-metrics-collector.service` since commit `a136298`, in a public repository. Both units now load secrets from an `EnvironmentFile` under `/mnt/sensor-data/config/` (`soil-alerts.env` and `system-metrics.env` respectively) instead of a hardcoded `Environment="INFLUX_TOKEN=..."` line
+- **`rpi-setup/install.sh`** — Stopped telling operators to add `INFLUX_TOKEN` to `/etc/environment`, which systemd units never read; it now points at `/mnt/sensor-data/config/system-metrics.env`
+- **The token must be rotated in InfluxDB.** Removing it from the working tree does not remove it from git history, and the same token still appears in `rpi-setup/scripts/system-health-monitor.sh` and `docs/archive/RECOVERY_2026-05-20.md`
 
 ---
 

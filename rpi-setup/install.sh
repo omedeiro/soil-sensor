@@ -324,8 +324,9 @@ cp systemd/system-metrics-collector.timer /etc/systemd/system/
 
 # Prompt for InfluxDB token (will be configured after InfluxDB setup)
 log_warn "System metrics collector requires InfluxDB token"
-log_warn "After setting up InfluxDB, add INFLUX_TOKEN to /etc/environment:"
-log_warn "  echo 'INFLUX_TOKEN=your_token_here' | sudo tee -a /etc/environment"
+log_warn "After setting up InfluxDB, write it to the service environment file:"
+log_warn "  sudo install -d -m 755 /mnt/sensor-data/config"
+log_warn "  ( umask 077; echo 'INFLUX_TOKEN=your_token_here' | sudo tee /mnt/sensor-data/config/system-metrics.env >/dev/null )"
 
 systemctl daemon-reload
 systemctl enable system-metrics-collector.timer
