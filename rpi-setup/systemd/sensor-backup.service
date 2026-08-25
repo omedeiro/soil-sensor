@@ -1,11 +1,13 @@
 [Unit]
 Description=Soil Sensor Backup Service
-Documentation=https://github.com/soil-sensor
+Documentation=https://github.com/omedeiro/soil-sensor
 
 [Service]
 Type=oneshot
 User=root
 Group=root
+# Optional (leading '-'): the script also reads the config files directly.
+EnvironmentFile=-/mnt/sensor-data/config/backup.env
 ExecStart=/usr/local/bin/sensor-backup.sh
 StandardOutput=append:/mnt/sensor-data/logs/backup.log
 StandardError=append:/mnt/sensor-data/logs/backup.log
