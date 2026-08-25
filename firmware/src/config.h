@@ -72,8 +72,16 @@
 // Option 1: Auto-generate from MAC address (e.g., "esp8266-40915141d997")
 // Option 2: Set DEVICE_ID_AUTO=false and provide custom ID below
 #define DEVICE_ID_AUTO      false
-#define DEVICE_ID           "sensor-9"          // Change for each sensor: sensor-1, sensor-2, etc.
-#define DEVICE_LOCATION     "guest-room"        // Room location for this sensor
+// DEVICE_ID / DEVICE_LOCATION are #ifndef-guarded so a per-sensor build can supply
+// them with -D (PLATFORMIO_BUILD_FLAGS) without editing this file. Without the
+// guard the value here silently WINS over -D (macro redefinition), which would
+// flash every sensor with the same identity and collapse per-plant history.
+#ifndef DEVICE_ID
+#define DEVICE_ID           "sensor-9"          // Fallback for a plain USB build
+#endif
+#ifndef DEVICE_LOCATION
+#define DEVICE_LOCATION     "guest-room"        // Fallback for a plain USB build
+#endif
 
 // ─── Static IP (use when DHCP fails) ──────────────────────────────────────────
 // Set USE_STATIC_IP to true and fill in values below if the board cannot
