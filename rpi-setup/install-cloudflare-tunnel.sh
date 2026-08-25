@@ -55,14 +55,30 @@ echo ""
 echo "Step 3: Creating Cloudflare Tunnel..."
 TUNNEL_NAME="soil-sensor-grafana"
 
-# Check if tunnel already exists
-if cloudflared tunnel list | grep -q "$TUNNEL_NAME"; then
-    echo "⚠️  Tunnel '$TUNNEL_NAME' already exists. Using existing tunnel."
-    TUNNEL_ID=$(cloudflared tunnel list | grep "$TUNNEL_NAME" | awk '{print $1}')
+# Reuse the existing tunnel ONLY if we still hold its credentials file.
+# A tunnel's credentials JSON is written once, at create time, and cannot be
+# re-downloaded. If the host was rebuilt (see RECOVERY.md) the file is gone and
+# the tunnel is unusable, so it must be deleted and recreated.
+tunnel_id_of() { cloudflared tunnel list | awk -v n="$TUNNEL_NAME" '$2==n {print $1}' | head -1; }
+
+TUNNEL_ID="$(tunnel_id_of)"
+if [ -n "$TUNNEL_ID" ] && [ -f "$HOME/.cloudflared/$TUNNEL_ID.json" ]; then
+    echo "⚠️  Tunnel '$TUNNEL_NAME' already exists and its credentials are present. Reusing it."
+elif [ -n "$TUNNEL_ID" ]; then
+    echo "⚠️  Tunnel '$TUNNEL_NAME' exists (ID: $TUNNEL_ID) but its credentials file is missing."
+    echo "    Credentials cannot be re-downloaded — recreating the tunnel."
+    cloudflared tunnel cleanup "$TUNNEL_NAME" 2>/dev/null || true
+    cloudflared tunnel delete "$TUNNEL_NAME" || {
+        echo "❌ Could not delete the stale tunnel. Delete it in the Cloudflare dashboard, then re-run."
+        exit 1
+    }
+    cloudflared tunnel create "$TUNNEL_NAME"
+    TUNNEL_ID="$(tunnel_id_of)"
+    echo "✓ Tunnel recreated with ID: $TUNNEL_ID"
 else
     echo "Creating new tunnel: $TUNNEL_NAME"
     cloudflared tunnel create "$TUNNEL_NAME"
-    TUNNEL_ID=$(cloudflared tunnel list | grep "$TUNNEL_NAME" | awk '{print $1}')
+    TUNNEL_ID="$(tunnel_id_of)"
     echo "✓ Tunnel created with ID: $TUNNEL_ID"
 fi
 
@@ -94,11 +110,14 @@ echo ""
 
 # Step 5: Create DNS record
 echo "Step 5: Creating DNS record..."
-if cloudflared tunnel route dns "$TUNNEL_NAME" soil.owenmedeiros.com 2>&1 | grep -q "already exists"; then
-    echo "⚠️  DNS record already exists for soil.owenmedeiros.com"
+# --overwrite-dns is required: after a tunnel is recreated the existing CNAME
+# still points at the OLD tunnel ID. Warning and moving on (the previous
+# behaviour) left the hostname permanently pointed at a dead tunnel.
+if cloudflared tunnel route dns --overwrite-dns "$TUNNEL_NAME" soil.owenmedeiros.com; then
+    echo "✓ DNS record points at $TUNNEL_NAME ($TUNNEL_ID)"
 else
-    cloudflared tunnel route dns "$TUNNEL_NAME" soil.owenmedeiros.com
-    echo "✓ DNS record created: soil.owenmedeiros.com"
+    echo "❌ Failed to route soil.owenmedeiros.com to the tunnel"
+    exit 1
 fi
 echo ""
 
