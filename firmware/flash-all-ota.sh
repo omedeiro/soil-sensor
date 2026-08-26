@@ -17,7 +17,7 @@ echo "║       ESP8266 OTA Multi-Sensor Flashing                        ║"
 echo "╚════════════════════════════════════════════════════════════════╝"
 echo ""
 echo "This will flash all $NUM_SENSORS sensors over WiFi with unique device IDs."
-echo "OTA password: soilmon2026"
+echo "OTA password: taken from firmware/src/secrets.h (gitignored)"
 echo ""
 
 TOTAL=${#SENSORS[@]}

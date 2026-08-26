@@ -311,7 +311,7 @@ pio run --target upload --upload-port sensor-2.local
 ```
 
 **OTA Upload Notes:**
-- Default OTA password: `soilmon2026` (set in main.cpp line 172)
+- OTA password: `OTA_PASSWORD` in `firmware/src/secrets.h` (gitignored); never commit it
 - Sensors must be on same network as your computer
 - OTA takes about 30 seconds per sensor
 - Sensor will reboot automatically after upload

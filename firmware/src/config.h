@@ -34,7 +34,14 @@
 //   DEVICE_TYPE_CLIMATE → DHT22/AM2302 ambient temp + humidity (sensor-8)
 #define DEVICE_TYPE_SOIL     0
 #define DEVICE_TYPE_CLIMATE  1
-#define DEVICE_TYPE          DEVICE_TYPE_CLIMATE   // ← set per board (default 0 for soil)
+// #ifndef-guarded so a per-device build can select the board type with -D.
+// Leaving a CLIMATE value here bit us once: flashing a soil probe without
+// overriding DEVICE_TYPE compiles the soil path OUT entirely, so the board
+// reports no moisture and /api/latest returns {"error":"no data"}.
+// The default is SOIL because 7 of 9 devices are soil probes.
+#ifndef DEVICE_TYPE
+#define DEVICE_TYPE          DEVICE_TYPE_SOIL      // ← override with -DDEVICE_TYPE=1 for climate
+#endif
 
 // DHT22 (AM2302) — only used when DEVICE_TYPE == DEVICE_TYPE_CLIMATE
 #define DHT_PIN              D2                 // GPIO4 (data line)
