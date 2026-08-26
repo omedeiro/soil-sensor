@@ -2,7 +2,7 @@
 # Test InfluxDB write from command line
 # Useful for verifying connectivity and tokens
 
-INFLUX_URL="${INFLUX_URL:-http://192.168.99.200:8086}"
+INFLUX_URL="${INFLUX_URL:-http://192.168.99.134:8086}"
 INFLUX_ORG="${INFLUX_ORG:-soil-monitoring}"
 INFLUX_BUCKET="${INFLUX_BUCKET:-sensor-readings}"
 
@@ -51,7 +51,7 @@ if [ "$HTTP_CODE" == "204" ] || [ "$HTTP_CODE" == "200" ]; then
     echo "  ✓ SUCCESS - Data written to InfluxDB"
     echo ""
     echo "Check Grafana dashboard to see the test data point!"
-    echo "  URL: http://192.168.99.200:3000"
+    echo "  URL: http://192.168.99.134:3000"
     exit 0
 else
     echo "  ✗ FAILED"

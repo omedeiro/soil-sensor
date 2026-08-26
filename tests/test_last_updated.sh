@@ -3,9 +3,9 @@
 
 set -e
 
-INFLUX_URL="http://localhost:8086"
+INFLUX_URL="${INFLUX_URL:-http://localhost:8086}"
 INFLUX_ORG="soil-monitoring"
-INFLUX_TOKEN="Bc2D1cESRAZ886x2aNs8I3nVBfarzu0HQpdN9GER9YyAAL-5neIZI2IxxkKnqdwBEpLqM8eSZ_nCsaONk9jQZA=="
+INFLUX_TOKEN="${INFLUX_TOKEN:-$(grep -m1 '^INFLUX_TOKEN=' "${CONFIG_DIR:-/mnt/sensor-data/config}/panel-health.env" 2>/dev/null | cut -d= -f2- | tr -d '"')}"
 
 echo "=== Testing Last Updated Panel Query ==="
 echo ""

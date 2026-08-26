@@ -4,6 +4,14 @@
 
 LOG_FILE="/mnt/sensor-data/logs/system-health.log"
 ALERT_LOG="/mnt/sensor-data/logs/system-alerts.log"
+# InfluxDB token. Never hardcode it: this file is tracked, and a literal here
+# ends up in git history permanently. Resolution order mirrors the other
+# scripts in this repo.
+CONFIG_DIR="${CONFIG_DIR:-/mnt/sensor-data/config}"
+if [ -z "${INFLUX_TOKEN:-}" ] && [ -r "$CONFIG_DIR/panel-health.env" ]; then
+    INFLUX_TOKEN="$(grep -m1 '^INFLUX_TOKEN=' "$CONFIG_DIR/panel-health.env" | cut -d= -f2- | tr -d '"'"'"'')"
+fi
+[ -n "${INFLUX_TOKEN:-}" ] || { echo "INFLUX_TOKEN not set and not found in $CONFIG_DIR/panel-health.env" >&2; exit 3; }
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
@@ -109,7 +117,7 @@ check_filesystem() {
 check_sensors() {
     # Check if sensors are posting data (within last 15 minutes)
     SENSOR_COUNT=$(curl -s -XPOST "http://localhost:8086/api/v2/query?org=soil-monitoring" \
-        -H "Authorization: Token fNL1d7Eg__QMxP_vGqR2Ekw16ADxYO8gDdDxXqEFGs-t3j03sRpHKDY8R7pz0kRIaQ35yWlU3NXhXX9ra0YWNA==" \
+        -H "Authorization: Token ${INFLUX_TOKEN}" \
         -H "Content-Type: application/vnd.flux" \
         -d 'from(bucket: "sensor-readings")
             |> range(start: -15m)
