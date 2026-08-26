@@ -90,7 +90,8 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "noValue": "0"
         }
       },
       "gridPos": {
@@ -156,7 +157,8 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "noValue": "0"
         }
       },
       "gridPos": {
@@ -222,7 +224,8 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "short",
+          "noValue": "0"
         }
       },
       "gridPos": {

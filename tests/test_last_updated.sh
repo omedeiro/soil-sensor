@@ -24,10 +24,15 @@ QUERY_RESULT=$(curl -s "$INFLUX_URL/api/v2/query?org=$INFLUX_ORG" \
   |> map(fn: (r) => ({_time: r._time, _value: uint(v: r._time) / uint(v: 1000000)}))')
 
 # Extract the _value (timestamp in milliseconds)
-LAST_READING_MS=$(echo "$QUERY_RESULT" | grep "^," | tail -1 | cut -d',' -f5)
+# InfluxDB returns CSV with CRLF line endings. Without stripping the trailing
+# \r the value is non-numeric, $((LAST_READING_MS / 1000)) evaluates to 0, the
+# elapsed-time maths returns a whole epoch ("496604 hours old"), and the date
+# call below is handed an empty argument:
+#     date: option requires an argument -- 'r'
+LAST_READING_MS=$(echo "$QUERY_RESULT" | grep "^," | tail -1 | cut -d',' -f5 | tr -d '\r')
 
-if [ -z "$LAST_READING_MS" ]; then
-    echo "❌ FAILED: Query returned no data"
+if ! printf '%s' "$LAST_READING_MS" | grep -qE '^[0-9]+$'; then
+    echo "❌ FAILED: Query returned no usable timestamp (got: \"$LAST_READING_MS\")"
     echo ""
     echo "Full response:"
     echo "$QUERY_RESULT"

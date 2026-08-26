@@ -514,7 +514,7 @@
       },
       "targets": [
         {
-          "query": "import \"strings\"\n\nlastHeartbeat = from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> keep(columns: [\"_time\", \"device_id\", \"location\", \"uptime\", \"free_heap\", \"rssi\"])\n  |> rename(columns: {_time: \"last_heartbeat\"})\n\nlastReading = from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> keep(columns: [\"device_id\", \"_value\"])\n  |> rename(columns: {_value: \"moisture\"})\n\njoin(\n  tables: {hb: lastHeartbeat, reading: lastReading},\n  on: [\"device_id\"],\n  method: \"left\"\n)\n  |> yield(name: \"result\")",
+          "query": "import \"join\"\n\nhb = from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\" and r._field == \"uptime\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> group()\n  |> keep(columns: [\"_time\", \"device_id\", \"location\", \"_value\"])\n  |> rename(columns: {_time: \"last_heartbeat\", _value: \"uptime\"})\n\nrd = from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\" and r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> group()\n  |> keep(columns: [\"device_id\", \"_value\"])\n  |> rename(columns: {_value: \"moisture\"})\n\njoin.left(\n  left: hb,\n  right: rd,\n  on: (l, r) => l.device_id == r.device_id,\n  as: (l, r) => ({l with moisture: r.moisture}),\n)\n  |> sort(columns: [\"device_id\"])\n",
           "refId": "A"
         }
       ],
@@ -556,7 +556,7 @@
           "refId": "A"
         }
       ],
-      "title": "🚨 Diagnostic Events",
+      "title": "\ud83d\udea8 Diagnostic Events",
       "type": "logs"
     },
     {
@@ -924,6 +924,6 @@
     "to": "now"
   },
   "timezone": "browser",
-  "title": "🔧 System Health Dashboard",
+  "title": "\ud83d\udd27 System Health Dashboard",
   "uid": "system-health-v2"
 }
