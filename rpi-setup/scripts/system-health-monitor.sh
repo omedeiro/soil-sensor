@@ -5,6 +5,15 @@
 LOG_FILE="/mnt/sensor-data/logs/system-health.log"
 ALERT_LOG="/mnt/sensor-data/logs/system-alerts.log"
 
+# INFLUX_TOKEN (read permission) comes from the environment. systemd supplies it
+# via EnvironmentFile=; when run by hand, fall back to the same file so the
+# token never has to live in this script.
+INFLUX_ENV_FILE="${INFLUX_ENV_FILE:-/mnt/sensor-data/config/soil-alerts.env}"
+if [ -z "${INFLUX_TOKEN:-}" ] && [ -r "$INFLUX_ENV_FILE" ]; then
+    # shellcheck disable=SC1090
+    . "$INFLUX_ENV_FILE"
+fi
+
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
 }
@@ -107,9 +116,14 @@ check_filesystem() {
 }
 
 check_sensors() {
+    if [ -z "${INFLUX_TOKEN:-}" ]; then
+        alert "INFLUX_TOKEN not set - skipping sensor data check (see $INFLUX_ENV_FILE)"
+        return 1
+    fi
+
     # Check if sensors are posting data (within last 15 minutes)
     SENSOR_COUNT=$(curl -s -XPOST "http://localhost:8086/api/v2/query?org=soil-monitoring" \
-        -H "Authorization: Token fNL1d7Eg__QMxP_vGqR2Ekw16ADxYO8gDdDxXqEFGs-t3j03sRpHKDY8R7pz0kRIaQ35yWlU3NXhXX9ra0YWNA==" \
+        -H "Authorization: Token ${INFLUX_TOKEN}" \
         -H "Content-Type: application/vnd.flux" \
         -d 'from(bucket: "sensor-readings")
             |> range(start: -15m)

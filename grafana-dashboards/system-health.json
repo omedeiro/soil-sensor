@@ -625,7 +625,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"cpu_percent\" or r._field == \"cpu_temp\" or r._field == \"memory_percent\" or r._field == \"disk_percent\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"cpu_percent\" or r._field == \"cpu_temp\" or r._field == \"ram_percent\" or r._field == \"disk_percent\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
           "refId": "A"
         }
       ],

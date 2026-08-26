@@ -18,10 +18,31 @@ auto-generated and will be overwritten.
 
 ## Critical Workflow Rules
 
-1. **NEVER manually edit `grafana-dashboards/soil-moisture-main.json`** — auto-generated, will be overwritten
+1. **NEVER manually edit `grafana-dashboards/soil-moisture-main.json`** — auto-generated, will be overwritten (CI fails if the committed file drifts from the generator output)
 2. **ALWAYS validate before generating:** run `./scripts/validate-config.py` to catch errors early
 3. **ALWAYS use `scripts/upload-dashboard-to-pi.sh`** for deployment (not manual curl or API calls)
 4. **Deployment order is strict:** Edit config → Validate → Generate → Upload
+5. **Hand-written queries must match `influx-schema.json`** — run `./scripts/check-no-data-panels.py` before committing a change to any of the other dashboards
+
+## Static "No Data" Check
+
+`./scripts/check-no-data-panels.py` compares every query in
+`grafana-dashboards/` against `influx-schema.json` (the measurements, tags, and
+fields the firmware and Pi collectors actually write) and `sensors-config.json`.
+It runs in CI, needs no Pi, and catches the queries that can never return a row:
+
+- `_field == "<name>"` where nothing writes that field — or where the name is
+  really a **tag** (`event_type`, `location`, `device_id`, `hostname`); filter on
+  a real field and group by the tag instead
+- an unknown measurement, bucket, or datasource UID
+- a `device_id` that is not in `sensors-config.json`
+- a `from()` with no `range()`, unbalanced brackets, or an undefined `${variable}`
+
+Adding a field to a dashboard means adding it to `influx-schema.json` too — and
+only once something in the repo actually writes it. Genuine exceptions go in
+`tests/no-data-allowlist.json` with a reason.
+
+Run the whole CI suite locally with `./scripts/run-ci-checks.sh`.
 
 ## Adding a New Sensor (dashboard side)
 

@@ -25,6 +25,50 @@ cd ~/soil-sensor
 
 ---
 
+## Catching It Before It Ships
+
+Most "No Data" panels are not a data problem — the query could never have
+matched anything. That is visible in the dashboard JSON alone, so it is checked
+in CI on every push, with no Pi and no InfluxDB involved:
+
+```bash
+# Anywhere, no network needed
+./scripts/check-no-data-panels.py
+./scripts/check-no-data-panels.py --format json    # machine-readable
+```
+
+It compares every query in `grafana-dashboards/` against `influx-schema.json`
+(the measurements, tags, and fields the firmware and Pi collectors actually
+write) and `sensors-config.json`, and fails on:
+
+| Rule | What it catches |
+|------|-----------------|
+| `datasource` | a datasource UID that is not the configured InfluxDB one |
+| `no_query` | a panel with no query at all |
+| `bucket` | reading a bucket that does not exist |
+| `measurement` | filtering on a measurement nothing writes |
+| `field` | filtering on a `_field` nothing writes — including a name that is really a **tag** (`event_type`, `location`, `device_id`, `hostname`) |
+| `tag` | filtering on a tag/column that does not exist |
+| `device_id` | a `device_id` that is not in `sensors-config.json` |
+| `missing_range` | a `from()` with no `range()` (Flux rejects it) |
+| `unbalanced` | unbalanced quotes or brackets |
+| `variable` | a `${variable}` the dashboard never defines |
+
+**The two rules that matter most.** `_field == "event_type"` looks right but
+`event_type` is a tag on `sensor_diagnostics`, so the filter matches zero rows —
+group by the tag instead and filter `_field` on a real field such as
+`event_count`. And a field name that drifted from its producer (`memory_percent`
+when `system-metrics-collector.sh` writes `ram_percent`) fails the same way.
+
+If the checker is wrong — the data is written by something outside this repo —
+add the measurement/field to `influx-schema.json`, or add an entry with a reason
+to `tests/no-data-allowlist.json`.
+
+The live checker below is still the one that finds panels that are *correctly*
+configured but genuinely have no data (sensor offline, time range too narrow).
+
+---
+
 ## Common Issues and Solutions
 
 ### 1. InfluxDB Connection Errors

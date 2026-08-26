@@ -3,9 +3,14 @@
 
 set -e
 
-INFLUX_URL="http://localhost:8086"
-INFLUX_ORG="soil-monitoring"
-INFLUX_TOKEN="Bc2D1cESRAZ886x2aNs8I3nVBfarzu0HQpdN9GER9YyAAL-5neIZI2IxxkKnqdwBEpLqM8eSZ_nCsaONk9jQZA=="
+INFLUX_URL="${INFLUX_URL:-http://localhost:8086}"
+INFLUX_ORG="${INFLUX_ORG:-soil-monitoring}"
+
+if [ -z "${INFLUX_TOKEN:-}" ]; then
+    echo "Error: INFLUX_TOKEN environment variable not set"
+    echo "Usage: export INFLUX_TOKEN='your_read_token' && ./test_last_updated.sh"
+    exit 1
+fi
 
 echo "=== Testing Last Updated Panel Query ==="
 echo ""
