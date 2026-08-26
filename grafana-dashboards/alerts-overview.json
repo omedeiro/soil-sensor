@@ -117,7 +117,7 @@
           "refId": "A"
         }
       ],
-      "title": "🚨 Critical Alerts (Now)",
+      "title": "\ud83d\udea8 Critical Alerts (Now)",
       "type": "stat"
     },
     {
@@ -183,7 +183,7 @@
           "refId": "A"
         }
       ],
-      "title": "💧 Sensors Need Watering",
+      "title": "\ud83d\udca7 Sensors Need Watering",
       "type": "stat"
     },
     {
@@ -245,11 +245,11 @@
       },
       "targets": [
         {
-          "query": "// Count sensors that haven't sent heartbeat in last 10 minutes\n// Expected sensors = 4 (excluding backyard)\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> count()\n  |> group()\n  |> count()\n  |> map(fn: (r) => ({\n      _time: now(),\n      _value: 4 - r._value,\n      _field: \"offline_count\"\n  }))",
+          "query": "// Count sensors that haven't sent heartbeat in last 10 minutes\n// Expected sensors = 4 (excluding backyard)\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> count()\n  |> group()\n  |> count()\n  |> map(fn: (r) => ({\n      _time: now(),\n      _value: 7 - r._value,\n      _field: \"offline_count\"\n  }))",
           "refId": "A"
         }
       ],
-      "title": "📡 Sensors Offline",
+      "title": "\ud83d\udce1 Sensors Offline",
       "type": "stat"
     },
     {
@@ -307,11 +307,11 @@
       },
       "targets": [
         {
-          "query": "// Health score: (sensors online / 4 expected) * 100%\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> count()\n  |> group()\n  |> count()\n  |> map(fn: (r) => ({\n      _time: now(),\n      _value: float(v: r._value) / 4.0 * 100.0,\n      _field: \"health_score\"\n  }))",
+          "query": "// Health score: (sensors online / 4 expected) * 100%\nfrom(bucket: \"sensor-readings\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> count()\n  |> group()\n  |> count()\n  |> map(fn: (r) => ({\n      _time: now(),\n      _value: float(v: r._value) / 7.0 * 100.0,\n      _field: \"health_score\"\n  }))",
           "refId": "A"
         }
       ],
-      "title": "⚙️ System Health Score",
+      "title": "\u2699\ufe0f System Health Score",
       "type": "stat"
     },
     {
@@ -382,13 +382,13 @@
                 "value": [
                   {
                     "color": "dark-red",
-                    "text": "🔴 CRITICAL",
+                    "text": "\ud83d\udd34 CRITICAL",
                     "type": "value",
                     "value": "critical"
                   },
                   {
                     "color": "dark-orange",
-                    "text": "🟠 ERROR",
+                    "text": "\ud83d\udfe0 ERROR",
                     "type": "value",
                     "value": "error"
                   }
@@ -463,7 +463,7 @@
           "refId": "A"
         }
       ],
-      "title": "🔴 Active Critical Issues",
+      "title": "\ud83d\udd34 Active Critical Issues",
       "transformations": [
         {
           "id": "organize",
@@ -637,7 +637,7 @@
           "refId": "A"
         }
       ],
-      "title": "💧 Sensors Requiring Attention (Moisture < 40%)",
+      "title": "\ud83d\udca7 Sensors Requiring Attention (Moisture < 40%)",
       "transformations": [
         {
           "id": "organize",
@@ -763,11 +763,11 @@
       },
       "targets": [
         {
-          "query": "// Get last heartbeat for each sensor in last 24h\nlastSeen = from(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> keep(columns: [\"_time\", \"device_id\", \"location\"])\n\n// Filter to only those not seen in last 10 minutes\nlastSeen\n  |> filter(fn: (r) => r._time < experimental.subDuration(from: now(), d: 10m))\n  |> yield(name: \"offline\")",
+          "query": "import \"experimental\"\n// Get last heartbeat for each sensor in last 24h\nlastSeen = from(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"sensor_heartbeat\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> keep(columns: [\"_time\", \"device_id\", \"location\"])\n\n// Filter to only those not seen in last 10 minutes\nlastSeen\n  |> filter(fn: (r) => r._time < experimental.subDuration(from: now(), d: 10m))\n  |> yield(name: \"offline\")",
           "refId": "A"
         }
       ],
-      "title": "📡 Offline Sensors",
+      "title": "\ud83d\udce1 Offline Sensors",
       "transformations": [
         {
           "id": "organize",
@@ -871,6 +871,6 @@
     "to": "now"
   },
   "timezone": "browser",
-  "title": "⚠️ Alerts & Notifications",
+  "title": "\u26a0\ufe0f Alerts & Notifications",
   "uid": "alerts-overview-v2"
 }
