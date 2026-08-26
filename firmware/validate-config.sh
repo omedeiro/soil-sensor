@@ -240,14 +240,14 @@ if [[ $ERRORS -eq 0 && $WARNINGS -eq 0 ]]; then
     echo -e "${GREEN}✓ Configuration is valid and optimal!${NC}"
     echo ""
     echo "Safe to flash firmware:"
-    echo "  - OTA: ./flash-ota-canary.sh"
+    echo "  - OTA: ./flash-fleet.sh          # per-device identity, safe"
     echo "  - USB: pio run --target upload"
     exit 0
 elif [[ $ERRORS -eq 0 ]]; then
     echo -e "${YELLOW}⚠ Configuration is valid but has $WARNINGS warning(s)${NC}"
     echo ""
     echo "Safe to flash firmware, but consider fixing warnings:"
-    echo "  - OTA: ./flash-ota-canary.sh"
+    echo "  - OTA: ./flash-fleet.sh          # per-device identity, safe"
     echo "  - USB: pio run --target upload"
     exit 0
 else
