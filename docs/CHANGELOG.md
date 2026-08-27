@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+#### Main Dashboard Split: Traces vs. Dropdown
+- **`grafana-dashboards/soil-moisture-main.json`** — The Sensor dropdown and the four panels that filtered on it (the colored plant heading, "Current Moisture Levels", "Moisture Trends", "Raw ADC Values") are gone. What is left needs nothing selected first: the status bar, one full-width single-trace moisture panel per plant, and the ambient temperature/humidity panels. `templating.list` is now empty, and the per-plant traces moved up under the status bar with ambient climate below them
+- **`grafana-dashboards/sensor-explorer.json`** — New generated dashboard (uid `sensor-explorer-v1`, tags `overview`, `sensors`, `explorer`) holding exactly what moved off the main dashboard: the custom Sensor variable and the four panels that read `${sensor}`
+- **`scripts/generate-dashboard.py`** — Now generates both dashboards. Panel builders take their grid `y` position from the caller instead of hardcoding it, so each dashboard lays out its own panels
+- **`scripts/upload-dashboard-to-pi.sh`** — Uploads both generated dashboards; pass a file name to deploy just one
+- **`grafana-dashboards/import-all-dashboards.sh`** — Imports `sensor-explorer.json` too
+- **CI** — the generated-dashboard drift check (`.github/workflows/ci.yml`, `scripts/run-ci-checks.sh`) now covers `sensor-explorer.json` alongside `soil-moisture-main.json`
+
 ### Added
 
 #### Continuous Integration

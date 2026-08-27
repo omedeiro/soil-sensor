@@ -203,7 +203,7 @@ healthchecks.io ping URL so an external service notices when pings stop.
    cd ~/soil-sensor/rpi-setup/scripts
    ./check-sensor-health.sh --verbose
    cd ~/soil-sensor/scripts
-   ./debug-grafana-query.sh --dashboard soil-moisture-main-v2 --panel 3
+   ./debug-grafana-query.sh --dashboard soil-moisture-main-v2 --panel 101
    ```
 3. **Query Syntax Errors:**
    ```bash

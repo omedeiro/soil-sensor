@@ -105,7 +105,8 @@ soil-sensor/
 │       ├── reading_queue.h/.cpp  # Offline queue (max 20 readings)
 │       └── web_server.h/.cpp     # Local HTTP server (optional)
 ├── grafana-dashboards/
-│   ├── soil-moisture-main.json   # Main overview dashboard (auto-generated, don't edit)
+│   ├── soil-moisture-main.json   # Main overview, one trace per plant (auto-generated, don't edit)
+│   ├── sensor-explorer.json      # Sensor dropdown + dependent panels (auto-generated, don't edit)
 │   ├── sensor-details.json       # Individual sensor deep-dive
 │   ├── watering-history.json     # Watering event detection & visualization
 │   ├── system-health.json        # ESP8266 diagnostics & events
@@ -359,11 +360,12 @@ The ESP8266 ADC is 10-bit (0–1023). Capacitive sensors read **high when dry** 
 
 ## Grafana Dashboards
 
-### Dashboard Suite (6 dashboards)
+### Dashboard Suite (8 dashboards)
 
 | Dashboard | Tags | Description |
 |-----------|------|-------------|
-| **Soil Moisture Main** | overview, sensors | Main overview with all sensors, moisture gauges, trend plots |
+| **Soil Moisture Main** | overview, sensors | Main overview: status bar, one full-width moisture trace per plant, ambient climate. No dropdown |
+| **Sensor Explorer** | overview, sensors, explorer | Sensor dropdown plus the panels that filter on it: current levels, moisture trends, raw ADC |
 | **Sensor Details** | sensors, diagnostics | Individual sensor deep-dive with uptime, heap, WiFi |
 | **System Health** | diagnostics, system | ESP8266 diagnostic events, WiFi stability, critical events |
 | **Alerts Overview** | alerts, monitoring | Critical alerts, watering needed, sensor offline detection |
@@ -372,11 +374,11 @@ The ESP8266 ADC is 10-bit (0–1023). Capacitive sensors read **high when dry** 
 
 ### Features
 - **Centralized configuration** — `sensors-config.json` manages all sensor info, colors, and labels
-- **Auto-generated dashboards** — Run `./scripts/generate-dashboard.py` to update from config
+- **Auto-generated dashboards** — Run `./scripts/generate-dashboard.py` to regenerate `soil-moisture-main.json` and `sensor-explorer.json` from config
 - **High-contrast colors** — Each sensor has a unique color for easy identification
 - **Moisture gradients** — Dark to bright within each color family (0% dry → 100% wet)
 - **Plant name labels** — "Rubber Tree", "Monstera" (no "sensor-1" IDs in display)
-- **Dropdown filtering** — Select individual sensors or view all at once
+- **Dropdown filtering** — Select individual sensors or view all at once (Sensor Explorer / Sensor Details)
 - **Location filtering** — 'backyard' location filtered out from all dashboards
 - **Time-adaptive** — Panel titles adjust to selected time window (no hardcoded "24h")
 - **Anonymous access** — View dashboards without login (optional, Viewer role)
@@ -532,7 +534,7 @@ Nothing in CI talks to the Pi — all of it works on the repository alone.
 
 | Job | What it checks |
 |-----|----------------|
-| **Dashboards** | `sensors-config.json` validates; every tracked JSON parses; `soil-moisture-main.json` still matches what `generate-dashboard.py` produces; no panel would render "No Data"; the panel checker's own self-test |
+| **Dashboards** | `sensors-config.json` validates; every tracked JSON parses; `soil-moisture-main.json` and `sensor-explorer.json` still match what `generate-dashboard.py` produces; no panel would render "No Data"; the panel checker's own self-test |
 | **Shell & Python** | every `.sh` parses under `bash -n`, ShellCheck at error severity, every `.py` compiles |
 | **Secret scan** | no InfluxDB token, Slack webhook, inline systemd secret, or private key in tracked files |
 | **Firmware build** | the ESP8266 firmware compiles (`pio run -e esp8266`) against `secrets.h.example` |

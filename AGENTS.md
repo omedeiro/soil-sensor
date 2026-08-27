@@ -36,7 +36,7 @@ Four jobs run on every push and PR; none of them need the Pi.
 
 | Job | Checks |
 | --- | ------ |
-| **Dashboards** | `validate-config.py`; all tracked JSON parses; `soil-moisture-main.json` still matches `generate-dashboard.py` output; `check-no-data-panels.py`; `tests/test-no-data-checker.sh` |
+| **Dashboards** | `validate-config.py`; all tracked JSON parses; `soil-moisture-main.json` and `sensor-explorer.json` still match `generate-dashboard.py` output; `check-no-data-panels.py`; `tests/test-no-data-checker.sh` |
 | **Shell & Python** | `bash -n` on every `.sh`, `shellcheck --severity=error`, `py_compile` on every `.py` |
 | **Secret scan** | `scripts/check-secrets.sh` — tokens, webhooks, inline systemd secrets, private keys |
 | **Firmware build** | `pio run -e esp8266` against `secrets.h.example` |
@@ -80,7 +80,7 @@ Run everything locally with `./scripts/run-ci-checks.sh`.
 8. **Duplicate device IDs:** Each sensor must have unique `DEVICE_ID` in multi-sensor setup
 9. **WiFi diagnostics disabled:** Set `ENABLE_WIFI_DIAGNOSTICS = true` in config.h for detailed logging
 10. **Queue disabled:** Set `QUEUE_FAILED_READINGS = true` in config.h to survive network outages
-11. **Editing auto-generated dashboard:** Never hand-edit `grafana-dashboards/soil-moisture-main.json` — regenerate from `sensors-config.json`
+11. **Editing auto-generated dashboards:** Never hand-edit `grafana-dashboards/soil-moisture-main.json` or `grafana-dashboards/sensor-explorer.json` — regenerate both from `sensors-config.json`
 12. **Committing secrets:** Slack webhook / InfluxDB tokens live only on the Pi under `/mnt/sensor-data/config/` (chmod 600), never in git. Systemd units must read them via `EnvironmentFile=`, never `Environment="INFLUX_TOKEN=..."`
 13. **Alert state in /tmp:** rate-limit and alert-state files belong on `/mnt/sensor-data` — a reboot must not reset a 24h suppression window
 14. **Querying a field nothing writes:** a dashboard query filtering on an unknown `_field` (or on a *tag* such as `event_type` via `_field ==`) renders "No Data" forever. `influx-schema.json` is the contract; `./scripts/check-no-data-panels.py` enforces it in CI. When firmware starts writing a new field, add it to `influx-schema.json` in the same commit

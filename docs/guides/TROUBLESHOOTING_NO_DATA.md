@@ -145,7 +145,7 @@ influx bucket list --org soil-monitoring
 # Debug specific panel query
 ./scripts/debug-grafana-query.sh \
   --dashboard soil-moisture-main-v2 \
-  --panel 3
+  --panel 101
 ```
 
 **Solutions:**
@@ -226,7 +226,7 @@ curl -XPOST "http://192.168.99.134:8086/api/v2/query?org=soil-monitoring" \
 ```bash
 # Extract and test query
 ./scripts/debug-grafana-query.sh \
-  --dashboard soil-moisture-main-v2 \
+  --dashboard sensor-explorer-v1 \
   --panel 5
 ```
 

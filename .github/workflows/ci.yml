@@ -38,16 +38,22 @@ jobs:
           done < <(git ls-files '*.json')
           exit $status
 
-      - name: Main dashboard matches sensors-config.json
+      - name: Generated dashboards match sensors-config.json
         run: |
-          # soil-moisture-main.json is generated — never hand-edited.
+          # Both of these are generated — never hand-edited.
           ./scripts/generate-dashboard.py > /dev/null
-          if ! git diff --quiet -- grafana-dashboards/soil-moisture-main.json; then
-            echo "::error file=grafana-dashboards/soil-moisture-main.json::does not match the output of scripts/generate-dashboard.py — edit sensors-config.json and regenerate"
-            git --no-pager diff -- grafana-dashboards/soil-moisture-main.json
-            exit 1
-          fi
-          echo "soil-moisture-main.json is up to date"
+          status=0
+          for file in grafana-dashboards/soil-moisture-main.json \
+                      grafana-dashboards/sensor-explorer.json; do
+            if ! git diff --quiet -- "$file"; then
+              echo "::error file=$file::does not match the output of scripts/generate-dashboard.py — edit sensors-config.json and regenerate"
+              git --no-pager diff -- "$file"
+              status=1
+            else
+              echo "$(basename "$file") is up to date"
+            fi
+          done
+          exit $status
 
       - name: No "No Data" panels
         run: ./scripts/check-no-data-panels.py --no-color

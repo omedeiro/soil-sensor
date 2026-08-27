@@ -65,35 +65,46 @@ check_json_parses() {
     return $rc
 }
 
-check_dashboard_is_generated() {
-    # soil-moisture-main.json is generated from sensors-config.json and must
-    # never be hand-edited. Regenerate into a scratch copy and compare, leaving
-    # the working tree exactly as it was found.
-    local dashboard=grafana-dashboards/soil-moisture-main.json
-    local scratch
+check_dashboards_are_generated() {
+    # soil-moisture-main.json and sensor-explorer.json are generated from
+    # sensors-config.json and must never be hand-edited. Regenerate into a
+    # scratch copy and compare, leaving the working tree exactly as found.
+    local dashboards=(
+        grafana-dashboards/soil-moisture-main.json
+        grafana-dashboards/sensor-explorer.json
+    )
+    local scratch dashboard name rc=0
     scratch=$(mktemp -d)
-    cp "$dashboard" "$scratch/committed.json"
+
+    for dashboard in "${dashboards[@]}"; do
+        cp "$dashboard" "$scratch/$(basename "$dashboard")"
+    done
 
     if ! ./scripts/generate-dashboard.py > "$scratch/generate.log" 2>&1; then
         cat "$scratch/generate.log"
-        cp "$scratch/committed.json" "$dashboard"
+        for dashboard in "${dashboards[@]}"; do
+            cp "$scratch/$(basename "$dashboard")" "$dashboard"
+        done
         rm -rf "$scratch"
         return 1
     fi
 
-    if diff -q "$scratch/committed.json" "$dashboard" > /dev/null; then
-        rm -rf "$scratch"
-        echo "  soil-moisture-main.json matches sensors-config.json"
-        return 0
-    fi
+    for dashboard in "${dashboards[@]}"; do
+        name=$(basename "$dashboard")
+        if diff -q "$scratch/$name" "$dashboard" > /dev/null; then
+            echo "  $name matches sensors-config.json"
+        else
+            echo "  $name does not match what sensors-config.json generates."
+            echo "  It must never be hand-edited — change sensors-config.json and regenerate:"
+            echo "      ./scripts/generate-dashboard.py"
+            diff -u "$scratch/$name" "$dashboard" | head -40
+            rc=1
+        fi
+        cp "$scratch/$name" "$dashboard"
+    done
 
-    echo "  soil-moisture-main.json does not match what sensors-config.json generates."
-    echo "  It must never be hand-edited — change sensors-config.json and regenerate:"
-    echo "      ./scripts/generate-dashboard.py"
-    diff -u "$scratch/committed.json" "$dashboard" | head -40
-    cp "$scratch/committed.json" "$dashboard"
     rm -rf "$scratch"
-    return 1
+    return $rc
 }
 
 # ── Shell and Python ─────────────────────────────────────────────────────────
@@ -140,7 +151,7 @@ echo "=================================================="
 
 run_check "sensors-config.json is valid"      ./scripts/validate-config.py
 run_check "All JSON parses"                   check_json_parses
-run_check "Main dashboard is generated"       check_dashboard_is_generated
+run_check "Dashboards are generated"          check_dashboards_are_generated
 run_check "No \"No Data\" panels"             ./scripts/check-no-data-panels.py --no-color
 run_check "Panel checker self-test"           ./tests/test-no-data-checker.sh
 run_check "Shell syntax"                      check_shell_syntax
