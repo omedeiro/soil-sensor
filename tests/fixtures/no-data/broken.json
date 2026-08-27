@@ -1,0 +1,134 @@
+{
+  "title": "Fixture — every failure mode",
+  "uid": "fixture-broken",
+  "templating": {"list": []},
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Wrong datasource UID",
+      "datasource": {"type": "influxdb", "uid": "someOtherDatasource"},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> last()"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "No query at all",
+      "datasource": {"type": "influxdb", "uid": "cflk0i2e2nwu8d"},
+      "targets": []
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Wrong bucket",
+      "datasource": {"type": "influxdb", "uid": "cflk0i2e2nwu8d"},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"sensor_readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> last()"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Measurement nothing writes",
+      "datasource": {"type": "influxdb", "uid": "cflk0i2e2nwu8d"},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"soil_reading\")\n  |> last()"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Field that is really a tag",
+      "datasource": {"type": "influxdb", "uid": "cflk0i2e2nwu8d"},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r._field == \"event_type\")\n  |> count()"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Field nothing writes",
+      "datasource": {"type": "influxdb", "uid": "cflk0i2e2nwu8d"},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"rpi_system_metrics\")\n  |> filter(fn: (r) => r._field == \"memory_percent\")\n  |> last()"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Tag that does not exist",
+      "datasource": {"type": "influxdb", "uid": "cflk0i2e2nwu8d"},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.room == \"living-room\")\n  |> last()"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Unknown device id",
+      "datasource": {"type": "influxdb", "uid": "cflk0i2e2nwu8d"},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-42\")\n  |> last()"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "Missing range",
+      "datasource": {"type": "influxdb", "uid": "cflk0i2e2nwu8d"},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"sensor-readings\")\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> last()"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "Unbalanced query",
+      "datasource": {"type": "influxdb", "uid": "cflk0i2e2nwu8d"},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\"\n  |> last()"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Undefined variable",
+      "datasource": {"type": "influxdb", "uid": "cflk0i2e2nwu8d"},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"${plant}\")\n  |> last()"
+        }
+      ]
+    }
+  ]
+}

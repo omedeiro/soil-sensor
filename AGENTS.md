@@ -26,8 +26,27 @@ matching skill before doing the work rather than guessing.
 1. `git checkout -b feature/<name>` (or `fix/`, `docs/`, `hotfix/`)
 2. Make changes; for dashboards: edit `sensors-config.json` → `./scripts/validate-config.py` → `./scripts/generate-dashboard.py` → deploy
 3. Optional version bump: `./scripts/bump-version.sh <major|minor|patch> [firmware|system|docs]`
-4. `git push -u origin <branch>` then `gh pr create` with summary/changes/testing checklist
-5. Merge with `gh pr merge --squash` after review
+4. `./scripts/run-ci-checks.sh` — runs exactly what CI runs, minus the firmware build
+5. `git push -u origin <branch>` then `gh pr create` with summary/changes/testing checklist
+6. Merge with `gh pr merge --squash` after review
+
+## CI (`.github/workflows/ci.yml`)
+
+Four jobs run on every push and PR; none of them need the Pi.
+
+| Job | Checks |
+| --- | ------ |
+| **Dashboards** | `validate-config.py`; all tracked JSON parses; `soil-moisture-main.json` still matches `generate-dashboard.py` output; `check-no-data-panels.py`; `tests/test-no-data-checker.sh` |
+| **Shell & Python** | `bash -n` on every `.sh`, `shellcheck --severity=error`, `py_compile` on every `.py` |
+| **Secret scan** | `scripts/check-secrets.sh` — tokens, webhooks, inline systemd secrets, private keys |
+| **Firmware build** | `pio run -e esp8266` against `secrets.h.example` |
+
+`scripts/check-no-data-panels.py` is the static counterpart to the Pi's live
+panel-health monitor: it compares every dashboard query against
+`influx-schema.json` (measurements/tags/fields as actually written by the
+firmware and the Pi collectors) and `sensors-config.json`. A query filtering on
+a field nothing writes — or on a *tag* via `_field ==` — fails the build.
+Run everything locally with `./scripts/run-ci-checks.sh`.
 
 ## Architecture
 
@@ -64,6 +83,7 @@ matching skill before doing the work rather than guessing.
 11. **Editing auto-generated dashboard:** Never hand-edit `grafana-dashboards/soil-moisture-main.json` — regenerate from `sensors-config.json`
 12. **Committing secrets:** Slack webhook / InfluxDB tokens live only on the Pi under `/mnt/sensor-data/config/` (chmod 600), never in git. Systemd units must read them via `EnvironmentFile=`, never `Environment="INFLUX_TOKEN=..."`
 13. **Alert state in /tmp:** rate-limit and alert-state files belong on `/mnt/sensor-data` — a reboot must not reset a 24h suppression window
+14. **Querying a field nothing writes:** a dashboard query filtering on an unknown `_field` (or on a *tag* such as `event_type` via `_field ==`) renders "No Data" forever. `influx-schema.json` is the contract; `./scripts/check-no-data-panels.py` enforces it in CI. When firmware starts writing a new field, add it to `influx-schema.json` in the same commit
 
 ## System Information
 
@@ -96,6 +116,8 @@ matching skill before doing the work rather than guessing.
 **Documentation:**
 - `docs/README.md` — Technical documentation (WiFi stability, Grafana Cloud setup, InfluxDB notes)
 - `docs/guides/TROUBLESHOOTING_NO_DATA.md` — Panel health troubleshooting guide (v2.9.0)
+- `influx-schema.json` — InfluxDB measurements/tags/fields as written by the firmware and Pi collectors (checked in CI)
+- `.github/workflows/ci.yml` — CI: dashboards, shell/python, secret scan, firmware build
 - `docs/guides/SLACK_NOTIFICATIONS.md` — Slack alerting: low moisture, sensor down, system down
 - `grafana-dashboards/README.md` — Dashboard installation, customization, and alert setup
 - `README.md` — Project overview and setup instructions

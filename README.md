@@ -68,14 +68,19 @@ Each soil sensor reads moisture every 5 minutes and posts data to a central time
 ```
 soil-sensor/
 ├── sensors-config.json           # ← Centralized sensor configuration (single source of truth)
+├── influx-schema.json            # ← InfluxDB measurements/tags/fields, as written by the code
 ├── AGENTS.md                     # Agent instructions & technical reference
 ├── README.md                     # This file
+├── .github/workflows/ci.yml      # CI: dashboards, shell/python, secrets, firmware build
 ├── scripts/                      # Dashboard generation & deployment tools
 │   ├── generate-dashboard.py     # Auto-generate Grafana dashboard from config
 │   ├── validate-config.py        # Validate sensors-config.json before generation
+│   ├── check-no-data-panels.py   # Static "No Data" panel check (runs in CI)
+│   ├── check-secrets.sh          # Committed-secret scan (runs in CI)
+│   ├── run-ci-checks.sh          # Run every CI check locally
 │   ├── upload-dashboard-to-pi.sh # Deploy dashboard to Grafana on Pi
 │   ├── bump-version.sh           # Version bump automation
-│   ├── check-grafana-panels.py   # Panel health checker
+│   ├── check-grafana-panels.py   # Panel health checker (live, runs on the Pi)
 │   ├── debug-grafana-query.sh    # Query debugger for "No Data" panels
 │   └── repair-grafana-panels.sh  # Automated panel repair
 ├── firmware/                     # ESP8266 PlatformIO firmware
@@ -129,7 +134,10 @@ soil-sensor/
 │   └── SCHEMATIC.md
 ├── tests/                        # Integration tests
 │   ├── test_influx_write.sh
-│   └── test-watering-detection.sh
+│   ├── test-watering-detection.sh
+│   ├── test-no-data-checker.sh   # Self-test for the "No Data" checker
+│   ├── no-data-allowlist.json    # Documented suppressions for that checker
+│   └── fixtures/no-data/         # Fixture dashboards it runs against
 └── docs/                         # Documentation
     ├── CHANGELOG.md
     ├── README.md                 # WiFi stability, Grafana Cloud, InfluxDB notes
@@ -449,7 +457,7 @@ Dashboards viewable at `http://<pi-ip>:3000` without login (Viewer role, read-on
 | `uptime` | int | Seconds since boot |
 | `free_heap` | int | Available RAM bytes |
 | `rssi` | int | WiFi signal dBm |
-| `queue_size` | int | Offline queue depth (0-20) |
+| `heartbeat_count` | int | Heartbeats sent since boot |
 
 **3. `sensor_diagnostics`** — Event tracking (on-demand)
 
@@ -467,7 +475,23 @@ Dashboards viewable at `http://<pi-ip>:3000` without login (Viewer role, read-on
 | `rssi` | int | WiFi signal at event time |
 | `queue_size` | int | Queue depth at event time |
 
-**4. `rpi_system_metrics`** — Raspberry Pi health (every 60 seconds)
+**4. `climate_reading`** — DHT22 temperature/humidity (every 5 minutes)
+
+| Tag | Example | Description |
+|-----|---------|-------------|
+| `device_id` | `sensor-8` | Sensor identifier |
+| `location` | `living-room` | Physical location |
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `temperature_c` | float | Temperature °C |
+| `temperature_f` | float | Temperature °F |
+| `humidity` | float | Relative humidity % |
+| `uptime` | int | Seconds since boot |
+| `rssi` | int | WiFi signal dBm |
+| `free_heap` | int | Available RAM bytes |
+
+**5. `rpi_system_metrics`** — Raspberry Pi health (every 60 seconds)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -493,6 +517,54 @@ from(bucket: "sensor-readings")
   |> filter(fn: (r) => r._field == "moisture")
   |> filter(fn: (r) => r.device_id == "sensor-1")
 ```
+
+The same schema lives in [`influx-schema.json`](influx-schema.json) in a form CI
+can read: `scripts/check-no-data-panels.py` fails the build when a dashboard
+queries a measurement or field nothing writes. Add a field there in the same
+commit that starts writing it.
+
+---
+
+## Continuous Integration
+
+Every push and pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+Nothing in CI talks to the Pi — all of it works on the repository alone.
+
+| Job | What it checks |
+|-----|----------------|
+| **Dashboards** | `sensors-config.json` validates; every tracked JSON parses; `soil-moisture-main.json` still matches what `generate-dashboard.py` produces; no panel would render "No Data"; the panel checker's own self-test |
+| **Shell & Python** | every `.sh` parses under `bash -n`, ShellCheck at error severity, every `.py` compiles |
+| **Secret scan** | no InfluxDB token, Slack webhook, inline systemd secret, or private key in tracked files |
+| **Firmware build** | the ESP8266 firmware compiles (`pio run -e esp8266`) against `secrets.h.example` |
+
+Run the same checks before pushing:
+
+```bash
+./scripts/run-ci-checks.sh                  # everything except the firmware build
+./scripts/run-ci-checks.sh --with-firmware  # add the PlatformIO compile
+```
+
+### The "No Data" check
+
+A panel goes blank in Grafana long before anyone notices, and the usual cause is
+a query that can never match anything — a field name that nothing writes, a
+measurement that was renamed, a `_field` filter naming what is actually a tag.
+`scripts/check-no-data-panels.py` reads every dashboard in `grafana-dashboards/`
+and compares each query against `influx-schema.json` and `sensors-config.json`:
+
+```bash
+./scripts/check-no-data-panels.py            # human-readable report
+./scripts/check-no-data-panels.py --format json
+```
+
+It flags a panel when the query uses the wrong datasource UID or bucket, has no
+query at all, filters on an unknown measurement/field/tag, names a `device_id`
+that is not configured, reads without a `range()`, has unbalanced brackets, or
+uses a `${variable}` the dashboard never defines.
+
+If a query is right and the checker is wrong — data written by something outside
+this repo, say — add the field to `influx-schema.json`, or add an entry with a
+reason to `tests/no-data-allowlist.json`.
 
 ---
 

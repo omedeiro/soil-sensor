@@ -1,0 +1,18 @@
+{
+  "_comment": [
+    "Suppressions for scripts/check-no-data-panels.py.",
+    "",
+    "Use this only when a query is correct but the checker cannot know it —",
+    "for example a measurement written by something outside this repo. A wrong",
+    "field name belongs in the dashboard, not in here.",
+    "",
+    "Each entry matches on:",
+    "  dashboard - file name, fnmatch pattern (default '*')",
+    "  panel     - panel id or panel title (optional)",
+    "  rule      - datasource | no_query | bucket | measurement | field |",
+    "              tag | device_id | missing_range | unbalanced | variable",
+    "  match     - substring of the finding message (optional)",
+    "  reason    - required; why this is not a bug"
+  ],
+  "suppressions": []
+}

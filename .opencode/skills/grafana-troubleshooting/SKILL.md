@@ -102,7 +102,19 @@ If panels show "No Data" or "Connection Refused", verify the datasource.
 
 Automated panel health monitoring with Slack alerts.
 
-**Quick Diagnosis:**
+**First, rule out a query that could never match** — no Pi or InfluxDB needed,
+and it is what CI runs on every push:
+```bash
+./scripts/check-no-data-panels.py
+```
+It compares every dashboard query against `influx-schema.json` and
+`sensors-config.json` and reports unknown fields (including a **tag** filtered
+via `_field ==`, e.g. `event_type`), unknown measurements, wrong bucket or
+datasource UID, unconfigured `device_id`s, a missing `range()`, unbalanced
+brackets, and undefined `${variables}`. If it is clean, the query is fine and
+the panel is genuinely empty — continue below.
+
+**Quick Diagnosis (live, on the Pi):**
 ```bash
 cd ~/soil-sensor
 ./scripts/check-grafana-panels.py
