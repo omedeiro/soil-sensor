@@ -1,0 +1,27 @@
+[Unit]
+Description=Slack alert for failed unit %i
+Documentation=https://github.com/omedeiro/soil-sensor
+
+[Service]
+Type=oneshot
+User=omedeiro
+Group=omedeiro
+WorkingDirectory=/home/omedeiro/soil-sensor
+
+# Only the Slack webhook is needed here; the leading '-' tolerates the file
+# being missing (which is itself one of the failures this unit reports).
+EnvironmentFile=-/mnt/sensor-data/config/soil-alerts.env
+
+ExecStart=/home/omedeiro/soil-sensor/rpi-setup/scripts/alert-unit-failed.sh %i
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=alert-unit-failed
+
+# Exit 2 means the notifier was rate-limited - not a failure worth escalating
+# (and escalating it would risk an OnFailure loop).
+SuccessExitStatus=0 2
+
+NoNewPrivileges=true
+MemoryMax=64M
+Restart=no

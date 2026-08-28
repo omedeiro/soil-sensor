@@ -1,0 +1,152 @@
+name: System Watchdog
+
+# The Raspberry Pi cannot report its own death. check-sensor-health.sh raises
+# "system down" when InfluxDB is unreachable or every sensor has gone silent,
+# but it runs ON the Pi — if the Pi loses power, loses network, or its SD card
+# fails, nothing is left to send anything and the alerts just stop arriving.
+#
+# This workflow is the outside observer. It probes the public Grafana endpoint
+# (Pi → cloudflared → Cloudflare → here) on a schedule and posts to Slack when
+# the system stops answering.
+#
+# Alerting is edge-triggered on the conclusion of the previous *scheduled* run,
+# so a multi-hour outage produces one message, not one every 15 minutes:
+#
+#   previous | now  | action
+#   ---------|------|---------------------------------------------
+#   success  | down | send "System Unreachable" (critical)
+#   failure  | down | stay quiet, already alerted
+#   failure  | up   | send "System Back Online" (success)
+#   success  | up   | stay quiet
+#
+# The job deliberately exits non-zero while the system is down: that red run is
+# what carries the state to the next one, and it makes an outage visible in the
+# Actions tab. Manual (workflow_dispatch) runs are excluded from that state, so
+# testing by hand never suppresses a real alert.
+#
+# Setup: add a repository secret SLACK_WEBHOOK_URL (Settings → Secrets and
+# variables → Actions). Without it every run exits early as a no-op. Optionally
+# set the repository variable WATCHDOG_URL to probe a different endpoint.
+#
+# Caveat: GitHub disables scheduled workflows in a repository with no commit
+# activity for 60 days, and cron runs can be delayed under load. This is a
+# backstop for a dead Pi, not a hard real-time guarantee.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: watchdog
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    name: Probe public endpoint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the Slack webhook is configured
+        id: config
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "::warning::SLACK_WEBHOOK_URL secret is not set — watchdog is a no-op."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Probe the system
+        id: probe
+        if: steps.config.outputs.configured == 'true'
+        env:
+          WATCHDOG_URL: ${{ vars.WATCHDOG_URL }}
+        run: |
+          # check-system-online.sh reads WATCHDOG_URL itself and falls back to
+          # the default endpoint when the repository variable is unset.
+          if output=$(./scripts/check-system-online.sh --attempts 3 --interval 30 --timeout 15); then
+            status=up
+          else
+            status=down
+          fi
+
+          summary=$(printf '%s\n' "$output" | sed -n 's/^SUMMARY=//p' | tail -1)
+          [ -n "$summary" ] || summary="The watchdog probe produced no summary."
+
+          echo "status=${status}"   >> "$GITHUB_OUTPUT"
+          echo "summary=${summary}" >> "$GITHUB_OUTPUT"
+          echo "System is ${status}: ${summary}"
+
+      # The previous scheduled run's conclusion IS the alert state: no external
+      # store, and it survives for as long as GitHub keeps run history.
+      - name: Read the previous scheduled outcome
+        id: prev
+        if: steps.config.outputs.configured == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          conclusion=$(gh api \
+            "repos/${REPO}/actions/workflows/watchdog.yml/runs?event=schedule&status=completed&per_page=10" \
+            --jq "[.workflow_runs[] | select(.id != ${RUN_ID}) | .conclusion] | .[0] // \"none\"" \
+            2>/dev/null) || conclusion=none
+          [ -n "$conclusion" ] || conclusion=none
+          echo "conclusion=${conclusion}" >> "$GITHUB_OUTPUT"
+          echo "Previous scheduled run concluded: ${conclusion}"
+
+      - name: Notify Slack
+        if: steps.config.outputs.configured == 'true'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          STATUS: ${{ steps.probe.outputs.status }}
+          SUMMARY: ${{ steps.probe.outputs.summary }}
+          PREV: ${{ steps.prev.outputs.conclusion }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          already_alerted=false
+          if [ "$PREV" = "failure" ]; then
+            already_alerted=true
+          fi
+
+          if [ "$STATUS" = "down" ] && [ "$already_alerted" = "true" ]; then
+            echo "Still down, and the previous scheduled run already alerted — staying quiet."
+            exit 0
+          fi
+
+          if [ "$STATUS" = "up" ] && [ "$already_alerted" = "false" ]; then
+            echo "Healthy, and it was healthy last time — nothing to say."
+            exit 0
+          fi
+
+          if [ "$STATUS" = "down" ]; then
+            ./scripts/send-slack-alert.sh \
+              --severity critical \
+              --title "Soil Monitoring System Unreachable" \
+              --message "The system did not answer from outside the network.\n\n${SUMMARY}\n\nThe on-Pi alerts cannot report this: the Raspberry Pi has lost power or network, cloudflared is down, or Grafana has stopped.\n\nWatchdog run: ${RUN_URL}" \
+              --topic watchdog-system-unreachable \
+              --no-rate-limit
+          else
+            ./scripts/send-slack-alert.sh \
+              --severity success \
+              --title "Soil Monitoring System Back Online" \
+              --message "The system is answering from outside the network again.\n\n${SUMMARY}" \
+              --topic watchdog-system-recovered \
+              --no-rate-limit
+          fi
+
+      # Record the outage in this run's conclusion so the next run can tell
+      # "still down" from "just went down". Keep this last.
+      - name: Fail the run while the system is down
+        if: steps.probe.outputs.status == 'down'
+        run: |
+          echo "::error::The soil monitoring system is not answering from outside the network."
+          exit 1

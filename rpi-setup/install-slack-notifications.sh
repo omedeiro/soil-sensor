@@ -3,10 +3,14 @@
 # install-slack-notifications.sh
 # One-time setup for Slack alerting on the Raspberry Pi.
 #
-# Installs three alerts:
+# Installs four alerts:
 #   1. Soil moisture below 50%      - checked every 30 min, edge-triggered
 #   2. A sensor stopped logging     - checked every 10 min, max 1 alert/day
 #   3. The whole system is down     - checked every 10 min, max 1 alert/day
+#   4. A check itself failed        - via OnFailure=, max 1 per unit per 6h
+#
+# A fifth alert lives outside the Pi entirely, in .github/workflows/watchdog.yml:
+# nothing running on the Pi can report the Pi being dead.
 #
 # Secrets are written to /mnt/sensor-data/config/ with mode 600 and are never
 # committed to git.
@@ -44,12 +48,14 @@ ok "repo at $REPO_DIR"
 for s in scripts/send-slack-alert.sh \
          rpi-setup/scripts/check-soil-moisture.sh \
          rpi-setup/scripts/check-sensor-health.sh \
+         rpi-setup/scripts/alert-unit-failed.sh \
          rpi-setup/scripts/lib/influx-lib.sh; do
     [[ -f "${REPO_DIR}/${s}" ]] || die "Missing ${s} - run 'git pull' in $REPO_DIR"
 done
 chmod +x "${REPO_DIR}/scripts/send-slack-alert.sh" \
          "${REPO_DIR}/rpi-setup/scripts/check-soil-moisture.sh" \
-         "${REPO_DIR}/rpi-setup/scripts/check-sensor-health.sh"
+         "${REPO_DIR}/rpi-setup/scripts/check-sensor-health.sh" \
+         "${REPO_DIR}/rpi-setup/scripts/alert-unit-failed.sh"
 ok "alert scripts present and executable"
 
 mkdir -p "$CONFIG_DIR" "$STATE_DIR" "$RATE_LIMIT_DIR"
@@ -144,7 +150,8 @@ echo ""
 echo "── Installing systemd timers ───────────────────────────────"
 UNIT_SRC="${REPO_DIR}/rpi-setup/systemd"
 for unit in sensor-health-check.service sensor-health-check.timer \
-            soil-moisture-check.service soil-moisture-check.timer; do
+            soil-moisture-check.service soil-moisture-check.timer \
+            alert-unit-failed@.service; do
     sudo cp "${UNIT_SRC}/${unit}" /etc/systemd/system/
     ok "installed ${unit}"
 done
@@ -171,6 +178,7 @@ echo "  • Soil moisture below 50%   - checked every 30 min"
 echo "                                 alerts once, then re-arms after watering"
 echo "  • Sensor stopped logging     - checked every 10 min, max 1 alert/day"
 echo "  • Whole system down          - checked every 10 min, max 1 alert/day"
+echo "  • A check itself failing     - reported via OnFailure=, max 1 per 6h"
 echo ""
 echo "Check status:"
 echo "  systemctl list-timers 'soil-*' 'sensor-*'"

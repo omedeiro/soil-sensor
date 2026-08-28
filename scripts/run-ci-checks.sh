@@ -146,6 +146,7 @@ run_check "Panel checker self-test"           ./tests/test-no-data-checker.sh
 run_check "Shell syntax"                      check_shell_syntax
 run_check "ShellCheck"                        check_shellcheck
 run_check "Python syntax"                     check_python_syntax
+run_check "Alerting end-to-end tests"         ./tests/test-alert-scripts.sh
 run_check "No committed secrets"              ./scripts/check-secrets.sh
 
 if [ "$WITH_FIRMWARE" -eq 1 ]; then

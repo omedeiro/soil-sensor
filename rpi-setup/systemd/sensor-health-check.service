@@ -31,6 +31,12 @@ SyslogIdentifier=sensor-health-check
 # checks that already alerted; they must not mark the unit as failed.
 SuccessExitStatus=0 1 2
 
+# What is left is the check itself being broken - a config error (exit 3,
+# usually a missing soil-alerts.env), a crash, a missing dependency. Without
+# this, that failure is silent, and silence is indistinguishable from
+# "everything is fine".
+OnFailure=alert-unit-failed@%n.service
+
 PrivateTmp=false
 NoNewPrivileges=true
 MemoryMax=128M

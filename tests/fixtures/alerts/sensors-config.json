@@ -1,0 +1,54 @@
+{
+  "sensors": [
+    {
+      "id": "sensor-1",
+      "plant": "Rubber Tree",
+      "location": "bed-room",
+      "color": "#73BF69",
+      "thresholds": { "low": 33, "medium": 67 },
+      "colorSteps": [
+        {"value": null, "color": "#2d5016"},
+        {"value": 33, "color": "#4a7c2a"},
+        {"value": 67, "color": "#73BF69"}
+      ]
+    },
+    {
+      "id": "sensor-2",
+      "plant": "Monstera",
+      "location": "living-room",
+      "color": "#F2CC0C",
+      "thresholds": { "low": 33, "medium": 67 },
+      "colorSteps": [
+        {"value": null, "color": "#6b5606"},
+        {"value": 33, "color": "#a88a09"},
+        {"value": 67, "color": "#F2CC0C"}
+      ]
+    },
+    {
+      "id": "sensor-3",
+      "plant": "Micro \"Greens\"",
+      "location": "guest-room",
+      "color": "#FF6B6B",
+      "thresholds": { "low": 33, "medium": 67, "alert": 60 },
+      "colorSteps": [
+        {"value": null, "color": "#6b2323"},
+        {"value": 33, "color": "#b54747"},
+        {"value": 67, "color": "#FF6B6B"}
+      ]
+    }
+  ],
+  "climate_sensors": [
+    {
+      "id": "sensor-8",
+      "label": "Living Room Climate",
+      "location": "living-room",
+      "color": "#FF780A"
+    }
+  ],
+  "grafana": {
+    "influxdb_datasource_uid": "test-uid-000000",
+    "bucket": "sensor-readings",
+    "measurement": "sensor_reading",
+    "climate_measurement": "climate_reading"
+  }
+}

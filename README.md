@@ -530,10 +530,15 @@ commit that starts writing it.
 Every push and pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 Nothing in CI talks to the Pi — all of it works on the repository alone.
 
+A second workflow, [`watchdog.yml`](.github/workflows/watchdog.yml), runs on a
+schedule rather than on pushes: it probes the public Grafana endpoint every 15
+minutes and posts to Slack when the Pi stops answering. See
+[Slack Notifications](docs/guides/SLACK_NOTIFICATIONS.md).
+
 | Job | What it checks |
 |-----|----------------|
 | **Dashboards** | `sensors-config.json` validates; every tracked JSON parses; `soil-moisture-main.json` still matches what `generate-dashboard.py` produces; no panel would render "No Data"; the panel checker's own self-test |
-| **Shell & Python** | every `.sh` parses under `bash -n`, ShellCheck at error severity, every `.py` compiles |
+| **Shell & Python** | every `.sh` parses under `bash -n`, ShellCheck at error severity, every `.py` compiles, and `tests/test-alert-scripts.sh` exercises the Slack alerting end to end |
 | **Secret scan** | no InfluxDB token, Slack webhook, inline systemd secret, or private key in tracked files |
 | **Firmware build** | the ESP8266 firmware compiles (`pio run -e esp8266`) against `secrets.h.example` |
 
@@ -595,6 +600,9 @@ datasource, reflash sensors, then revoke the old token.
 | `grafana-server` | Dashboard server (auto-restart on failure) |
 | `cloudflared` | Cloudflare Tunnel for public HTTPS access |
 | `sensor-health-monitor` | Monitors InfluxDB/Grafana, alerts on failure |
+| `soil-moisture-check.timer` | Slack alert when a plant drops below 50% (every 30 min) |
+| `sensor-health-check.timer` | Slack alert for a silent sensor or a whole-system outage (every 10 min) |
+| `alert-unit-failed@.service` | `OnFailure=` notifier: reports a check that could not run |
 | `sensor-backup.timer` | Daily backup at 3:00 AM |
 | `system-metrics-collector` | Pi CPU/RAM/disk monitoring (60s interval) |
 

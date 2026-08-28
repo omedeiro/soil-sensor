@@ -26,7 +26,18 @@ SyslogIdentifier=soil-moisture-check
 
 # Exit code 1 just means "a plant is dry" - that is a successful check,
 # not a unit failure.
-SuccessExitStatus=0 1
+#
+# Exit 2 (InfluxDB unreachable) is also not escalated here: that exact
+# condition is already reported by sensor-health-check.service as a
+# "System Down" alert, with a better explanation. Counting it as a failure
+# too would send two Slack messages for one root cause.
+SuccessExitStatus=0 1 2
+
+# The alerting system reports its own breakage. Anything left - a config
+# error (exit 3, usually a missing soil-alerts.env), a crash, a missing
+# dependency - would otherwise be completely silent: the timer keeps ticking
+# and no alert ever arrives.
+OnFailure=alert-unit-failed@%n.service
 
 PrivateTmp=false
 NoNewPrivileges=true

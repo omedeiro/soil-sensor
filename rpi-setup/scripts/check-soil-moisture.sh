@@ -143,6 +143,7 @@ NOW=$(date +%s)
 REMINDER_SECONDS=$((REMINDER_HOURS * 3600))
 ALERT_LINES=""
 ALERT_COUNT=0
+ALERT_IDS=""
 RECOVERED_LINES=""
 RECOVERED_COUNT=0
 DRY_COUNT=0
@@ -194,6 +195,7 @@ while IFS=$'\t' read -r id plant override; do
             echo -e "  ${RED}✗${RESET} $id ($plant) - ${moisture}% (below ${limit}%) → ALERT [$reason]"
             ALERT_LINES="${ALERT_LINES}  • ${plant} (${id}) — ${moisture}% (threshold ${limit}%)\\n"
             ALERT_COUNT=$((ALERT_COUNT + 1))
+            ALERT_IDS="${ALERT_IDS}${id} "
         else
             echo -e "  ${YELLOW}✗${RESET} $id ($plant) - ${moisture}% (below ${limit}%) [$reason]"
         fi
@@ -239,17 +241,14 @@ if [[ "$NOTIFY" == "true" && $ALERT_COUNT -gt 0 ]]; then
     if send_alert "warning" "Soil Moisture Low" "$message" "$SLACK_TOPIC"; then
         # Stamp state only after a confirmed send, so a Slack outage does not
         # silently swallow the alert. Dry runs never write state.
+        #
+        # Only the plants NAMED in this message are stamped. A plant that was
+        # suppressed ("already alerted 3h ago") keeps its original timestamp,
+        # so an unrelated plant drying out cannot push its 24h reminder back.
         if [[ "$DRY_RUN" != "true" ]]; then
-            while IFS=$'\t' read -r id plant override; do
-                [[ -z "$id" ]] && continue
-                limit="$THRESHOLD"; [[ -n "$override" ]] && limit="$override"
-                row=$(printf '%s\n' "$READINGS" | awk -F'\t' -v d="$id" '$1 == d {print; exit}')
-                [[ -z "$row" ]] && continue
-                moisture=$(printf '%s' "$row" | cut -f3)
-                if awk -v m="$moisture" -v t="$limit" 'BEGIN { exit !(m < t) }'; then
-                    echo "$NOW" > "${STATE_DIR}/dry-${id}.state"
-                fi
-            done < <(jq -r '.sensors[] | [.id, .plant, (.thresholds.alert // "")] | @tsv' "$SENSORS_CONFIG")
+            for alerted_id in $ALERT_IDS; do
+                echo "$NOW" > "${STATE_DIR}/dry-${alerted_id}.state"
+            done
         fi
         echo -e "${GREEN}✓ Slack alert sent${RESET}"
     else

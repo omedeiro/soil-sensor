@@ -95,6 +95,9 @@ jobs:
           done < <(git ls-files '*.py')
           exit $status
 
+      - name: Alerting end-to-end tests
+        run: ./tests/test-alert-scripts.sh
+
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest

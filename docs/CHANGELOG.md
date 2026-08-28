@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Slack Alerting — Coverage For What The Pi Cannot Report
+- **`.github/workflows/watchdog.yml`** + **`scripts/check-system-online.sh`** — New: an off-Pi watchdog. Every alert until now ran *on* the Raspberry Pi, so a dead Pi produced silence rather than a notification. A scheduled GitHub-hosted runner now probes the public Grafana endpoint (`https://soil.owenmedeiros.com/api/health` — the whole path through cloudflared, the Cloudflare Tunnel and Grafana) every 15 minutes. Three attempts 30s apart are required before declaring an outage; HTTP 200 and 401/403 both count as up (Grafana answered, which is what the probe is for), while no response and 502/503/504 count as down. Alerting is edge-triggered on the previous scheduled run's conclusion, so a multi-hour outage sends one message rather than one every 15 minutes, and the run deliberately fails while the system is down so that conclusion carries the state. Needs a `SLACK_WEBHOOK_URL` repository secret; without it every run is a no-op
+- **`rpi-setup/scripts/alert-unit-failed.sh`** + **`rpi-setup/systemd/alert-unit-failed@.service`** — New: the alerting reports its own breakage, wired up by `OnFailure=` on both check units. A check that cannot run was previously invisible — a missing `soil-alerts.env` (exit 3, "INFLUX_TOKEN not set"), an uninstalled `jq` or a crash left the timer ticking, the unit failing, and no Slack message ever arriving. The alert carries the unit's result, exit status and last journal lines, rate limited to one per unit per 6h
+- **`tests/test-alert-scripts.sh`** + **`tests/fixtures/alerts/`** — New: 24 end-to-end tests for the alerting path, with no Pi and no network. The real check scripts and `send-slack-alert.sh` run unmodified; `curl` is replaced by a stub earlier on `PATH` serving canned InfluxDB responses and capturing the Slack payloads, so the Flux plumbing, CSV parsing, state machine, rate limiting and JSON escaping are all covered. Runs in the CI *Shell & Python* job and via `run-ci-checks.sh`
+
 #### Continuous Integration
 - **`.github/workflows/ci.yml`** — New: four jobs on every push and pull request, none of which need the Pi. *Dashboards* (config validation, JSON parse, generated-dashboard drift, "No Data" check, checker self-test), *Shell & Python* (`bash -n`, `shellcheck --severity=error`, `py_compile`), *Secret scan*, and *Firmware build* (`pio run -e esp8266` against `secrets.h.example`)
 - **`scripts/check-no-data-panels.py`** — New: static "No Data" panel checker, the CI counterpart to the Pi's live `check-grafana-panels.py`. Compares every query in `grafana-dashboards/` against `influx-schema.json` and `sensors-config.json` and fails on a wrong datasource UID or bucket, a panel with no query, an unknown measurement/field/tag, a `_field` filter naming what is really a tag, an unconfigured `device_id`, a `from()` without `range()`, unbalanced brackets, or an undefined `${variable}`. Text and JSON output; exit 1 when a panel would render "No Data"
@@ -22,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+#### Soil Moisture Reminder Window
+- **`rpi-setup/scripts/check-soil-moisture.sh`** — After a successful send, the 24h reminder timestamp was stamped for **every** plant currently below its threshold, not just the plants named in the message. A second plant drying out therefore pushed the first plant's reminder clock forward, so a plant that had been dry for 21h would wait another 24h from that moment instead of being reminded on schedule. Only the plants actually included in the alert are stamped now; a suppressed plant keeps its original timestamp
+
 #### Dashboard Panels That Could Never Return Data
 - **`rpi-health.json` "Memory & Disk Usage History"** and **`system-health.json` "Raspberry Pi System Metrics"** — queried `_field == "memory_percent"`, but `system-metrics-collector.sh` writes `ram_percent`. Both now query `ram_percent`; the rpi-health field override matcher moved from `.*memory.*` to `.*ram.*` so the series is still labelled "Memory %"
 - **`alerts-overview.json` "Active Critical Issues"** and **`sensor-details.json` "Diagnostic Events"** — filtered `sensor_diagnostics` on `_field == "severity" / "message" / "detail" / "event_type"`. None of those are fields: the firmware writes `event_reason`, `event_count`, `free_heap`, `rssi`, `queue_size`, and `event_type` is a *tag*. Both panels now read `event_reason` as the message and derive `severity` from the `event_type` tag, matching the classification already used by "Diagnostic Events: Critical vs Info"
@@ -31,6 +39,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Documentation
 - **`README.md` InfluxDB schema** — `sensor_heartbeat` listed `queue_size`, which it does not write (`heartbeat_count` is the fourth field), and the `climate_reading` measurement was missing entirely
+
+### Changed
+
+#### Slack Alerting
+- **`rpi-setup/systemd/soil-moisture-check.service`** — `SuccessExitStatus` widened from `0 1` to `0 1 2`. Exit 2 means InfluxDB is unreachable, which `sensor-health-check.service` already reports as a "System Down" alert with a better explanation; counting it as a unit failure too would send two Slack messages for one root cause. Exit 3 (configuration error) is now the only failing status, and that is exactly what the new `OnFailure=` notifier reports
 
 ### Security
 - **The InfluxDB admin token left in the working tree is gone.** v2.14.0 removed it from the systemd units but noted it still appeared in `rpi-setup/scripts/system-health-monitor.sh` and `docs/archive/RECOVERY_2026-05-20.md`. The script now reads `INFLUX_TOKEN` from the environment (systemd supplies it via the `EnvironmentFile=` line added to the unit `install-reliability.sh` generates; a manual run falls back to `/mnt/sensor-data/config/soil-alerts.env`) and skips the sensor check with an alert when it is unset. The archived report has the value redacted
