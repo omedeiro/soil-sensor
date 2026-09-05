@@ -1,11 +1,13 @@
 [Unit]
 Description=Daily Soil Sensor Backup
-Documentation=https://github.com/soil-sensor
+Documentation=https://github.com/omedeiro/soil-sensor
 
 [Timer]
-OnCalendar=daily
-OnCalendar=03:00
+# A single OnCalendar. Two entries are ADDITIVE in systemd, so the previous
+# "daily" + "03:00" pair fired at midnight AND 03:00.
+OnCalendar=*-*-* 03:00:00
 Persistent=true
+RandomizedDelaySec=300
 Unit=sensor-backup.service
 
 [Install]

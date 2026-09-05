@@ -710,7 +710,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Firmware
 - **Hardware watchdog** — 8-second ESP8266 hardware watchdog prevents infinite loops
-- **OTA updates** — Flash firmware remotely via WiFi (password: `soilmon2026`)
+- **OTA updates** — Flash firmware remotely via WiFi (password stored in `firmware/src/secrets.h`, gitignored)
 - **Heartbeat system** — 60-second telemetry with uptime, free heap, WiFi RSSI, queue status
 - **Diagnostic events system** — Tracks crashes, WiFi events, InfluxDB errors in dedicated measurement
 - **WiFi stability improvements** — Exponential backoff reconnect (5s → 60s), automatic retry, max TX power

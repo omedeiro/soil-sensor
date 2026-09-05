@@ -107,7 +107,7 @@ Run everything locally with `./scripts/run-ci-checks.sh`.
 - **sensor-8** (living-room, Ambient Climate — **DHT22/AM2302**, not soil): `192.168.99.182` (MAC: 48:55:19:e6:6c:af) - online
 - **sensor-9** (guest-room, Ambient Climate — **DHT22/AM2302**, not soil): `192.168.99.48` (MAC: 7c:87:ce:80:4d:36) - online (not in sensors-config.json; climate sensors are excluded from the soil dashboard config)
 - All sensors use **DHCP** (static IP disabled in v2.4.0 — it caused a "thinks it's connected forever" failure after power cycles). IPs above are current DHCP leases; use MAC/ARP to relocate a sensor if its IP changes. Sensors can be unplugged and moved to any outlet; they rejoin automatically.
-- **OTA updates:** `pio run -e esp8266-ota --target upload --upload-port <sensor-ip>` (password `soilmon2026`). USB only needed for bricked/offline boards.
+- **OTA updates:** `pio run -e esp8266-ota --target upload --upload-port <sensor-ip>` (password: `OTA_PASSWORD` in `firmware/src/secrets.h`). USB only needed for bricked/offline boards.
 - Web Dashboard: `http://<sensor-ip>` (e.g., `http://192.168.99.110`)
 - Reading Interval: 5 minutes (300000ms)
 

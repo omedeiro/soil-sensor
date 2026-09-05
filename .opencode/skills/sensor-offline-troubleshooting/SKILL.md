@@ -72,7 +72,7 @@ journalctl -u sensor-health-check -f
    - Check power supply (use quality USB adapter ≥1A, short USB cable)
    - Reflash firmware — OTA if reachable:
      `cd ~/soil-sensor/firmware && pio run -e esp8266-ota --target upload --upload-port <sensor-ip>`
-     (password `soilmon2026`; set DEVICE_ID/DEVICE_LOCATION/DEVICE_TYPE in config.h first),
+     (password: `OTA_PASSWORD` in `firmware/src/secrets.h`, gitignored),
      or USB if not: `pio run --target upload`
    - Check WiFi signal strength (RSSI should be > -70 dBm)
 3. **Long-term fix:**

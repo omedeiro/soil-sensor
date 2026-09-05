@@ -18,7 +18,7 @@ CANARY_IP="${SENSORS[$CANARY_SENSOR]}"
 
 # Configuration
 OTA_PORT="8266"
-OTA_PASSWORD="${OTA_PASSWORD:-soilmon2026}"
+OTA_PASSWORD="${OTA_PASSWORD:?set OTA_PASSWORD (see firmware/src/secrets.h)}"
 FIRMWARE_PATH=".pio/build/esp8266/firmware.bin"
 CANARY_WAIT_SECONDS=600  # Wait 10 minutes after canary deployment
 HEALTH_CHECK_INTERVAL=30  # Check canary health every 30 seconds

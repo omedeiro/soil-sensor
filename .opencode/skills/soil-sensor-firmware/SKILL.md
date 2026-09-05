@@ -17,7 +17,7 @@ pio device monitor             # serial output at 115200 baud
 
 # OTA (preferred for deployed sensors — no USB needed):
 pio run -e esp8266-ota --target upload --upload-port <sensor-ip>
-# OTA password: soilmon2026 (set in platformio.ini upload_flags + main.cpp)
+# OTA password: OTA_PASSWORD in src/secrets.h (gitignored); platformio.ini reads ${sysenv.OTA_AUTH_PASSWORD}
 ```
 
 Two PlatformIO environments exist: `esp8266` (USB/esptool) and `esp8266-ota`

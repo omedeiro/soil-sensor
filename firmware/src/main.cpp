@@ -230,7 +230,7 @@ void setup() {
     // 3.5. OTA Updates
     if (wifi.isConnected()) {
         ArduinoOTA.setHostname(deviceId.c_str());
-        ArduinoOTA.setPassword("soilmon2026");  // Change this to your preferred password
+        ArduinoOTA.setPassword(OTA_PASSWORD);
         
         ArduinoOTA.onStart([]() {
             String type = (ArduinoOTA.getCommand() == U_FLASH) ? "firmware" : "filesystem";

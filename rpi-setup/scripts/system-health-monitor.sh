@@ -4,6 +4,14 @@
 
 LOG_FILE="/mnt/sensor-data/logs/system-health.log"
 ALERT_LOG="/mnt/sensor-data/logs/system-alerts.log"
+# InfluxDB token. Never hardcode it: this file is tracked, and a literal here
+# ends up in git history permanently. Resolution order mirrors the other
+# scripts in this repo.
+CONFIG_DIR="${CONFIG_DIR:-/mnt/sensor-data/config}"
+if [ -z "${INFLUX_TOKEN:-}" ] && [ -r "$CONFIG_DIR/panel-health.env" ]; then
+    INFLUX_TOKEN="$(grep -m1 '^INFLUX_TOKEN=' "$CONFIG_DIR/panel-health.env" | cut -d= -f2- | tr -d '"'"'"'')"
+fi
+[ -n "${INFLUX_TOKEN:-}" ] || { echo "INFLUX_TOKEN not set and not found in $CONFIG_DIR/panel-health.env" >&2; exit 3; }
 
 # INFLUX_TOKEN (read permission) comes from the environment. systemd supplies it
 # via EnvironmentFile=; when run by hand, fall back to the same file so the

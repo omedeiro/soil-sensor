@@ -341,7 +341,7 @@ After the first USB flash, you can update sensors remotely:
 ```bash
 # From firmware/ directory
 pio run --target upload --upload-port <sensor-ip>
-# Password: soilmon2026
+# Password: OTA_PASSWORD from firmware/src/secrets.h (gitignored)
 ```
 
 Find sensor IPs in Grafana or via router DHCP leases.

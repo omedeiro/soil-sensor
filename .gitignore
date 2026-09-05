@@ -46,3 +46,7 @@ firmware/src/secrets.h
 # Local backups (may contain secrets/data — never commit)
 *.backup
 firmware/src/config.h.backup.*
+
+# Claude Code worktrees and run-skill driver scratch state
+.claude/worktrees/
+.claude/skills/*/.work/

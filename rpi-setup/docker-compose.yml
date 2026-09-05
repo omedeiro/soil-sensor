@@ -1,26 +1,34 @@
-version: '3.8'
+# soil-sensor stack: InfluxDB (metrics store) + Grafana (dashboards)
+#
+# Deploy:  docker compose -f rpi-setup/docker-compose.yml up -d
+#
+# No top-level `version:` key — obsolete in Compose v2, warns when present.
 
 services:
   influxdb:
     container_name: influxdb
-    image: influxdb:2.7
+    # Pinned by DIGEST, not just tag. Tags are mutable: publishers re-push
+    # them for base-image CVE rebuilds, so `influxdb:2.7.12` alone can still
+    # deliver a different binary later. InfluxDB migrates influxd.bolt to the
+    # running binary's schema on startup and that migration is ONE-WAY.
+    # Bump deliberately, with a fresh backup of /mnt/sensor-data/influxdb/data.
+    image: influxdb:2.7.12@sha256:b8d940ca9376f85118260f5b6bd236b8a00b1749c3350c5578d4cde8e27f31f2
     restart: unless-stopped
     ports:
+      # MUST stay bound to 0.0.0.0 — the ESP8266 sensors write to this port
+      # directly over the LAN. Narrowing it to 127.0.0.1 looks safe (Grafana
+      # reaches InfluxDB by container DNS, not via the published port) but
+      # would silently kill all sensor ingest.
       - "8086:8086"
     volumes:
-      - /mnt/sensor-data/influxdb:/var/lib/influxdb2
+      - influxdb-data:/var/lib/influxdb2
     networks:
       - soil-sensor
-    environment:
-      # Optional: Pre-configure InfluxDB (useful for fresh installs).
-      # Provide secrets via a gitignored .env file next to this compose file
-      # (docker compose auto-loads ./.env). Never hardcode tokens here.
-      # DOCKER_INFLUXDB_INIT_MODE: setup
-      # DOCKER_INFLUXDB_INIT_USERNAME: admin
-      # DOCKER_INFLUXDB_INIT_PASSWORD: ${DOCKER_INFLUXDB_INIT_PASSWORD}
-      # DOCKER_INFLUXDB_INIT_ORG: soil-monitoring
-      # DOCKER_INFLUXDB_INIT_BUCKET: sensor-readings
-      # DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
+    # No environment block on purpose. Do NOT add DOCKER_INFLUXDB_INIT_MODE
+    # here: with an existing bolt file the entrypoint skips setup, but if the
+    # bolt file is ever MISSING, setup runs and its failure path executes
+    # `rm -rf ${BOLT_PATH} ${ENGINE_PATH}/*`. Tokens are created through the
+    # InfluxDB API and stored outside this file — never hardcode them.
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
       interval: 30s
@@ -30,30 +38,36 @@ services:
 
   grafana:
     container_name: grafana
-    image: grafana/grafana:latest
+    # Pinned by digest for the same reason. Grafana runs one-way schema
+    # migrations against grafana.db on startup; dashboards, datasources and
+    # users all live in that one file.
+    image: grafana/grafana:13.0.2@sha256:5dad0df181cb644a14e13617b913b261a54f7d4fd4510721dba420929f35bea2
     restart: unless-stopped
+    # depends_on orders `docker compose up` ONLY. On an unattended reboot
+    # Compose never runs — the daemon applies each container's restart policy
+    # independently, so Grafana may start before InfluxDB is healthy. That is
+    # tolerable (Grafana retries datasource connections and self-heals); it is
+    # NOT a startup-ordering guarantee.
     depends_on:
       influxdb:
         condition: service_healthy
     ports:
       - "3000:3000"
     volumes:
-      - /mnt/sensor-data/grafana:/var/lib/grafana
-      # Optional: Auto-provision datasources and dashboards
-      # - ./grafana-provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+      # DO NOT mount ./grafana-provisioning here. Its datasources/influxdb.yml
+      # recreates the dead read-only datasource, sets isDefault: true (stealing
+      # default status from the working datasource and silently repointing every
+      # panel that relies on the default), and its ${INFLUX_READ_TOKEN} resolves
+      # to an empty string because no .env exists in this directory.
     networks:
       - soil-sensor
     environment:
-      # Security settings
       - GF_SECURITY_ALLOW_EMBEDDING=true
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
-      
-      # Server settings
       - GF_SERVER_ROOT_URL=https://soil.owenmedeiros.com
       - GF_SERVER_DOMAIN=soil.owenmedeiros.com
-      
-      # Disable usage analytics
       - GF_ANALYTICS_REPORTING_ENABLED=false
       - GF_ANALYTICS_CHECK_FOR_UPDATES=false
     healthcheck:
@@ -63,9 +77,35 @@ services:
       retries: 3
       start_period: 40s
 
+# Bind-backed NAMED volumes rather than raw bind mounts. This is a safety
+# mechanism, not a style choice.
+#
+# /etc/fstab mounts the USB data drive with `nofail`, and docker.service has no
+# ordering dependency on that mount. With raw bind mounts, a boot where
+# /dev/sda1 is absent or slow to enumerate would have Docker AUTO-CREATE
+# /mnt/sensor-data/... as empty root-owned directories on the SD card: Grafana
+# would initialise a brand-new empty grafana.db (no dashboards, no datasources,
+# admin password reset), InfluxDB would come up unconfigured, every sensor write
+# would 401 — and the real data on the USB drive would be shadowed by the live
+# container mount.
+#
+# The local driver's bind option does NOT auto-create: Docker refuses to start
+# the container if the device path is missing, so the stack fails loudly and
+# visibly instead of quietly coming up empty.
+volumes:
+  influxdb-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/sensor-data/influxdb/data
+  grafana-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/sensor-data/grafana/data
+
 networks:
   soil-sensor:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
