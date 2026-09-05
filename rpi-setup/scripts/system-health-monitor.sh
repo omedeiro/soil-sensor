@@ -13,6 +13,15 @@ if [ -z "${INFLUX_TOKEN:-}" ] && [ -r "$CONFIG_DIR/panel-health.env" ]; then
 fi
 [ -n "${INFLUX_TOKEN:-}" ] || { echo "INFLUX_TOKEN not set and not found in $CONFIG_DIR/panel-health.env" >&2; exit 3; }
 
+# INFLUX_TOKEN (read permission) comes from the environment. systemd supplies it
+# via EnvironmentFile=; when run by hand, fall back to the same file so the
+# token never has to live in this script.
+INFLUX_ENV_FILE="${INFLUX_ENV_FILE:-/mnt/sensor-data/config/soil-alerts.env}"
+if [ -z "${INFLUX_TOKEN:-}" ] && [ -r "$INFLUX_ENV_FILE" ]; then
+    # shellcheck disable=SC1090
+    . "$INFLUX_ENV_FILE"
+fi
+
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
 }
@@ -115,6 +124,11 @@ check_filesystem() {
 }
 
 check_sensors() {
+    if [ -z "${INFLUX_TOKEN:-}" ]; then
+        alert "INFLUX_TOKEN not set - skipping sensor data check (see $INFLUX_ENV_FILE)"
+        return 1
+    fi
+
     # Check if sensors are posting data (within last 15 minutes)
     SENSOR_COUNT=$(curl -s -XPOST "http://localhost:8086/api/v2/query?org=soil-monitoring" \
         -H "Authorization: Token ${INFLUX_TOKEN}" \

@@ -40,6 +40,9 @@ panel-health.env
 firmware/src/secrets.h
 !firmware/src/secrets.h.example
 
+# The secret *scanner* is not a secret — the *secret* pattern above catches it
+!scripts/check-secrets.sh
+
 # Local backups (may contain secrets/data — never commit)
 *.backup
 firmware/src/config.h.backup.*

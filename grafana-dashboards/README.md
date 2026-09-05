@@ -1,6 +1,6 @@
 # Grafana Dashboards Guide
 
-7 production-ready dashboards for the Soil Moisture Monitoring System (v2.11.2).
+8 production-ready dashboards for the Soil Moisture Monitoring System (v2.11.2).
 
 All dashboards feature:
 - **High-contrast color scheme** per sensor (7 distinct colors for easy identification)
@@ -19,23 +19,43 @@ All dashboards feature:
 ### 1. 🌱 Soil Moisture Main (`soil-moisture-main.json`)
 **Tags:** `overview`, `sensors`
 
-**Purpose:** Main overview dashboard with all sensors, moisture gauges, and trend plots.
+**Purpose:** Main overview dashboard — one full-width moisture trace per plant, with no dropdown to set first.
+
+**No template variables.** The Sensor dropdown and every panel that filtered on
+it now live on [Sensor Explorer](#2--sensor-explorer-sensor-explorerjson).
 
 **Key Panels:**
+- **System status** — Percentage of configured sensors reporting
 - **Raspberry Pi Uptime** — Server uptime in top status bar (v2.3.0)
-- **Ambient Temperature & Humidity** — DHT22 climate sensor stat panels (°F / %) plus trend plots (v2.10.0)
-- **Moisture gauges** (7) — Current moisture % with color gradients per sensor (v2.4.0)
-- **Moisture trend plot** — Time series for all sensors (color-coded)
 - **Last updated** — Relative time since most recent reading
-- **System health score** — Percentage of sensors online
-- **Recent readings table** — Latest sensor data with WiFi signal
-- **Watering recommendations** — Sensors below moisture threshold
+- **Per-plant moisture traces** (7) — One full-width single-trace time series per plant, in `sensors-config.json` order, each in that plant's color
+- **Ambient Temperature & Humidity** — DHT22 climate sensor stat panels (°F / %) plus trend plots (v2.10.0)
 
-**Use case:** Daily monitoring, quick health check, identifying sensors needing attention.
+**Use case:** Daily monitoring, quick health check, reading an individual plant's moisture curve without deselecting the others.
+
+**Generated file** — produced by `scripts/generate-dashboard.py` from `sensors-config.json`. Never hand-edit it; CI fails on drift.
 
 ---
 
-### 2. 🔍 Sensor Details (`sensor-details.json`)
+### 2. 🔍 Sensor Explorer (`sensor-explorer.json`)
+**Tags:** `overview`, `sensors`, `explorer`
+
+**Purpose:** The Sensor dropdown and the panels that filter on it, split out of the main dashboard.
+
+**Key Panels:**
+- **Sensor dropdown** — Custom variable listing every plant by name, plus "All" (`.*`)
+- **Plant heading** — Colored banner showing the current selection
+- **Current Moisture Levels** — Bar gauge, one bar per selected sensor with per-plant thresholds
+- **Moisture Trends** — Overlaid moisture time series for the selection
+- **Raw ADC Values** — Overlaid raw ADC time series for the selection
+
+**Use case:** Comparing plants against each other, or isolating one plant across moisture and raw ADC at once.
+
+**Generated file** — produced by `scripts/generate-dashboard.py` from `sensors-config.json`. Never hand-edit it; CI fails on drift.
+
+---
+
+### 3. 🔍 Sensor Details (`sensor-details.json`)
 **Tags:** `sensors`, `diagnostics`
 
 **Purpose:** Individual sensor deep-dive with uptime, heap, WiFi signal, and diagnostics.
@@ -54,7 +74,7 @@ All dashboards feature:
 
 ---
 
-### 3. ⚙️ System Health (`system-health.json`)
+### 4. ⚙️ System Health (`system-health.json`)
 **Tags:** `diagnostics`, `system`
 
 **Purpose:** ESP8266 diagnostic events, WiFi stability, crash detection, critical events.
@@ -75,7 +95,7 @@ All dashboards feature:
 
 ---
 
-### 4. 🚨 Alerts Overview (`alerts-overview.json`)
+### 5. 🚨 Alerts Overview (`alerts-overview.json`)
 **Tags:** `alerts`, `monitoring`
 
 **Purpose:** Critical alerts, watering needed notifications, sensor offline detection.
@@ -90,7 +110,7 @@ All dashboards feature:
 
 ---
 
-### 5. 📱 Mobile Summary (`mobile-summary.json`)
+### 6. 📱 Mobile Summary (`mobile-summary.json`)
 **Tags:** `mobile`, `overview`
 
 **Purpose:** Mobile-optimized quick view with essential metrics.
@@ -105,7 +125,7 @@ All dashboards feature:
 
 ---
 
-### 6. 🖥️ Raspberry Pi Health (`rpi-health.json`)
+### 7. 🖥️ Raspberry Pi Health (`rpi-health.json`)
 **Tags:** `system`, `server`
 
 **Purpose:** Raspberry Pi system metrics — CPU, RAM, disk, temperature monitoring.
@@ -128,7 +148,7 @@ All dashboards feature:
 
 ---
 
-### 7. 🚰 Watering History (`watering-history.json`) — v2.7.0, enhanced v2.11.0
+### 8. 🚰 Watering History (`watering-history.json`) — v2.7.0, enhanced v2.11.0
 **Tags:** `watering`, `monitoring`
 
 **Purpose:** Automatic detection and visualization of watering events, dry conditions, sensor noise, and offline periods.
@@ -407,11 +427,12 @@ sudo cp new-dashboard.json /mnt/sensor-data/grafana/dashboards/
 
 ## Dashboard Tags
 
-Each dashboard has exactly 2 functional tags for easy filtering:
+Each dashboard has 2 functional tags for easy filtering (Sensor Explorer adds a third):
 
 | Dashboard | Tag 1 | Tag 2 | Description |
 |-----------|-------|-------|-------------|
-| Soil Moisture Main | overview | sensors | Main overview with all sensors |
+| Soil Moisture Main | overview | sensors | One moisture trace per plant, no dropdown |
+| Sensor Explorer | overview | sensors | Sensor dropdown and the panels that filter on it (also tagged `explorer`) |
 | Sensor Details | sensors | diagnostics | Individual sensor deep-dive |
 | System Health | diagnostics | system | ESP8266 diagnostics and events |
 | Alerts Overview | alerts | monitoring | Critical alerts and notifications |
@@ -429,6 +450,7 @@ Each dashboard has exactly 2 functional tags for easy filtering:
 - **server** — Raspberry Pi infrastructure
 - **mobile** — Mobile-optimized views
 - **watering** — Watering event tracking and history
+- **explorer** — Dropdown-driven views you filter yourself
 
 ---
 
@@ -603,6 +625,10 @@ Some panels intentionally show "NO DATA" when everything is healthy:
 ---
 
 ### Sensor doesn't appear in dropdown
+
+The dropdowns live on **Sensor Explorer** and **Sensor Details** — the main
+dashboard has no template variables, so a missing plant there means a missing
+entry in `sensors-config.json` (regenerate with `./scripts/generate-dashboard.py`).
 
 **Possible causes:**
 - Sensor hasn't posted data yet (wait 5 minutes)

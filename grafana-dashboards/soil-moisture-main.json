@@ -19,204 +19,18 @@
   "fiscalYearStartMonth": 0,
   "liveNow": false,
   "schemaVersion": 38,
-  "version": 4,
+  "version": 5,
   "templating": {
-    "list": [
-      {
-        "name": "sensor",
-        "label": "Sensor",
-        "type": "custom",
-        "description": "Select sensor to view",
-        "query": "Rubber Tree : sensor-1, Monstera : sensor-2, Avocado : sensor-3, Micro Greens : sensor-4, ZZ Plant : sensor-5, Ficus Elastica Ruby : sensor-6, Parsley : sensor-7",
-        "includeAll": true,
-        "multi": false,
-        "allValue": ".*",
-        "current": {
-          "selected": true,
-          "text": "All",
-          "value": "$__all"
-        },
-        "options": [
-          {
-            "text": "All",
-            "value": "$__all",
-            "selected": true
-          },
-          {
-            "text": "Rubber Tree",
-            "value": "sensor-1",
-            "selected": false
-          },
-          {
-            "text": "Monstera",
-            "value": "sensor-2",
-            "selected": false
-          },
-          {
-            "text": "Avocado",
-            "value": "sensor-3",
-            "selected": false
-          },
-          {
-            "text": "Micro Greens",
-            "value": "sensor-4",
-            "selected": false
-          },
-          {
-            "text": "ZZ Plant",
-            "value": "sensor-5",
-            "selected": false
-          },
-          {
-            "text": "Ficus Elastica Ruby",
-            "value": "sensor-6",
-            "selected": false
-          },
-          {
-            "text": "Parsley",
-            "value": "sensor-7",
-            "selected": false
-          }
-        ],
-        "skipUrlSync": false,
-        "sort": 1
-      }
-    ]
+    "list": []
   },
   "panels": [
-    {
-      "id": 1001,
-      "type": "stat",
-      "title": "",
-      "gridPos": {
-        "x": 0,
-        "y": 0,
-        "w": 24,
-        "h": 3
-      },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
-      },
-      "targets": [
-        {
-          "query": "import \"array\"\nimport \"experimental\"\n\nsensor = \"${sensor}\"\n\ndata = if sensor == \".*\" then [{_time: now(), _value: \"All Plants\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-1\" then [{_time: now(), _value: \"Rubber Tree\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-2\" then [{_time: now(), _value: \"Monstera\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-3\" then [{_time: now(), _value: \"Avocado\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-4\" then [{_time: now(), _value: \"Micro Greens\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-5\" then [{_time: now(), _value: \"ZZ Plant\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-6\" then [{_time: now(), _value: \"Ficus Elastica Ruby\", _field: \"plant_name\"}]\n  else if sensor == \"sensor-7\" then [{_time: now(), _value: \"Parsley\", _field: \"plant_name\"}]\n  else [{_time: now(), _value: \"All Plants\", _field: \"plant_name\"}]\n\narray.from(rows: data)",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "graphMode": "none",
-        "colorMode": "background",
-        "textMode": "value",
-        "reduceOptions": {
-          "values": true,
-          "fields": "/_value/",
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "text": {
-          "titleSize": 16,
-          "valueSize": 48
-        }
-      },
-      "transparent": false,
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "All Plants": {
-                  "color": "#5794F2",
-                  "index": 0
-                }
-              }
-            },
-            {
-              "type": "value",
-              "options": {
-                "Rubber Tree": {
-                  "color": "#73BF69",
-                  "index": 1
-                }
-              }
-            },
-            {
-              "type": "value",
-              "options": {
-                "Monstera": {
-                  "color": "#F2CC0C",
-                  "index": 2
-                }
-              }
-            },
-            {
-              "type": "value",
-              "options": {
-                "Avocado": {
-                  "color": "#5794F2",
-                  "index": 3
-                }
-              }
-            },
-            {
-              "type": "value",
-              "options": {
-                "Micro Greens": {
-                  "color": "#FF6B6B",
-                  "index": 4
-                }
-              }
-            },
-            {
-              "type": "value",
-              "options": {
-                "ZZ Plant": {
-                  "color": "#B877D9",
-                  "index": 5
-                }
-              }
-            },
-            {
-              "type": "value",
-              "options": {
-                "Ficus Elastica Ruby": {
-                  "color": "#FF9830",
-                  "index": 6
-                }
-              }
-            },
-            {
-              "type": "value",
-              "options": {
-                "Parsley": {
-                  "color": "#5DDBDB",
-                  "index": 7
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      }
-    },
     {
       "id": 1,
       "type": "stat",
       "title": "System Status",
       "gridPos": {
         "x": 0,
-        "y": 3,
+        "y": 0,
         "w": 8,
         "h": 4
       },
@@ -257,7 +71,7 @@
               },
               {
                 "color": "green",
-                "value": 7
+                "value": 9
               }
             ]
           },
@@ -272,7 +86,7 @@
       "title": "\ud83d\udda5\ufe0f Raspberry Pi Uptime",
       "gridPos": {
         "x": 8,
-        "y": 3,
+        "y": 0,
         "w": 8,
         "h": 4
       },
@@ -329,7 +143,7 @@
       "title": "Last Updated",
       "gridPos": {
         "x": 16,
-        "y": 3,
+        "y": 0,
         "w": 8,
         "h": 4
       },
@@ -373,12 +187,12 @@
       }
     },
     {
-      "id": 2,
-      "type": "bargauge",
-      "title": "Current Moisture Levels",
+      "id": 101,
+      "type": "timeseries",
+      "title": "Rubber Tree",
       "gridPos": {
         "x": 0,
-        "y": 7,
+        "y": 4,
         "w": 24,
         "h": 8
       },
@@ -388,345 +202,14 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id =~ /^${sensor}$/)\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> sort(columns: [\"device_id\"])",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "orientation": "horizontal",
-        "displayMode": "gradient",
-        "showUnfilled": true,
-        "minVizWidth": 0,
-        "minVizHeight": 10,
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "decimals": 1,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "dark-green",
-                "value": null
-              },
-              {
-                "color": "semi-dark-green",
-                "value": 50
-              },
-              {
-                "color": "green",
-                "value": 75
-              }
-            ]
-          },
-          "mappings": [],
-          "color": {
-            "mode": "palette-classic"
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-1.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Rubber Tree"
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "value": null,
-                      "color": "#2d5016"
-                    },
-                    {
-                      "value": 33,
-                      "color": "#4a7c2a"
-                    },
-                    {
-                      "value": 67,
-                      "color": "#73BF69"
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "thresholds"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-2.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Monstera"
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "value": null,
-                      "color": "#6b5606"
-                    },
-                    {
-                      "value": 33,
-                      "color": "#a88a09"
-                    },
-                    {
-                      "value": 67,
-                      "color": "#F2CC0C"
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "thresholds"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-3.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Avocado"
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "value": null,
-                      "color": "#1f3f68"
-                    },
-                    {
-                      "value": 33,
-                      "color": "#3b6aad"
-                    },
-                    {
-                      "value": 67,
-                      "color": "#5794F2"
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "thresholds"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-4.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Micro Greens"
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "value": null,
-                      "color": "#6b2323"
-                    },
-                    {
-                      "value": 33,
-                      "color": "#b54747"
-                    },
-                    {
-                      "value": 67,
-                      "color": "#FF6B6B"
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "thresholds"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-5.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "ZZ Plant"
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "value": null,
-                      "color": "#4a2b57"
-                    },
-                    {
-                      "value": 33,
-                      "color": "#7d4a9b"
-                    },
-                    {
-                      "value": 67,
-                      "color": "#B877D9"
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "thresholds"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-6.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Ficus Elastica Ruby"
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "value": null,
-                      "color": "#663c13"
-                    },
-                    {
-                      "value": 33,
-                      "color": "#b36420"
-                    },
-                    {
-                      "value": 67,
-                      "color": "#FF9830"
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "thresholds"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-7.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Parsley"
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "value": null,
-                      "color": "#255858"
-                    },
-                    {
-                      "value": 33,
-                      "color": "#3f9999"
-                    },
-                    {
-                      "value": 67,
-                      "color": "#5DDBDB"
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "thresholds"
-                }
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "id": 3,
-      "type": "timeseries",
-      "title": "Moisture Trends",
-      "gridPos": {
-        "x": 0,
-        "y": 15,
-        "w": 24,
-        "h": 10
-      },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
-      },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r.device_id =~ /^${sensor}$/)\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-1\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
           "refId": "A"
         }
       ],
       "options": {
         "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
           "displayMode": "table",
@@ -742,6 +225,7 @@
       },
       "fieldConfig": {
         "defaults": {
+          "displayName": "Rubber Tree",
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
@@ -770,175 +254,26 @@
               {
                 "color": "transparent",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 0
-              },
-              {
-                "color": "yellow",
-                "value": 20
-              },
-              {
-                "color": "green",
-                "value": 40
-              },
-              {
-                "color": "blue",
-                "value": 80
               }
             ]
           },
           "color": {
-            "mode": "palette-classic"
+            "mode": "fixed",
+            "fixedColor": "#73BF69"
           }
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-1.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Rubber Tree"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#73BF69"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-2.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Monstera"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#F2CC0C"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-3.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Avocado"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#5794F2"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-4.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Micro Greens"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#FF6B6B"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-5.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "ZZ Plant"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#B877D9"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-6.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Ficus Elastica Ruby"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#FF9830"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-7.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Parsley"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#5DDBDB"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       }
     },
     {
-      "id": 5,
+      "id": 102,
       "type": "timeseries",
-      "title": "Raw ADC Values",
+      "title": "Monstera",
       "gridPos": {
         "x": 0,
-        "y": 25,
+        "y": 12,
         "w": 24,
-        "h": 10
+        "h": 8
       },
       "datasource": {
         "type": "influxdb",
@@ -946,14 +281,14 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"raw_adc\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r.device_id =~ /^${sensor}$/)\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-2\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
           "refId": "A"
         }
       ],
       "options": {
         "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
           "displayMode": "table",
@@ -969,6 +304,7 @@
       },
       "fieldConfig": {
         "defaults": {
+          "displayName": "Monstera",
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
@@ -983,14 +319,14 @@
               "group": "A"
             },
             "axisPlacement": "auto",
-            "axisLabel": "ADC Value",
+            "axisLabel": "Moisture %",
             "scaleDistribution": {
               "type": "linear"
             }
           },
-          "unit": "short",
+          "unit": "percent",
           "min": 0,
-          "max": 1023,
+          "max": 100,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1001,144 +337,406 @@
             ]
           },
           "color": {
-            "mode": "palette-classic"
+            "mode": "fixed",
+            "fixedColor": "#F2CC0C"
           }
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-1.*"
+        "overrides": []
+      }
+    },
+    {
+      "id": 103,
+      "type": "timeseries",
+      "title": "Avocado",
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-3\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "min",
+            "max"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "displayName": "Avocado",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "spanNulls": 3600000,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
             },
-            "properties": [
+            "axisPlacement": "auto",
+            "axisLabel": "Moisture %",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
               {
-                "id": "displayName",
-                "value": "Rubber Tree"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#73BF69"
-                }
+                "color": "transparent",
+                "value": null
               }
             ]
           },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-2.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Monstera"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#F2CC0C"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-3.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Avocado"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#5794F2"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-4.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Micro Greens"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#FF6B6B"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-5.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "ZZ Plant"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#B877D9"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-6.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Ficus Elastica Ruby"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#FF9830"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*sensor-7.*"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Parsley"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#5DDBDB"
-                }
-              }
-            ]
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#5794F2"
           }
-        ]
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 104,
+      "type": "timeseries",
+      "title": "Micro Greens",
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-4\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "min",
+            "max"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "displayName": "Micro Greens",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "spanNulls": 3600000,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "Moisture %",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#FF6B6B"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 105,
+      "type": "timeseries",
+      "title": "ZZ Plant",
+      "gridPos": {
+        "x": 0,
+        "y": 36,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-5\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "min",
+            "max"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "displayName": "ZZ Plant",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "spanNulls": 3600000,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "Moisture %",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#B877D9"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 106,
+      "type": "timeseries",
+      "title": "Ficus Elastica Ruby",
+      "gridPos": {
+        "x": 0,
+        "y": 44,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-6\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "min",
+            "max"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "displayName": "Ficus Elastica Ruby",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "spanNulls": 3600000,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "Moisture %",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#FF9830"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 107,
+      "type": "timeseries",
+      "title": "Parsley",
+      "gridPos": {
+        "x": 0,
+        "y": 52,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-7\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "min",
+            "max"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "displayName": "Parsley",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "spanNulls": 3600000,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "Moisture %",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#5DDBDB"
+          }
+        },
+        "overrides": []
       }
     },
     {
@@ -1147,7 +745,7 @@
       "title": "Ambient Temperature",
       "gridPos": {
         "x": 0,
-        "y": 35,
+        "y": 60,
         "w": 12,
         "h": 6
       },
@@ -1248,7 +846,7 @@
       "title": "Ambient Humidity",
       "gridPos": {
         "x": 12,
-        "y": 35,
+        "y": 60,
         "w": 12,
         "h": 6
       },
@@ -1349,7 +947,7 @@
       "title": "Ambient Temperature Trend (\u00b0F)",
       "gridPos": {
         "x": 0,
-        "y": 41,
+        "y": 66,
         "w": 24,
         "h": 10
       },
@@ -1463,7 +1061,7 @@
       "title": "Ambient Humidity Trend (%)",
       "gridPos": {
         "x": 0,
-        "y": 51,
+        "y": 76,
         "w": 24,
         "h": 10
       },
@@ -1571,559 +1169,6 @@
             ]
           }
         ]
-      }
-    },
-    {
-      "id": 101,
-      "type": "timeseries",
-      "title": "Rubber Tree",
-      "gridPos": {
-        "x": 0,
-        "y": 61,
-        "w": 24,
-        "h": 8
-      },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
-      },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-1\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true,
-          "calcs": [
-            "lastNotNull",
-            "mean",
-            "min",
-            "max"
-          ]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "displayName": "Rubber Tree",
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "spanNulls": 3600000,
-            "showPoints": "never",
-            "pointSize": 5,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            },
-            "axisPlacement": "auto",
-            "axisLabel": "Moisture %",
-            "scaleDistribution": {
-              "type": "linear"
-            }
-          },
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "transparent",
-                "value": null
-              }
-            ]
-          },
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#73BF69"
-          }
-        },
-        "overrides": []
-      }
-    },
-    {
-      "id": 102,
-      "type": "timeseries",
-      "title": "Monstera",
-      "gridPos": {
-        "x": 0,
-        "y": 69,
-        "w": 24,
-        "h": 8
-      },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
-      },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-2\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true,
-          "calcs": [
-            "lastNotNull",
-            "mean",
-            "min",
-            "max"
-          ]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "displayName": "Monstera",
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "spanNulls": 3600000,
-            "showPoints": "never",
-            "pointSize": 5,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            },
-            "axisPlacement": "auto",
-            "axisLabel": "Moisture %",
-            "scaleDistribution": {
-              "type": "linear"
-            }
-          },
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "transparent",
-                "value": null
-              }
-            ]
-          },
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#F2CC0C"
-          }
-        },
-        "overrides": []
-      }
-    },
-    {
-      "id": 103,
-      "type": "timeseries",
-      "title": "Avocado",
-      "gridPos": {
-        "x": 0,
-        "y": 77,
-        "w": 24,
-        "h": 8
-      },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
-      },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-3\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true,
-          "calcs": [
-            "lastNotNull",
-            "mean",
-            "min",
-            "max"
-          ]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "displayName": "Avocado",
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "spanNulls": 3600000,
-            "showPoints": "never",
-            "pointSize": 5,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            },
-            "axisPlacement": "auto",
-            "axisLabel": "Moisture %",
-            "scaleDistribution": {
-              "type": "linear"
-            }
-          },
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "transparent",
-                "value": null
-              }
-            ]
-          },
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#5794F2"
-          }
-        },
-        "overrides": []
-      }
-    },
-    {
-      "id": 104,
-      "type": "timeseries",
-      "title": "Micro Greens",
-      "gridPos": {
-        "x": 0,
-        "y": 85,
-        "w": 24,
-        "h": 8
-      },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
-      },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-4\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true,
-          "calcs": [
-            "lastNotNull",
-            "mean",
-            "min",
-            "max"
-          ]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "displayName": "Micro Greens",
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "spanNulls": 3600000,
-            "showPoints": "never",
-            "pointSize": 5,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            },
-            "axisPlacement": "auto",
-            "axisLabel": "Moisture %",
-            "scaleDistribution": {
-              "type": "linear"
-            }
-          },
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "transparent",
-                "value": null
-              }
-            ]
-          },
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#FF6B6B"
-          }
-        },
-        "overrides": []
-      }
-    },
-    {
-      "id": 105,
-      "type": "timeseries",
-      "title": "ZZ Plant",
-      "gridPos": {
-        "x": 0,
-        "y": 93,
-        "w": 24,
-        "h": 8
-      },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
-      },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-5\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true,
-          "calcs": [
-            "lastNotNull",
-            "mean",
-            "min",
-            "max"
-          ]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "displayName": "ZZ Plant",
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "spanNulls": 3600000,
-            "showPoints": "never",
-            "pointSize": 5,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            },
-            "axisPlacement": "auto",
-            "axisLabel": "Moisture %",
-            "scaleDistribution": {
-              "type": "linear"
-            }
-          },
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "transparent",
-                "value": null
-              }
-            ]
-          },
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#B877D9"
-          }
-        },
-        "overrides": []
-      }
-    },
-    {
-      "id": 106,
-      "type": "timeseries",
-      "title": "Ficus Elastica Ruby",
-      "gridPos": {
-        "x": 0,
-        "y": 101,
-        "w": 24,
-        "h": 8
-      },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
-      },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-6\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true,
-          "calcs": [
-            "lastNotNull",
-            "mean",
-            "min",
-            "max"
-          ]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "displayName": "Ficus Elastica Ruby",
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "spanNulls": 3600000,
-            "showPoints": "never",
-            "pointSize": 5,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            },
-            "axisPlacement": "auto",
-            "axisLabel": "Moisture %",
-            "scaleDistribution": {
-              "type": "linear"
-            }
-          },
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "transparent",
-                "value": null
-              }
-            ]
-          },
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#FF9830"
-          }
-        },
-        "overrides": []
-      }
-    },
-    {
-      "id": 107,
-      "type": "timeseries",
-      "title": "Parsley",
-      "gridPos": {
-        "x": 0,
-        "y": 109,
-        "w": 24,
-        "h": 8
-      },
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cflk0i2e2nwu8d"
-      },
-      "targets": [
-        {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-7\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true,
-          "calcs": [
-            "lastNotNull",
-            "mean",
-            "min",
-            "max"
-          ]
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "displayName": "Parsley",
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "spanNulls": 3600000,
-            "showPoints": "never",
-            "pointSize": 5,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            },
-            "axisPlacement": "auto",
-            "axisLabel": "Moisture %",
-            "scaleDistribution": {
-              "type": "linear"
-            }
-          },
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "transparent",
-                "value": null
-              }
-            ]
-          },
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#5DDBDB"
-          }
-        },
-        "overrides": []
       }
     }
   ]

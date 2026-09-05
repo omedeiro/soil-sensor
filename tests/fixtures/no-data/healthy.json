@@ -1,0 +1,70 @@
+{
+  "title": "Fixture — healthy",
+  "uid": "fixture-healthy",
+  "templating": {
+    "list": [
+      {
+        "name": "sensor",
+        "type": "custom",
+        "query": "Rubber Tree : sensor-1"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "A collapsed row",
+      "collapsed": true,
+      "panels": [
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Moisture inside a row",
+          "datasource": {"type": "influxdb", "uid": "cflk0i2e2nwu8d"},
+          "targets": [
+            {
+              "refId": "A",
+              "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id == \"sensor-1\")\n  |> last()"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "text",
+      "title": "",
+      "options": {"content": "Text panels need no query"}
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Computed columns are not tags",
+      "datasource": {"type": "influxdb", "uid": "cflk0i2e2nwu8d"},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> elapsed(unit: 1m, timeColumn: \"_time\")\n  |> filter(fn: (r) => r.elapsed > 15)\n  |> map(fn: (r) => ({_time: r._time, _value: r._value, gap: r.elapsed, device_id: r.device_id}))\n  |> filter(fn: (r) => r.gap < 240)"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "Variables and climate data",
+      "datasource": {"type": "influxdb", "uid": "cflk0i2e2nwu8d"},
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"climate_reading\")\n  |> filter(fn: (r) => r._field == \"temperature_f\" or r._field == \"humidity\")\n  |> filter(fn: (r) => r.device_id == \"${sensor}\")\n  |> aggregateWindow(every: ${__interval}, fn: mean, createEmpty: false)"
+        },
+        {
+          "refId": "B",
+          "hide": true,
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"nonexistent_measurement\")"
+        }
+      ]
+    }
+  ]
+}

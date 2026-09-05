@@ -569,7 +569,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": ".*memory.*"
+              "options": ".*ram.*"
             },
             "properties": [
               {

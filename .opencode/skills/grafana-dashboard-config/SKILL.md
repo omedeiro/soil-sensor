@@ -1,27 +1,52 @@
 ---
 name: grafana-dashboard-config
-description: Configure and deploy Grafana dashboards for the soil sensor project from centralized config. Use when editing `sensors-config.json`, adding a sensor to a dashboard, changing plant names/colors/thresholds, running `scripts/validate-config.py`, `scripts/generate-dashboard.py`, or `scripts/upload-dashboard-to-pi.sh`, working with the auto-generated `grafana-dashboards/soil-moisture-main.json`, or setting up the watering-history dashboard.
+description: Configure and deploy Grafana dashboards for the soil sensor project from centralized config. Use when editing `sensors-config.json`, adding a sensor to a dashboard, changing plant names/colors/thresholds, running `scripts/validate-config.py`, `scripts/generate-dashboard.py`, or `scripts/upload-dashboard-to-pi.sh`, working with the auto-generated `grafana-dashboards/soil-moisture-main.json` or `grafana-dashboards/sensor-explorer.json`, or setting up the watering-history dashboard.
 ---
 
 # Grafana Dashboard Configuration (v2.7.0)
 
-The main Grafana dashboard is **auto-generated** from centralized configuration.
-**Never manually edit `grafana-dashboards/soil-moisture-main.json`** — it is
-auto-generated and will be overwritten.
+Two Grafana dashboards are **auto-generated** from centralized configuration:
+`soil-moisture-main.json` (status bar, one moisture trace per plant, ambient
+climate — no template variables) and `sensor-explorer.json` (the Sensor
+dropdown and every panel that filters on it).
+**Never manually edit `grafana-dashboards/soil-moisture-main.json` or
+`grafana-dashboards/sensor-explorer.json`** — both are auto-generated and will
+be overwritten.
 
 ## Centralized Configuration System
 
 - **`sensors-config.json`** — Single source of truth for all sensor information (plant names, IPs, MACs, colors, thresholds)
-- **`scripts/generate-dashboard.py`** — Auto-generates `grafana-dashboards/soil-moisture-main.json` from config
+- **`scripts/generate-dashboard.py`** — Auto-generates `grafana-dashboards/soil-moisture-main.json` and `grafana-dashboards/sensor-explorer.json` from config
 - **`scripts/validate-config.py`** — Validates `sensors-config.json` before generation (checks syntax, duplicates, required fields)
-- **`scripts/upload-dashboard-to-pi.sh`** — Deploys dashboard to Grafana on Raspberry Pi (uses SSH + Grafana API)
+- **`scripts/upload-dashboard-to-pi.sh`** — Deploys both generated dashboards to Grafana on Raspberry Pi (uses SSH + Grafana API); pass a file name to deploy just one
 
 ## Critical Workflow Rules
 
-1. **NEVER manually edit `grafana-dashboards/soil-moisture-main.json`** — auto-generated, will be overwritten
+1. **NEVER manually edit `grafana-dashboards/soil-moisture-main.json` or `grafana-dashboards/sensor-explorer.json`** — auto-generated, will be overwritten (CI fails if either committed file drifts from the generator output)
 2. **ALWAYS validate before generating:** run `./scripts/validate-config.py` to catch errors early
 3. **ALWAYS use `scripts/upload-dashboard-to-pi.sh`** for deployment (not manual curl or API calls)
 4. **Deployment order is strict:** Edit config → Validate → Generate → Upload
+5. **Hand-written queries must match `influx-schema.json`** — run `./scripts/check-no-data-panels.py` before committing a change to any of the other dashboards
+
+## Static "No Data" Check
+
+`./scripts/check-no-data-panels.py` compares every query in
+`grafana-dashboards/` against `influx-schema.json` (the measurements, tags, and
+fields the firmware and Pi collectors actually write) and `sensors-config.json`.
+It runs in CI, needs no Pi, and catches the queries that can never return a row:
+
+- `_field == "<name>"` where nothing writes that field — or where the name is
+  really a **tag** (`event_type`, `location`, `device_id`, `hostname`); filter on
+  a real field and group by the tag instead
+- an unknown measurement, bucket, or datasource UID
+- a `device_id` that is not in `sensors-config.json`
+- a `from()` with no `range()`, unbalanced brackets, or an undefined `${variable}`
+
+Adding a field to a dashboard means adding it to `influx-schema.json` too — and
+only once something in the repo actually writes it. Genuine exceptions go in
+`tests/no-data-allowlist.json` with a reason.
+
+Run the whole CI suite locally with `./scripts/run-ci-checks.sh`.
 
 ## Adding a New Sensor (dashboard side)
 
@@ -34,13 +59,13 @@ vim sensors-config.json
 ./scripts/validate-config.py
 # Output: ✓ Configuration is valid (8 sensors)
 
-# 3. Generate dashboard
+# 3. Generate dashboards
 ./scripts/generate-dashboard.py
-# Output: ✓ Generated grafana-dashboards/soil-moisture-main.json
+# Output: ✓ Writes grafana-dashboards/soil-moisture-main.json and sensor-explorer.json
 
 # 4. Deploy to Grafana
 ./scripts/upload-dashboard-to-pi.sh
-# Output: ✓ Dashboard imported successfully
+# Output: ✓ Both dashboards imported successfully
 
 # 5. Configure and flash ESP8266 (see soil-sensor-firmware skill)
 cd firmware
@@ -117,12 +142,13 @@ Always run `./scripts/validate-config.py` before generating.
 
 - **Dashboard upload fails with "Access denied":** Update credentials in `scripts/upload-dashboard-to-pi.sh` (default: admin/admin)
 - **Dashboard not updating in Grafana:** Hard refresh browser (Cmd+Shift+R or Ctrl+Shift+R)
-- **Sensor not appearing in dropdown:** Sensor hasn't sent data yet, or `DEVICE_ID` in config.h doesn't match sensors-config.json
+- **Sensor not appearing in dropdown:** the dropdown lives on `sensor-explorer.json` (the main dashboard has none) — the sensor hasn't sent data yet, or `DEVICE_ID` in config.h doesn't match sensors-config.json
 - **Colors not matching config:** Regenerate and upload dashboard, then hard refresh browser
 
 ## Grafana Dashboards (`/grafana-dashboards/`)
 
-- `soil-moisture-main.json` — Main overview dashboard (auto-generated, don't edit manually)
+- `soil-moisture-main.json` — Main overview, one trace per plant (auto-generated, don't edit manually)
+- `sensor-explorer.json` — Sensor dropdown + the panels that filter on it (auto-generated, don't edit manually)
 - `watering-history.json` — Watering event detection and tracking (v2.12.3)
 - `sensor-details.json` — Individual sensor deep-dive
 - `system-health.json` — ESP8266 diagnostics & events

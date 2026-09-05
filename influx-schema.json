@@ -1,0 +1,66 @@
+{
+  "_comment": [
+    "InfluxDB schema contract for the soil-sensor project.",
+    "",
+    "Every measurement/tag/field below is derived from the code that WRITES it",
+    "(see 'producer'). Grafana dashboards may only query what appears here — a",
+    "query that filters on a measurement or field that nothing writes renders as",
+    "a 'No Data' panel.",
+    "",
+    "Validated in CI by scripts/check-no-data-panels.py. When firmware or a Pi",
+    "collector starts writing a new field, add it here in the same commit."
+  ],
+  "columns": [
+    "_time",
+    "_value",
+    "_field",
+    "_measurement",
+    "_start",
+    "_stop"
+  ],
+  "measurements": {
+    "sensor_reading": {
+      "description": "Soil moisture reading, posted every 5 minutes by each soil sensor.",
+      "producer": "firmware/src/database_client.cpp :: DatabaseClient::buildLineProtocol",
+      "tags": ["device_id", "location"],
+      "fields": ["moisture", "raw_adc", "uptime", "crashes", "rssi", "free_heap"]
+    },
+    "climate_reading": {
+      "description": "Temperature/humidity reading from the DHT22 climate sensors.",
+      "producer": "firmware/src/database_client.cpp :: DatabaseClient::buildClimateLineProtocol",
+      "tags": ["device_id", "location"],
+      "fields": ["temperature_c", "temperature_f", "humidity", "uptime", "rssi", "free_heap"]
+    },
+    "sensor_heartbeat": {
+      "description": "Liveness beacon written by every sensor, independent of readings.",
+      "producer": "firmware/src/heartbeat.cpp :: HeartbeatManager::buildLineProtocol",
+      "tags": ["device_id", "location"],
+      "fields": ["uptime", "free_heap", "rssi", "heartbeat_count"]
+    },
+    "sensor_diagnostics": {
+      "description": "Discrete diagnostic events (crash, wifi reconnect, queue overflow, ...). The event kind is the 'event_type' TAG, not a field.",
+      "producer": "firmware/src/diagnostics.cpp :: DiagnosticsManager::buildLineProtocol",
+      "tags": ["device_id", "location", "event_type"],
+      "fields": ["event_reason", "event_count", "free_heap", "rssi", "queue_size"]
+    },
+    "rpi_system_metrics": {
+      "description": "Raspberry Pi host metrics, collected on a systemd timer.",
+      "producer": "rpi-setup/scripts/system-metrics-collector.sh (and system-metrics-collector.py)",
+      "tags": ["hostname"],
+      "fields": [
+        "cpu_percent",
+        "cpu_temp",
+        "load_1min",
+        "load_5min",
+        "load_15min",
+        "ram_used_mb",
+        "ram_free_mb",
+        "ram_percent",
+        "disk_used_gb",
+        "disk_free_gb",
+        "disk_percent",
+        "uptime_seconds"
+      ]
+    }
+  }
+}

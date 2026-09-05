@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Config helpers for firmware flash scripts
 # Sources sensors-config.json at the project root via jq
 # Usage: source "$(dirname "$0")/lib/config-helpers.sh"

@@ -131,6 +131,8 @@ After=multi-user.target influxdb.service grafana-server.service
 
 [Service]
 Type=oneshot
+# INFLUX_TOKEN (read) lives on the Pi, chmod 600 — never in git.
+EnvironmentFile=-/mnt/sensor-data/config/soil-alerts.env
 ExecStart=/home/omedeiro/soil-sensor/rpi-setup/scripts/system-health-monitor.sh
 StandardOutput=journal
 StandardError=journal

@@ -821,7 +821,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -12h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r.device_id == \"${sensor}\")\n  |> filter(fn: (r) => r._field == \"event_type\" or r._field == \"severity\" or r._field == \"message\" or r._field == \"detail\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> sort(columns: [\"_time\"], desc: true)\n  |> limit(n: 100)",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -12h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r.device_id == \"${sensor}\")\n  |> filter(fn: (r) => r._field == \"event_reason\")\n  |> map(fn: (r) => ({\n    _time: r._time,\n    device_id: r.device_id,\n    event_type: r.event_type,\n    message: r._value,\n    severity: if r.event_type == \"crash_detected\" or r.event_type == \"system_restart\" or r.event_type == \"queue_overflow\" or r.event_type == \"influxdb_error\" then \"critical\"\n      else if r.event_type == \"wifi_reconnect_failed\" or r.event_type == \"heap_low_warning\" then \"error\"\n      else if r.event_type == \"wifi_disconnect\" then \"warning\"\n      else \"info\"\n  }))\n  |> group()\n  |> sort(columns: [\"_time\"], desc: true)\n  |> limit(n: 100)",
           "refId": "A"
         }
       ],
@@ -987,7 +987,7 @@
       },
       "targets": [
         {
-          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -12h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r.device_id == \"${sensor}\")\n  |> filter(fn: (r) => r._field == \"event_type\")\n  |> group(columns: [\"_value\"])\n  |> count()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)",
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -12h)\n  |> filter(fn: (r) => r._measurement == \"sensor_diagnostics\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r.device_id == \"${sensor}\")\n  |> filter(fn: (r) => r._field == \"event_count\")\n  |> group(columns: [\"event_type\"])\n  |> count()\n  |> keep(columns: [\"event_type\", \"_value\"])",
           "refId": "A"
         }
       ],

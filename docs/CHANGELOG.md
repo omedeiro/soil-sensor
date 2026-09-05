@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+#### Main Dashboard Split: Traces vs. Dropdown
+- **`grafana-dashboards/soil-moisture-main.json`** — The Sensor dropdown and the four panels that filtered on it (the colored plant heading, "Current Moisture Levels", "Moisture Trends", "Raw ADC Values") are gone. What is left needs nothing selected first: the status bar, one full-width single-trace moisture panel per plant, and the ambient temperature/humidity panels. `templating.list` is now empty, and the per-plant traces moved up under the status bar with ambient climate below them
+- **`grafana-dashboards/sensor-explorer.json`** — New generated dashboard (uid `sensor-explorer-v1`, tags `overview`, `sensors`, `explorer`) holding exactly what moved off the main dashboard: the custom Sensor variable and the four panels that read `${sensor}`
+- **`scripts/generate-dashboard.py`** — Now generates both dashboards. Panel builders take their grid `y` position from the caller instead of hardcoding it, so each dashboard lays out its own panels
+- **`scripts/upload-dashboard-to-pi.sh`** — Uploads both generated dashboards; pass a file name to deploy just one
+- **`grafana-dashboards/import-all-dashboards.sh`** — Imports `sensor-explorer.json` too
+- **CI** — the generated-dashboard drift check (`.github/workflows/ci.yml`, `scripts/run-ci-checks.sh`) now covers `sensor-explorer.json` alongside `soil-moisture-main.json`
+
+### Added
+
+#### Continuous Integration
+- **`.github/workflows/ci.yml`** — New: four jobs on every push and pull request, none of which need the Pi. *Dashboards* (config validation, JSON parse, generated-dashboard drift, "No Data" check, checker self-test), *Shell & Python* (`bash -n`, `shellcheck --severity=error`, `py_compile`), *Secret scan*, and *Firmware build* (`pio run -e esp8266` against `secrets.h.example`)
+- **`scripts/check-no-data-panels.py`** — New: static "No Data" panel checker, the CI counterpart to the Pi's live `check-grafana-panels.py`. Compares every query in `grafana-dashboards/` against `influx-schema.json` and `sensors-config.json` and fails on a wrong datasource UID or bucket, a panel with no query, an unknown measurement/field/tag, a `_field` filter naming what is really a tag, an unconfigured `device_id`, a `from()` without `range()`, unbalanced brackets, or an undefined `${variable}`. Text and JSON output; exit 1 when a panel would render "No Data"
+- **`influx-schema.json`** — New: the InfluxDB contract (measurements, tags, fields) derived from the code that writes each point, with the producer recorded per measurement. This is what the panel checker validates against
+- **`tests/test-no-data-checker.sh`** + **`tests/fixtures/no-data/`** — New: self-test for the checker. One fixture must come back clean, one trips all ten rules, and the allowlist is exercised
+- **`tests/no-data-allowlist.json`** — New: documented suppressions for the panel checker; every entry needs a reason
+- **`scripts/check-secrets.sh`** — New: scans tracked files for InfluxDB tokens, Slack webhooks, secrets inlined in systemd units (`Environment="INFLUX_TOKEN=..."`), and private keys
+- **`scripts/run-ci-checks.sh`** — New: runs every CI check locally; `--with-firmware` adds the PlatformIO compile
+
+### Fixed
+
+#### Dashboard Panels That Could Never Return Data
+- **`rpi-health.json` "Memory & Disk Usage History"** and **`system-health.json` "Raspberry Pi System Metrics"** — queried `_field == "memory_percent"`, but `system-metrics-collector.sh` writes `ram_percent`. Both now query `ram_percent`; the rpi-health field override matcher moved from `.*memory.*` to `.*ram.*` so the series is still labelled "Memory %"
+- **`alerts-overview.json` "Active Critical Issues"** and **`sensor-details.json` "Diagnostic Events"** — filtered `sensor_diagnostics` on `_field == "severity" / "message" / "detail" / "event_type"`. None of those are fields: the firmware writes `event_reason`, `event_count`, `free_heap`, `rssi`, `queue_size`, and `event_type` is a *tag*. Both panels now read `event_reason` as the message and derive `severity` from the `event_type` tag, matching the classification already used by "Diagnostic Events: Critical vs Info"
+- **`sensor-details.json` "Diagnostic Event Summary"** — counted `_field == "event_type"` (a tag, so always zero rows); now counts `event_count` grouped by the `event_type` tag
+- **`tests/check-dashboard-panels.sh`** — had a duplicated `exit 0` / `fi` after the final block, so the script failed to parse and could never run
+- **`firmware/lib/config-helpers.sh`** — added a `# shellcheck shell=bash` directive; it is sourced, not executed, so it has no shebang for ShellCheck to key off
+
+#### Documentation
+- **`README.md` InfluxDB schema** — `sensor_heartbeat` listed `queue_size`, which it does not write (`heartbeat_count` is the fourth field), and the `climate_reading` measurement was missing entirely
+
+### Security
+- **The InfluxDB admin token left in the working tree is gone.** v2.14.0 removed it from the systemd units but noted it still appeared in `rpi-setup/scripts/system-health-monitor.sh` and `docs/archive/RECOVERY_2026-05-20.md`. The script now reads `INFLUX_TOKEN` from the environment (systemd supplies it via the `EnvironmentFile=` line added to the unit `install-reliability.sh` generates; a manual run falls back to `/mnt/sensor-data/config/soil-alerts.env`) and skips the sensor check with an alert when it is unset. The archived report has the value redacted
+- **`tests/test_last_updated.sh`** — had a second hardcoded InfluxDB token; it now requires `INFLUX_TOKEN` in the environment, like `test_influx_write.sh`
+- **Both tokens are still in git history and must be rotated in InfluxDB.** `scripts/check-secrets.sh` now fails CI if either pattern comes back
+
+---
+
 ## [2.14.0] - 2026-08-23
 
 ### Added

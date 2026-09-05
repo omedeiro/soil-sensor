@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
 """
-Generate Grafana dashboard from centralized sensor configuration.
+Generate Grafana dashboards from centralized sensor configuration.
 
-This script reads sensors-config.json and generates the soil-moisture-main.json
-dashboard file with all sensor configurations, labels, colors, and filters.
+This script reads sensors-config.json and generates two dashboards with all
+sensor configurations, labels, colors, and filters:
+
+  * soil-moisture-main.json — the main dashboard. No template variables: the
+    status bar, one full-width trace panel per plant, and the ambient climate
+    panels.
+  * sensor-explorer.json — the Sensor dropdown and every panel that filters on
+    it (plant heading, current levels, overlaid moisture trends, raw ADC).
 
 Usage:
     ./generate-dashboard.py
-    
+
 Output:
     grafana-dashboards/soil-moisture-main.json
+    grafana-dashboards/sensor-explorer.json
 """
 
 import json
@@ -90,12 +97,40 @@ def create_field_override(sensor, is_bargauge=False):
 
 
 def create_dashboard(config):
-    """Create the complete dashboard structure."""
+    """Create the main dashboard: status bar, per-plant traces, ambient climate.
+
+    This dashboard deliberately has no template variables. Every panel that
+    filtered on the Sensor dropdown lives on the sensor explorer dashboard
+    (see create_sensor_explorer_dashboard), so what is left here always shows
+    one trace per plant with nothing to select first.
+    """
     sensors = config["sensors"]
     grafana_config = config["grafana"]
     climate_sensors = config.get("climate_sensors", [])
-    
-    dashboard = {
+
+    status_y = 0
+    status_height = 4
+
+    # One full-width single-trace moisture panel per plant, in sensor order.
+    per_plant_start_y = status_y + status_height
+    per_plant_height = 8
+    per_plant_panels = [
+        create_single_plant_moisture_panel(
+            sensor,
+            panel_id=101 + index,
+            y_pos=per_plant_start_y + index * per_plant_height,
+            height=per_plant_height,
+            grafana_config=grafana_config
+        )
+        for index, sensor in enumerate(sensors)
+    ]
+
+    # Ambient climate sits below the plant traces.
+    climate_stats_y = per_plant_start_y + len(sensors) * per_plant_height
+    temperature_trend_y = climate_stats_y + 6
+    humidity_trend_y = temperature_trend_y + 10
+
+    return {
         "id": None,
         "uid": "soil-moisture-main-v2",
         "title": "🌱 Soil Moisture Dashboard",
@@ -113,7 +148,57 @@ def create_dashboard(config):
         "fiscalYearStartMonth": 0,
         "liveNow": False,
         "schemaVersion": 38,
-        "version": 4,
+        "version": 5,
+        "templating": {
+            "list": []
+        },
+        "panels": [
+            create_system_status_panel(sensors, climate_sensors, grafana_config, status_y),
+            create_rpi_uptime_panel(grafana_config, status_y),
+            create_last_updated_panel(grafana_config, status_y),
+            *per_plant_panels,
+            create_temperature_stat_panel(climate_sensors, grafana_config, climate_stats_y),
+            create_humidity_stat_panel(climate_sensors, grafana_config, climate_stats_y),
+            create_temperature_trends_panel(climate_sensors, grafana_config, temperature_trend_y),
+            create_humidity_trends_panel(climate_sensors, grafana_config, humidity_trend_y)
+        ]
+    }
+
+
+def create_sensor_explorer_dashboard(config):
+    """Create the sensor explorer dashboard: the Sensor dropdown and its panels.
+
+    These panels all filter on ${sensor}, so they only make sense next to the
+    selector. They used to live on the main dashboard above the per-plant
+    traces.
+    """
+    sensors = config["sensors"]
+    grafana_config = config["grafana"]
+
+    plant_name_y = 0
+    current_moisture_y = plant_name_y + 3
+    moisture_trends_y = current_moisture_y + 8
+    raw_adc_y = moisture_trends_y + 10
+
+    return {
+        "id": None,
+        "uid": "sensor-explorer-v1",
+        "title": "🔍 Sensor Explorer",
+        "description": "Pick a plant (or All) from the Sensor dropdown to compare current levels, moisture trends, and raw ADC values",
+        "tags": ["overview", "sensors", "explorer"],
+        "style": "dark",
+        "timezone": "browser",
+        "editable": True,
+        "graphTooltip": 1,
+        "refresh": "5m",
+        "time": {
+            "from": "now-7d",
+            "to": "now"
+        },
+        "fiscalYearStartMonth": 0,
+        "liveNow": False,
+        "schemaVersion": 38,
+        "version": 1,
         "templating": {
             "list": [
                 {
@@ -137,39 +222,15 @@ def create_dashboard(config):
             ]
         },
         "panels": [
-            create_plant_name_panel(sensors, grafana_config),
-            create_system_status_panel(sensors, climate_sensors, grafana_config),
-            create_rpi_uptime_panel(grafana_config),
-            create_last_updated_panel(grafana_config),
-            create_current_moisture_panel(sensors, grafana_config),
-            create_moisture_trends_panel(sensors, grafana_config),
-            create_raw_adc_panel(sensors, grafana_config),
-            create_temperature_stat_panel(climate_sensors, grafana_config),
-            create_humidity_stat_panel(climate_sensors, grafana_config),
-            create_temperature_trends_panel(climate_sensors, grafana_config),
-            create_humidity_trends_panel(climate_sensors, grafana_config)
+            create_plant_name_panel(sensors, grafana_config, plant_name_y),
+            create_current_moisture_panel(sensors, grafana_config, current_moisture_y),
+            create_moisture_trends_panel(sensors, grafana_config, moisture_trends_y),
+            create_raw_adc_panel(sensors, grafana_config, raw_adc_y)
         ]
     }
 
-    # Append one single-trace moisture panel per plant, in fixed sensor order.
-    # These live below the temperature/humidity block (which ends at y=61).
-    per_plant_start_y = 61
-    per_plant_height = 8
-    for index, sensor in enumerate(sensors):
-        dashboard["panels"].append(
-            create_single_plant_moisture_panel(
-                sensor,
-                panel_id=101 + index,
-                y_pos=per_plant_start_y + index * per_plant_height,
-                height=per_plant_height,
-                grafana_config=grafana_config
-            )
-        )
 
-    return dashboard
-
-
-def create_plant_name_panel(sensors, grafana_config):
+def create_plant_name_panel(sensors, grafana_config, y_pos):
     """Create the plant name heading panel with dynamic color matching."""
     # Build the Flux if/else chain for sensor-to-plant mapping
     flux_conditions = []
@@ -215,7 +276,7 @@ array.from(rows: data)'''
         "id": 1001,
         "type": "stat",
         "title": "",
-        "gridPos": {"x": 0, "y": 0, "w": 24, "h": 3},
+        "gridPos": {"x": 0, "y": y_pos, "w": 24, "h": 3},
         "datasource": {
             "type": "influxdb",
             "uid": grafana_config["influxdb_datasource_uid"]
@@ -256,7 +317,7 @@ array.from(rows: data)'''
     }
 
 
-def create_system_status_panel(sensors, climate_sensors, grafana_config):
+def create_system_status_panel(sensors, climate_sensors, grafana_config, y_pos):
     """Create the System Status stat panel.
 
     Counts all sensors defined in sensors-config.json (soil + climate) by
@@ -269,7 +330,7 @@ def create_system_status_panel(sensors, climate_sensors, grafana_config):
         "id": 1,
         "type": "stat",
         "title": "System Status",
-        "gridPos": {"x": 0, "y": 3, "w": 8, "h": 4},
+        "gridPos": {"x": 0, "y": y_pos, "w": 8, "h": 4},
         "datasource": {
             "type": "influxdb",
             "uid": grafana_config["influxdb_datasource_uid"]
@@ -307,13 +368,13 @@ def create_system_status_panel(sensors, climate_sensors, grafana_config):
     }
 
 
-def create_rpi_uptime_panel(grafana_config):
+def create_rpi_uptime_panel(grafana_config, y_pos):
     """Create the Raspberry Pi Uptime stat panel."""
     return {
         "id": 998,
         "type": "stat",
         "title": "🖥️ Raspberry Pi Uptime",
-        "gridPos": {"x": 8, "y": 3, "w": 8, "h": 4},
+        "gridPos": {"x": 8, "y": y_pos, "w": 8, "h": 4},
         "datasource": {
             "type": "influxdb",
             "uid": grafana_config["influxdb_datasource_uid"]
@@ -352,13 +413,13 @@ def create_rpi_uptime_panel(grafana_config):
     }
 
 
-def create_last_updated_panel(grafana_config):
+def create_last_updated_panel(grafana_config, y_pos):
     """Create the Last Updated stat panel."""
     return {
         "id": 999,
         "type": "stat",
         "title": "Last Updated",
-        "gridPos": {"x": 16, "y": 3, "w": 8, "h": 4},
+        "gridPos": {"x": 16, "y": y_pos, "w": 8, "h": 4},
         "datasource": {
             "type": "influxdb",
             "uid": grafana_config["influxdb_datasource_uid"]
@@ -393,13 +454,13 @@ def create_last_updated_panel(grafana_config):
     }
 
 
-def create_current_moisture_panel(sensors, grafana_config):
+def create_current_moisture_panel(sensors, grafana_config, y_pos):
     """Create the Current Moisture Levels bar gauge panel."""
     return {
         "id": 2,
         "type": "bargauge",
         "title": "Current Moisture Levels",
-        "gridPos": {"x": 0, "y": 7, "w": 24, "h": 8},
+        "gridPos": {"x": 0, "y": y_pos, "w": 24, "h": 8},
         "datasource": {
             "type": "influxdb",
             "uid": grafana_config["influxdb_datasource_uid"]
@@ -443,13 +504,13 @@ def create_current_moisture_panel(sensors, grafana_config):
     }
 
 
-def create_moisture_trends_panel(sensors, grafana_config):
+def create_moisture_trends_panel(sensors, grafana_config, y_pos):
     """Create the Moisture Trends time series panel."""
     return {
         "id": 3,
         "type": "timeseries",
         "title": "Moisture Trends",
-        "gridPos": {"x": 0, "y": 15, "w": 24, "h": 10},
+        "gridPos": {"x": 0, "y": y_pos, "w": 24, "h": 10},
         "datasource": {
             "type": "influxdb",
             "uid": grafana_config["influxdb_datasource_uid"]
@@ -569,13 +630,13 @@ def create_single_plant_moisture_panel(sensor, panel_id, y_pos, height, grafana_
     }
 
 
-def create_raw_adc_panel(sensors, grafana_config):
+def create_raw_adc_panel(sensors, grafana_config, y_pos):
     """Create the Raw ADC Values time series panel."""
     return {
         "id": 5,
         "type": "timeseries",
         "title": "Raw ADC Values",
-        "gridPos": {"x": 0, "y": 25, "w": 24, "h": 10},
+        "gridPos": {"x": 0, "y": y_pos, "w": 24, "h": 10},
         "datasource": {
             "type": "influxdb",
             "uid": grafana_config["influxdb_datasource_uid"]
@@ -643,14 +704,14 @@ def _climate_measurement(grafana_config):
     return grafana_config.get("climate_measurement", "climate_reading")
 
 
-def create_temperature_stat_panel(climate_sensors, grafana_config):
+def create_temperature_stat_panel(climate_sensors, grafana_config, y_pos):
     """Current ambient temperature as a single number with °F unit."""
     measurement = _climate_measurement(grafana_config)
     return {
         "id": 20,
         "type": "stat",
         "title": "Ambient Temperature",
-        "gridPos": {"x": 0, "y": 35, "w": 12, "h": 6},
+        "gridPos": {"x": 0, "y": y_pos, "w": 12, "h": 6},
         "datasource": {
             "type": "influxdb",
             "uid": grafana_config["influxdb_datasource_uid"]
@@ -691,14 +752,14 @@ def create_temperature_stat_panel(climate_sensors, grafana_config):
     }
 
 
-def create_humidity_stat_panel(climate_sensors, grafana_config):
+def create_humidity_stat_panel(climate_sensors, grafana_config, y_pos):
     """Current ambient humidity as a single number with % unit."""
     measurement = _climate_measurement(grafana_config)
     return {
         "id": 21,
         "type": "stat",
         "title": "Ambient Humidity",
-        "gridPos": {"x": 12, "y": 35, "w": 12, "h": 6},
+        "gridPos": {"x": 12, "y": y_pos, "w": 12, "h": 6},
         "datasource": {
             "type": "influxdb",
             "uid": grafana_config["influxdb_datasource_uid"]
@@ -739,14 +800,14 @@ def create_humidity_stat_panel(climate_sensors, grafana_config):
     }
 
 
-def create_temperature_trends_panel(climate_sensors, grafana_config):
+def create_temperature_trends_panel(climate_sensors, grafana_config, y_pos):
     """Ambient temperature (°F) time series."""
     measurement = _climate_measurement(grafana_config)
     return {
         "id": 22,
         "type": "timeseries",
         "title": "Ambient Temperature Trend (°F)",
-        "gridPos": {"x": 0, "y": 41, "w": 24, "h": 10},
+        "gridPos": {"x": 0, "y": y_pos, "w": 24, "h": 10},
         "datasource": {
             "type": "influxdb",
             "uid": grafana_config["influxdb_datasource_uid"]
@@ -794,14 +855,14 @@ def create_temperature_trends_panel(climate_sensors, grafana_config):
     }
 
 
-def create_humidity_trends_panel(climate_sensors, grafana_config):
+def create_humidity_trends_panel(climate_sensors, grafana_config, y_pos):
     """Ambient humidity (%) time series."""
     measurement = _climate_measurement(grafana_config)
     return {
         "id": 23,
         "type": "timeseries",
         "title": "Ambient Humidity Trend (%)",
-        "gridPos": {"x": 0, "y": 51, "w": 24, "h": 10},
+        "gridPos": {"x": 0, "y": y_pos, "w": 24, "h": 10},
         "datasource": {
             "type": "influxdb",
             "uid": grafana_config["influxdb_datasource_uid"]
@@ -871,23 +932,31 @@ def main():
     print("Loading sensor configuration...")
     config = load_config()
     
-    print(f"Generating dashboard for {len(config['sensors'])} sensors...")
-    dashboard = create_dashboard(config)
-    
-    # Write to the repo-root grafana-dashboards/ (the file upload-dashboard-to-pi.sh deploys)
-    output_file = Path(__file__).parent.parent / "grafana-dashboards" / "soil-moisture-main.json"
-    print(f"Writing dashboard to {output_file}...")
-    
-    with open(output_file, 'w') as f:
-        json.dump(dashboard, f, indent=2)
-    
-    print("✓ Dashboard generated successfully!")
+    print(f"Generating dashboards for {len(config['sensors'])} sensors...")
+
+    # Write to the repo-root grafana-dashboards/ (the directory
+    # upload-dashboard-to-pi.sh and import-all-dashboards.sh deploy from)
+    dashboard_dir = Path(__file__).parent.parent / "grafana-dashboards"
+    outputs = [
+        ("soil-moisture-main.json", create_dashboard(config)),
+        ("sensor-explorer.json", create_sensor_explorer_dashboard(config)),
+    ]
+
+    for filename, dashboard in outputs:
+        output_file = dashboard_dir / filename
+        print(f"Writing dashboard to {output_file}...")
+        with open(output_file, 'w') as f:
+            json.dump(dashboard, f, indent=2)
+
+    print("✓ Dashboards generated successfully!")
     print(f"\nSensors configured:")
     for sensor in config['sensors']:
         print(f"  - {sensor['id']}: {sensor['plant']} ({sensor['location']})")
     
-    print(f"\nTo upload to Grafana, run:")
+    print(f"\nTo upload the main dashboard to Grafana, run:")
     print(f"  ./upload-dashboard-to-pi.sh")
+    print(f"To upload every dashboard, run:")
+    print(f"  ../grafana-dashboards/import-all-dashboards.sh")
 
 
 if __name__ == "__main__":

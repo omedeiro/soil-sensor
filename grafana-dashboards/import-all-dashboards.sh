@@ -15,6 +15,7 @@ DASHBOARDS=(
   "mobile-summary.json"
   "rpi-health.json"
   "sensor-details.json"
+  "sensor-explorer.json"
   "soil-moisture-main.json"
   "system-health.json"
   "watering-history.json"

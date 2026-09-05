@@ -1,0 +1,140 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dashboards:
+    name: Dashboards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: sensors-config.json is valid
+        run: ./scripts/validate-config.py
+
+      - name: Every tracked JSON file parses
+        run: |
+          status=0
+          while IFS= read -r file; do
+            python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$file" || {
+              echo "::error file=$file::invalid JSON"
+              status=1
+            }
+          done < <(git ls-files '*.json')
+          exit $status
+
+      - name: Generated dashboards match sensors-config.json
+        run: |
+          # Both of these are generated — never hand-edited.
+          ./scripts/generate-dashboard.py > /dev/null
+          status=0
+          for file in grafana-dashboards/soil-moisture-main.json \
+                      grafana-dashboards/sensor-explorer.json; do
+            if ! git diff --quiet -- "$file"; then
+              echo "::error file=$file::does not match the output of scripts/generate-dashboard.py — edit sensors-config.json and regenerate"
+              git --no-pager diff -- "$file"
+              status=1
+            else
+              echo "$(basename "$file") is up to date"
+            fi
+          done
+          exit $status
+
+      - name: No "No Data" panels
+        run: ./scripts/check-no-data-panels.py --no-color
+
+      - name: Panel checker self-test
+        run: ./tests/test-no-data-checker.sh
+
+  scripts:
+    name: Shell & Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Shell syntax
+        run: |
+          status=0
+          while IFS= read -r file; do
+            bash -n "$file" || {
+              echo "::error file=$file::shell syntax error"
+              status=1
+            }
+          done < <(git ls-files '*.sh')
+          exit $status
+
+      - name: ShellCheck
+        run: |
+          command -v shellcheck > /dev/null 2>&1 || {
+            sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          }
+          # shellcheck disable=SC2046
+          shellcheck --severity=error --format=gcc $(git ls-files '*.sh')
+
+      - name: Python syntax
+        run: |
+          status=0
+          while IFS= read -r file; do
+            python3 -m py_compile "$file" || {
+              echo "::error file=$file::python syntax error"
+              status=1
+            }
+          done < <(git ls-files '*.py')
+          exit $status
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: No committed secrets
+        run: ./scripts/check-secrets.sh
+
+  firmware:
+    name: Firmware build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            ~/.cache/pip
+          key: pio-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini') }}
+          restore-keys: pio-${{ runner.os }}-
+
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+
+      - name: Provide placeholder secrets.h
+        run: cp firmware/src/secrets.h.example firmware/src/secrets.h
+
+      - name: Compile ESP8266 firmware
+        working-directory: firmware
+        run: pio run -e esp8266

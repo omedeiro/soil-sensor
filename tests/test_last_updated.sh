@@ -4,8 +4,19 @@
 set -e
 
 INFLUX_URL="${INFLUX_URL:-http://localhost:8086}"
-INFLUX_ORG="soil-monitoring"
-INFLUX_TOKEN="${INFLUX_TOKEN:-$(grep -m1 '^INFLUX_TOKEN=' "${CONFIG_DIR:-/mnt/sensor-data/config}/panel-health.env" 2>/dev/null | cut -d= -f2- | tr -d '"')}"
+INFLUX_ORG="${INFLUX_ORG:-soil-monitoring}"
+
+# Prefer the environment; fall back to the Pi's config file when it is readable.
+CONFIG_FILE="${CONFIG_DIR:-/mnt/sensor-data/config}/panel-health.env"
+if [ -z "${INFLUX_TOKEN:-}" ] && [ -r "$CONFIG_FILE" ]; then
+    INFLUX_TOKEN="$(grep -m1 '^INFLUX_TOKEN=' "$CONFIG_FILE" | cut -d= -f2- | tr -d '"')"
+fi
+
+if [ -z "${INFLUX_TOKEN:-}" ]; then
+    echo "Error: INFLUX_TOKEN environment variable not set"
+    echo "Usage: export INFLUX_TOKEN='your_read_token' && ./test_last_updated.sh"
+    exit 1
+fi
 
 echo "=== Testing Last Updated Panel Query ==="
 echo ""
