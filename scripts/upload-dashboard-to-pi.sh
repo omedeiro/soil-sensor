@@ -39,15 +39,14 @@ for name in "${DASHBOARDS[@]}"; do
         continue
     fi
 
-    echo "Importing $name into Grafana (folder: Soil Monitoring)..."
+    echo "Importing $name into Grafana..."
     ssh "${PI_USER}@${PI_HOST}" 'bash -s' "$name" <<'ENDSSH' || status=1
     NAME="$1"
 
     # Create API payload (wrap dashboard in required format, include folder)
     PAYLOAD=$(jq -n \
       --argjson dashboard "$(cat "/tmp/$NAME")" \
-      --argjson folderId 2158619959259136 \
-      '{"dashboard": $dashboard, "folderId": $folderId, "overwrite": true, "message": "Auto-updated dashboard"}')
+      '{"dashboard": $dashboard, "overwrite": true, "message": "Auto-updated dashboard"}')
     echo "$PAYLOAD" > /tmp/payload.json
 
     # Import to Grafana (using admin credentials)

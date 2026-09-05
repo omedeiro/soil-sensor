@@ -1,13 +1,11 @@
 #!/bin/bash
 # Import all dashboards to Grafana on Raspberry Pi
 # Uses the proven /api/dashboards/db endpoint (same as upload-dashboard-to-pi.sh)
-# Dashboards are placed in the Soil Monitoring folder
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 GRAFANA_URL="http://192.168.99.134:3000"
 GRAFANA_USER="admin"
 GRAFANA_PASS="admin"
-FOLDER_UID="afma8ap3k5csgb"  # Soil Monitoring folder
 
 # Dashboard files to import
 DASHBOARDS=(
@@ -23,7 +21,6 @@ DASHBOARDS=(
 
 echo "🚀 Importing Grafana dashboards..."
 echo "Target: $GRAFANA_URL"
-echo "Folder UID: $FOLDER_UID"
 echo ""
 
 for dashboard in "${DASHBOARDS[@]}"; do
@@ -32,11 +29,9 @@ for dashboard in "${DASHBOARDS[@]}"; do
   # Build payload via SSH on the Pi (avoids shell quoting issues with large JSON)
   payload=$(jq -n \
     --argjson dashboard "$(cat "$SCRIPT_DIR/$dashboard")" \
-    --arg folderUid "$FOLDER_UID" \
     '{
       dashboard: $dashboard,
-      overwrite: true,
-      folderUid: $folderUid
+      overwrite: true
     }')
 
   response=$(curl -s -X POST \
