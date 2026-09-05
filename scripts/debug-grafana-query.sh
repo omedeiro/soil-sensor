@@ -49,7 +49,7 @@ OPTIONS:
 
 EXAMPLES:
     # Debug specific panel
-    $0 --dashboard soil-moisture-main-v2 --panel 3
+    $0 --dashboard soil-moisture-main-v2 --panel 101
 
     # Test custom query
     $0 --query 'from(bucket: "sensor-readings") |> range(start: -1h) |> limit(n: 10)'

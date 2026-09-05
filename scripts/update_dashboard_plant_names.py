@@ -87,7 +87,7 @@ def main():
     
     # Dashboards that have sensor dropdowns
     target_dashboards = [
-        "soil-moisture-main.json",
+        "sensor-explorer.json",
         "sensor-details.json",
         "alerts-overview.json",
         "mobile-summary.json",
