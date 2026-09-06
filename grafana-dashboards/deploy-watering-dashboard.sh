@@ -5,7 +5,6 @@ set -e
 
 DASHBOARD_FILE="watering-history.json"
 PI_HOST="omedeiro@192.168.99.134"
-FOLDER_UID="afma8ap3k5csgb"  # Soil Monitoring folder
 
 echo "🚰 Deploying Watering History Dashboard"
 echo "========================================"
@@ -35,7 +34,6 @@ import sys, json
 dashboard = json.load(sys.stdin)
 wrapper = {
   'dashboard': dashboard,
-  'folderUid': '$FOLDER_UID',
   'overwrite': True
 }
 print(json.dumps(wrapper))

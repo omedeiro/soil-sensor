@@ -344,8 +344,7 @@ Estimated time: 10 minutes
 # Login: admin / admin (change password if prompted)
 
 # Navigate to: Dashboards → Browse
-# You should see folder: "Soil Monitoring"
-# Inside, you'll find:
+# You should see:
 #   - 🌱 Soil Moisture Dashboard (Main)
 #   - 🏥 System Health
 #   - (+ any other dashboards you created)
