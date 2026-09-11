@@ -19,7 +19,7 @@
   "fiscalYearStartMonth": 0,
   "liveNow": false,
   "schemaVersion": 38,
-  "version": 5,
+  "version": 6,
   "templating": {
     "list": []
   },
@@ -187,12 +187,343 @@
       }
     },
     {
+      "id": 2,
+      "type": "bargauge",
+      "title": "Current Moisture Levels",
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cflk0i2e2nwu8d"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"sensor-readings\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"sensor_reading\")\n  |> filter(fn: (r) => r.location != \"backyard\")\n  |> filter(fn: (r) => r._field == \"moisture\")\n  |> filter(fn: (r) => r.device_id =~ /^(sensor-1|sensor-2|sensor-3|sensor-4|sensor-5|sensor-6|sensor-7)$/)\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> sort(columns: [\"device_id\"])",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "minVizWidth": 0,
+        "minVizHeight": 10,
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-green",
+                "value": null
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 75
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-1.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Rubber Tree"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "value": null,
+                      "color": "#2d5016"
+                    },
+                    {
+                      "value": 33,
+                      "color": "#4a7c2a"
+                    },
+                    {
+                      "value": 67,
+                      "color": "#73BF69"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-2.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Monstera"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "value": null,
+                      "color": "#6b5606"
+                    },
+                    {
+                      "value": 33,
+                      "color": "#a88a09"
+                    },
+                    {
+                      "value": 67,
+                      "color": "#F2CC0C"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-3.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Avocado"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "value": null,
+                      "color": "#1f3f68"
+                    },
+                    {
+                      "value": 33,
+                      "color": "#3b6aad"
+                    },
+                    {
+                      "value": 67,
+                      "color": "#5794F2"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-4.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Micro Greens"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "value": null,
+                      "color": "#6b2323"
+                    },
+                    {
+                      "value": 33,
+                      "color": "#b54747"
+                    },
+                    {
+                      "value": 67,
+                      "color": "#FF6B6B"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-5.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "ZZ Plant"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "value": null,
+                      "color": "#4a2b57"
+                    },
+                    {
+                      "value": 33,
+                      "color": "#7d4a9b"
+                    },
+                    {
+                      "value": 67,
+                      "color": "#B877D9"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-6.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Ficus Elastica Ruby"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "value": null,
+                      "color": "#663c13"
+                    },
+                    {
+                      "value": 33,
+                      "color": "#b36420"
+                    },
+                    {
+                      "value": 67,
+                      "color": "#FF9830"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sensor-7.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Parsley"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "value": null,
+                      "color": "#255858"
+                    },
+                    {
+                      "value": 33,
+                      "color": "#3f9999"
+                    },
+                    {
+                      "value": 67,
+                      "color": "#5DDBDB"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "id": 101,
       "type": "timeseries",
       "title": "Rubber Tree",
       "gridPos": {
         "x": 0,
-        "y": 4,
+        "y": 12,
         "w": 24,
         "h": 8
       },
@@ -271,7 +602,7 @@
       "title": "Monstera",
       "gridPos": {
         "x": 0,
-        "y": 12,
+        "y": 20,
         "w": 24,
         "h": 8
       },
@@ -350,7 +681,7 @@
       "title": "Avocado",
       "gridPos": {
         "x": 0,
-        "y": 20,
+        "y": 28,
         "w": 24,
         "h": 8
       },
@@ -429,7 +760,7 @@
       "title": "Micro Greens",
       "gridPos": {
         "x": 0,
-        "y": 28,
+        "y": 36,
         "w": 24,
         "h": 8
       },
@@ -508,7 +839,7 @@
       "title": "ZZ Plant",
       "gridPos": {
         "x": 0,
-        "y": 36,
+        "y": 44,
         "w": 24,
         "h": 8
       },
@@ -587,7 +918,7 @@
       "title": "Ficus Elastica Ruby",
       "gridPos": {
         "x": 0,
-        "y": 44,
+        "y": 52,
         "w": 24,
         "h": 8
       },
@@ -666,7 +997,7 @@
       "title": "Parsley",
       "gridPos": {
         "x": 0,
-        "y": 52,
+        "y": 60,
         "w": 24,
         "h": 8
       },
@@ -745,7 +1076,7 @@
       "title": "Ambient Temperature",
       "gridPos": {
         "x": 0,
-        "y": 60,
+        "y": 68,
         "w": 12,
         "h": 6
       },
@@ -846,7 +1177,7 @@
       "title": "Ambient Humidity",
       "gridPos": {
         "x": 12,
-        "y": 60,
+        "y": 68,
         "w": 12,
         "h": 6
       },
@@ -947,7 +1278,7 @@
       "title": "Ambient Temperature Trend (\u00b0F)",
       "gridPos": {
         "x": 0,
-        "y": 66,
+        "y": 74,
         "w": 24,
         "h": 10
       },
@@ -1061,7 +1392,7 @@
       "title": "Ambient Humidity Trend (%)",
       "gridPos": {
         "x": 0,
-        "y": 76,
+        "y": 84,
         "w": 24,
         "h": 10
       },
