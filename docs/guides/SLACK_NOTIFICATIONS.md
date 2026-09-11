@@ -23,6 +23,34 @@ sends a test message, and enables the systemd timers.
 To create the webhook: <https://api.slack.com/apps> → your app → **Incoming
 Webhooks** → *Add New Webhook to Workspace* → pick the channel.
 
+### Verify it is actually armed
+
+Installing the alerts and *having* the alerts are not the same thing — an
+SD-card rebuild or a fresh checkout leaves the scripts in place but the timers
+gone, and nothing complains. On 2026-09-10 the whole sensor fleet went silent
+for 10h45m without an alert for exactly this reason: none of the timers were
+installed on the Pi.
+
+```bash
+./rpi-setup/install-health-timers.sh --check     # read-only, no sudo
+```
+
+It reports, per unit, whether the file is in `/etc/systemd/system` and whether
+the timer is enabled *and* active, plus whether the webhook and
+`soil-alerts.env` exist. Exit status is 1 if anything is missing.
+
+Run it with no arguments to fix what it found:
+
+```bash
+./rpi-setup/install-health-timers.sh
+```
+
+Unlike `install-slack-notifications.sh`, this one prompts for nothing: it
+reuses the existing webhook, seeds `soil-alerts.env` from the read token in
+`panel-health.env` when it is missing, dry-runs both checks, and only then
+installs and enables the four units. It needs `sudo` for that last step, and
+is safe to re-run.
+
 ## How each alert behaves
 
 ### 1. Soil moisture below 50%
@@ -154,7 +182,8 @@ show up as a failed unit.
 | `rpi-setup/scripts/lib/influx-lib.sh` | Shared InfluxDB query + CSV parsing |
 | `rpi-setup/scripts/check-soil-moisture.sh` | Alert #1 |
 | `rpi-setup/scripts/check-sensor-health.sh` | Alerts #2 and #3 |
-| `rpi-setup/install-slack-notifications.sh` | One-time setup |
+| `rpi-setup/install-slack-notifications.sh` | One-time setup (interactive) |
+| `rpi-setup/install-health-timers.sh` | Audit (`--check`) / re-install just the timers, non-interactive |
 | `rpi-setup/systemd/soil-moisture-check.{service,timer}` | 30-min moisture timer |
 | `rpi-setup/systemd/sensor-health-check.{service,timer}` | 10-min health timer |
 

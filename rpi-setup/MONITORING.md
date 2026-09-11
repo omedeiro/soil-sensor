@@ -283,6 +283,13 @@ Already implemented — see `docs/guides/SLACK_NOTIFICATIONS.md`:
 cd ~/soil-sensor && ./rpi-setup/install-slack-notifications.sh
 ```
 
+Check whether the timers are actually installed and armed (read-only, no sudo —
+worth running after any SD-card rebuild):
+
+```bash
+./rpi-setup/install-health-timers.sh --check
+```
+
 Use `scripts/send-slack-alert.sh` from any other monitor script rather than
 hand-rolling a curl call; it handles severity colours, rate limiting and retries:
 
