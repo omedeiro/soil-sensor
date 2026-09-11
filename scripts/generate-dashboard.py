@@ -6,8 +6,8 @@ This script reads sensors-config.json and generates two dashboards with all
 sensor configurations, labels, colors, and filters:
 
   * soil-moisture-main.json — the main dashboard. No template variables: the
-    status bar, one full-width trace panel per plant, and the ambient climate
-    panels.
+    status bar, the current-moisture bar gauge, one full-width trace panel per
+    plant, and the ambient climate panels.
   * sensor-explorer.json — the Sensor dropdown and every panel that filters on
     it (plant heading, current levels, overlaid moisture trends, raw ADC).
 
@@ -97,12 +97,13 @@ def create_field_override(sensor, is_bargauge=False):
 
 
 def create_dashboard(config):
-    """Create the main dashboard: status bar, per-plant traces, ambient climate.
+    """Create the main dashboard: status bar, bar gauge, traces, ambient climate.
 
-    This dashboard deliberately has no template variables. Every panel that
-    filtered on the Sensor dropdown lives on the sensor explorer dashboard
-    (see create_sensor_explorer_dashboard), so what is left here always shows
-    one trace per plant with nothing to select first.
+    This dashboard deliberately has no template variables, so the
+    current-moisture bar gauge here filters on the configured sensor ids
+    rather than the Sensor dropdown. The panels that only make sense next to
+    that dropdown live on the sensor explorer dashboard (see
+    create_sensor_explorer_dashboard).
     """
     sensors = config["sensors"]
     grafana_config = config["grafana"]
@@ -111,8 +112,12 @@ def create_dashboard(config):
     status_y = 0
     status_height = 4
 
+    # Current levels for every plant at a glance, under the status bar.
+    current_moisture_y = status_y + status_height
+    current_moisture_height = 8
+
     # One full-width single-trace moisture panel per plant, in sensor order.
-    per_plant_start_y = status_y + status_height
+    per_plant_start_y = current_moisture_y + current_moisture_height
     per_plant_height = 8
     per_plant_panels = [
         create_single_plant_moisture_panel(
@@ -148,7 +153,7 @@ def create_dashboard(config):
         "fiscalYearStartMonth": 0,
         "liveNow": False,
         "schemaVersion": 38,
-        "version": 5,
+        "version": 6,
         "templating": {
             "list": []
         },
@@ -156,6 +161,12 @@ def create_dashboard(config):
             create_system_status_panel(sensors, climate_sensors, grafana_config, status_y),
             create_rpi_uptime_panel(grafana_config, status_y),
             create_last_updated_panel(grafana_config, status_y),
+            create_current_moisture_panel(
+                sensors,
+                grafana_config,
+                current_moisture_y,
+                device_filter=all_sensors_filter(sensors)
+            ),
             *per_plant_panels,
             create_temperature_stat_panel(climate_sensors, grafana_config, climate_stats_y),
             create_humidity_stat_panel(climate_sensors, grafana_config, climate_stats_y),
@@ -454,8 +465,24 @@ def create_last_updated_panel(grafana_config, y_pos):
     }
 
 
-def create_current_moisture_panel(sensors, grafana_config, y_pos):
-    """Create the Current Moisture Levels bar gauge panel."""
+def all_sensors_filter(sensors):
+    """Flux regex matching every configured soil sensor.
+
+    Used where the Sensor dropdown is not available (the main dashboard has no
+    template variables), so the panel still shows exactly the configured
+    sensors instead of whatever else has written to the measurement.
+    """
+    return "^(" + "|".join(s["id"] for s in sensors) + ")$"
+
+
+def create_current_moisture_panel(sensors, grafana_config, y_pos,
+                                  device_filter="^${sensor}$"):
+    """Create the Current Moisture Levels bar gauge panel.
+
+    device_filter is the Flux regex the panel matches device_id against. It
+    defaults to the Sensor dropdown; callers without that variable pass
+    all_sensors_filter(sensors).
+    """
     return {
         "id": 2,
         "type": "bargauge",
@@ -467,7 +494,7 @@ def create_current_moisture_panel(sensors, grafana_config, y_pos):
         },
         "targets": [
             {
-                "query": f'from(bucket: "{grafana_config["bucket"]}")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == "{grafana_config["measurement"]}")\n  |> filter(fn: (r) => r.location != "backyard")\n  |> filter(fn: (r) => r._field == "moisture")\n  |> filter(fn: (r) => r.device_id =~ /^${{sensor}}$/)\n  |> group(columns: ["device_id"])\n  |> last()\n  |> sort(columns: ["device_id"])',
+                "query": f'from(bucket: "{grafana_config["bucket"]}")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == "{grafana_config["measurement"]}")\n  |> filter(fn: (r) => r.location != "backyard")\n  |> filter(fn: (r) => r._field == "moisture")\n  |> filter(fn: (r) => r.device_id =~ /{device_filter}/)\n  |> group(columns: ["device_id"])\n  |> last()\n  |> sort(columns: ["device_id"])',
                 "refId": "A"
             }
         ],
