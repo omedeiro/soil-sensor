@@ -154,6 +154,11 @@ jobs:
           python3 scripts/check_agent_env.py
           --require-deny 'Bash(gh pr merge:*)'
           --require-deny 'Bash(git push origin main:*)'
+          --require-deny 'Bash(git push -f:*)'
+          --require-deny 'Bash(git push --force:*)'
+          --require-deny 'Bash(ssh * sudo*)'
+          --require-deny 'Bash(python3 .claude/skills/run-soil-sensor/driver.py live:*)'
+          --require-deny 'Bash(pio run * --target upload*)'
           --ignore-path firmware/src/secrets.h
 
   smoke:

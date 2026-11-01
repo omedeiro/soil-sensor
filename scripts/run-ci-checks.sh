@@ -145,7 +145,25 @@ check_agent_env() {
     python3 scripts/check_agent_env.py \
         --require-deny 'Bash(gh pr merge:*)' \
         --require-deny 'Bash(git push origin main:*)' \
+        --require-deny 'Bash(git push -f:*)' \
+        --require-deny 'Bash(git push --force:*)' \
+        --require-deny 'Bash(ssh * sudo*)' \
+        --require-deny 'Bash(python3 .claude/skills/run-soil-sensor/driver.py live:*)' \
+        --require-deny 'Bash(pio run * --target upload*)' \
         --ignore-path firmware/src/secrets.h
+}
+
+check_jq_installed() {
+    # check-soil-moisture.sh and check-sensor-health.sh exit 3 without jq,
+    # which would make every smoke scenario fail for an unrelated reason.
+    if command -v jq > /dev/null 2>&1; then
+        echo "  jq $(jq --version 2>/dev/null)"
+        return 0
+    fi
+    echo "  jq not found — install jq before running the smoke check:"
+    echo "      sudo apt-get install jq    # Debian/Ubuntu/Raspberry Pi OS"
+    echo "      brew install jq            # macOS"
+    return 1
 }
 
 # ── Firmware ─────────────────────────────────────────────────────────────────
@@ -169,6 +187,7 @@ run_check "ShellCheck"                        check_shellcheck
 run_check "Python syntax"                     check_python_syntax
 run_check "No committed secrets"              ./scripts/check-secrets.sh
 run_check "Agent env is consistent"           check_agent_env
+run_check "jq is installed (smoke needs it)"  check_jq_installed
 run_check "Smoke (mock InfluxDB/Slack)"       python3 .claude/skills/run-soil-sensor/driver.py smoke
 
 if [ "$WITH_FIRMWARE" -eq 1 ]; then
