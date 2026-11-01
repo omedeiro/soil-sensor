@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./scripts/run-ci-checks.sh:*)",
+      "Bash(python3 .claude/skills/run-soil-sensor/driver.py smoke:*)",
+      "Bash(python3 .claude/skills/run-soil-sensor/driver.py alerts:*)",
+      "Bash(./scripts/validate-config.py:*)",
+      "Bash(./scripts/generate-dashboard.py:*)",
+      "Bash(shellcheck:*)"
+    ],
+    "deny": [
+      "Bash(ssh * sudo*)",
+      "Bash(python3 .claude/skills/run-soil-sensor/driver.py live:*)",
+      "Bash(pio run * --target upload*)",
+      "Bash(git push origin main:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push --force:*)",
+      "Bash(gh pr merge:*)"
+    ]
+  }
+}

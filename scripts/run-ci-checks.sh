@@ -138,6 +138,16 @@ check_python_syntax() {
     return $rc
 }
 
+# ── Agentic environment ──────────────────────────────────────────────────────
+
+check_agent_env() {
+    # Same arguments as the agent-env job in .github/workflows/ci.yml.
+    python3 scripts/check_agent_env.py \
+        --require-deny 'Bash(gh pr merge:*)' \
+        --require-deny 'Bash(git push origin main:*)' \
+        --ignore-path firmware/src/secrets.h
+}
+
 # ── Firmware ─────────────────────────────────────────────────────────────────
 
 check_firmware_build() {
@@ -158,6 +168,8 @@ run_check "Shell syntax"                      check_shell_syntax
 run_check "ShellCheck"                        check_shellcheck
 run_check "Python syntax"                     check_python_syntax
 run_check "No committed secrets"              ./scripts/check-secrets.sh
+run_check "Agent env is consistent"           check_agent_env
+run_check "Smoke (mock InfluxDB/Slack)"       python3 .claude/skills/run-soil-sensor/driver.py smoke
 
 if [ "$WITH_FIRMWARE" -eq 1 ]; then
     if command -v pio > /dev/null 2>&1; then

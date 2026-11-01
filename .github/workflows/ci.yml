@@ -138,3 +138,39 @@ jobs:
       - name: Compile ESP8266 firmware
         working-directory: firmware
         run: pio run -e esp8266
+
+  agent-env:
+    name: Agent env
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Agentic environment is consistent
+        run: >-
+          python3 scripts/check_agent_env.py
+          --require-deny 'Bash(gh pr merge:*)'
+          --require-deny 'Bash(git push origin main:*)'
+          --ignore-path firmware/src/secrets.h
+
+  smoke:
+    name: Smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: jq is available
+        run: |
+          command -v jq > /dev/null 2>&1 || {
+            sudo apt-get update -qq && sudo apt-get install -y -qq jq
+          }
+
+      - name: Dashboard + alert scenarios against mock InfluxDB/Slack
+        run: python3 .claude/skills/run-soil-sensor/driver.py smoke
