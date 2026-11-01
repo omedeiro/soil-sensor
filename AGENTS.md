@@ -1,14 +1,11 @@
 # Agent Instructions — Soil Sensor Project
 
-## Communication Guidelines
-
-**CRITICAL:** The phrase "You're absolutely right!" should NEVER be used in responses. Provide direct, objective technical information without validating language.
-
 ## Specialized Skills
 
-Detailed, task-specific workflows have been moved into opencode skills under
-`.opencode/skills/`. They load automatically when a task matches. Load the
-matching skill before doing the work rather than guessing.
+Detailed, task-specific workflows live in `.claude/skills/<name>/SKILL.md`
+(the canonical home); `.opencode/skills/<name>` are relative symlinks to the
+same directories so opencode sees one set. They load automatically when a task
+matches. Load the matching skill before doing the work rather than guessing.
 
 | Skill | Use it for |
 | ----- | ---------- |
@@ -17,6 +14,8 @@ matching skill before doing the work rather than guessing.
 | **`grafana-troubleshooting`** | Grafana unreachable, Cloudflare Tunnel, "No Data"/datasource UID fixes, panel-health monitor, Slack alerts, secret storage |
 | **`sensor-offline-troubleshooting`** | ESP8266 stopped posting, power-cycle recovery, sensor health monitoring, InfluxDB last-reading queries |
 | **`rpi-server-ops`** | Raspberry Pi install, InfluxDB/Grafana setup, tokens/buckets, `test_influx_write.sh`, end-to-end testing, legacy Flask/SQLite server |
+| **`pi-access`** | SSH to the Pi (`omedeiro@192.168.99.134`), what is *actually* running there (InfluxDB in Docker, user-level timers), where secrets live, sudo/docker constraints, InfluxDB token rotation over HTTP |
+| **`run-soil-sensor`** | `driver.py smoke` / `alerts` / `dashboard` / `firmware` — mock InfluxDB + Slack to exercise the real alerting scripts, diff regenerated dashboards, compile firmware; `live` is a read-only Pi probe and is deny-listed for agents |
 
 ## Standard PR Workflow
 
@@ -28,11 +27,11 @@ matching skill before doing the work rather than guessing.
 3. Optional version bump: `./scripts/bump-version.sh <major|minor|patch> [firmware|system|docs]`
 4. `./scripts/run-ci-checks.sh` — runs exactly what CI runs, minus the firmware build
 5. `git push -u origin <branch>` then `gh pr create` with summary/changes/testing checklist
-6. Merge with `gh pr merge --squash` after review
+6. Merge with `gh pr merge --squash` after review (Owen does this; `.claude/settings.json` denies it for agents)
 
 ## CI (`.github/workflows/ci.yml`)
 
-Four jobs run on every push and PR; none of them need the Pi.
+Six jobs run on every push and PR; none of them need the Pi.
 
 | Job | Checks |
 | --- | ------ |
@@ -40,6 +39,8 @@ Four jobs run on every push and PR; none of them need the Pi.
 | **Shell & Python** | `bash -n` on every `.sh`, `shellcheck --severity=error`, `py_compile` on every `.py` |
 | **Secret scan** | `scripts/check-secrets.sh` — tokens, webhooks, inline systemd secrets, private keys |
 | **Firmware build** | `pio run -e esp8266` against `secrets.h.example` |
+| **Agent env** | `scripts/check_agent_env.py` — `.claude/settings.json` deny rules, skill frontmatter, `.opencode/skills` symlinks, AGENTS.md size and paths |
+| **Smoke** | `driver.py smoke` — regenerates the dashboard and runs both monitoring scripts through every fault scenario against a mock InfluxDB/Slack |
 
 `scripts/check-no-data-panels.py` is the static counterpart to the Pi's live
 panel-health monitor: it compares every dashboard query against
@@ -50,14 +51,11 @@ Run everything locally with `./scripts/run-ci-checks.sh`.
 
 ## Architecture
 
-**NEW SYSTEM (InfluxDB + Grafana on Raspberry Pi 5):**
 - **ESP8266 firmware** (PlatformIO/Arduino) — reads sensor, POSTs to InfluxDB every 5 min
 - **InfluxDB** (Raspberry Pi 5) — time-series database for sensor readings
 - **Grafana** (Raspberry Pi 5) — dashboards, alerts, visualization
 - **Raspberry Pi 5** — dedicated server, 256GB USB storage, automated backups
-
-**OLD SYSTEM (deprecated, being replaced):**
-- **Database server** (Python/Flask/SQLite on macOS) — to be phased out
+- Legacy Flask/SQLite server: `database/` (deprecated; see `rpi-server-ops` skill)
 
 **Working directories:**
 - Firmware: `/firmware`
@@ -96,20 +94,8 @@ Run everything locally with `./scripts/run-ci-checks.sh`.
 - Data Storage: `/mnt/sensor-data` (256GB USB drive)
 - Cloudflare Tunnel: `soil-sensor-grafana` (ID: ec9b412a-098a-45d2-8060-f2fa7b23b477)
 
-**ESP8266 Sensors (all on firmware v2.4.0, DHCP, OTA-updatable):**
-- **sensor-1** (bed-room, Rubber Tree): `192.168.99.110` (MAC: 68:c6:3a:f6:b3:ae) - online
-- **sensor-2** (living-room, Monstera): `192.168.99.149` (MAC: 48:3f:da:19:c0:86) - online
-- **sensor-3** (living-room, Avocado): `192.168.99.70` (MAC: 40:91:51:4f:d9:97) - online
-- **sensor-4** (guest-room, Micro Greens): `192.168.99.105` (MAC: 48:3f:da:aa:fe:d7) - online
-- **sensor-5** (bed-room, ZZ Plant): `192.168.99.89` (MAC: 34:ab:95:16:51:d9) (ESP-1651D9, Wi-Fi 2.4GHz n) - online (weakest signal, RSSI ≈ -71 dBm)
-- **sensor-6** (living-room, Ficus Elastica Ruby): `192.168.99.38` (MAC: 48:3f:da:62:f9:07) (Wi-Fi 2.4GHz n) - online
-- **sensor-7** (guest-room, Parsley): `192.168.99.141` (MAC: 84:cc:a8:a7:96:32) (Wi-Fi 2.4GHz n) - online
-- **sensor-8** (living-room, Ambient Climate — **DHT22/AM2302**, not soil): `192.168.99.182` (MAC: 48:55:19:e6:6c:af) - online
-- **sensor-9** (guest-room, Ambient Climate — **DHT22/AM2302**, not soil): `192.168.99.48` (MAC: 7c:87:ce:80:4d:36) - online (not in sensors-config.json; climate sensors are excluded from the soil dashboard config)
-- All sensors use **DHCP** (static IP disabled in v2.4.0 — it caused a "thinks it's connected forever" failure after power cycles). IPs above are current DHCP leases; use MAC/ARP to relocate a sensor if its IP changes. Sensors can be unplugged and moved to any outlet; they rejoin automatically.
-- **OTA updates:** `pio run -e esp8266-ota --target upload --upload-port <sensor-ip>` (password: `OTA_PASSWORD` in `firmware/src/secrets.h`). USB only needed for bricked/offline boards.
-- Web Dashboard: `http://<sensor-ip>` (e.g., `http://192.168.99.110`)
-- Reading Interval: 5 minutes (300000ms)
+**ESP8266 sensors:** 9 boards (7 soil, 2 DHT22 climate), DHCP, OTA-updatable, 5-minute reading interval.
+Current sensor IPs/MACs: `docs/SENSOR_INVENTORY.md` (DHCP leases drift; `sensors-config.json` is the source of truth for names/rooms/thresholds)
 
 ## Status Files Reference
 
@@ -117,9 +103,11 @@ Run everything locally with `./scripts/run-ci-checks.sh`.
 - `docs/README.md` — Technical documentation (WiFi stability, Grafana Cloud setup, InfluxDB notes)
 - `docs/guides/TROUBLESHOOTING_NO_DATA.md` — Panel health troubleshooting guide (v2.9.0)
 - `influx-schema.json` — InfluxDB measurements/tags/fields as written by the firmware and Pi collectors (checked in CI)
-- `.github/workflows/ci.yml` — CI: dashboards, shell/python, secret scan, firmware build
+- `.github/workflows/ci.yml` — CI: dashboards, shell/python, secret scan, firmware build, agent env, smoke
 - `docs/guides/SLACK_NOTIFICATIONS.md` — Slack alerting: low moisture, sensor down, system down
 - `grafana-dashboards/README.md` — Dashboard installation, customization, and alert setup
 - `README.md` — Project overview and setup instructions
 - `AGENTS.md` — This file (agent instructions index + core reference)
-- `.opencode/skills/` — Task-specific skill workflows (see Specialized Skills above)
+- `docs/SENSOR_INVENTORY.md` — Sensor IPs/MACs/RSSI snapshot (drifts; see System Information)
+- `.claude/skills/` — Task-specific skill workflows (see Specialized Skills above); `.opencode/skills/` symlinks to them
+- `.claude/settings.json` — Agent permissions: pre-approved local checks, deny list for `driver.py live`, firmware upload, `ssh … sudo`, pushes to `main`, PR merges
